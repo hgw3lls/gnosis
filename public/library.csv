@@ -1,0 +1,275 @@
+HoldingID,Source,OriginalID,Author,Title,Publisher,Language,Format,Confidence,Notes,TitleID,OpenLibrary_OLID,ISBN_13,Publish_Year,Page_Count,Subjects,Cover_S,Cover_M,Cover_L,Primary_Shelf,Tags,Use_Status
+H-A-001,Table A,B001,"Moore, Alan",Jerusalem: Book One: The Boroughs,Liveright,English,Book,High,Vol. 1,,,9781631492433.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-002,Table A,B002,"Moore, Alan",Jerusalem: Book Two: Mansoul,Liveright,English,Book,High,Vol. 2,,,9781631492433.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-003,Table A,B003,"Moore, Alan",Jerusalem: Book Three: Vernall’s Inquest,Liveright,English,Book,High,Vol. 3,,,9781631492433.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-004,Table A,B004,"Sartre, Jean-Paul",Nausea,New Directions,English,Book,High,,,9780811220309.0,,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-005,Table A,B005,"Nietzsche, Friedrich",Thus Spoke Zarathustra,Unknown,English,Book,Medium,,,9780140441185.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-006,Table A,B006,"Nietzsche, Friedrich",Beyond Good and Evil,Unknown,English,Book,Medium,,,9780140449235.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-007,Table A,B007,"Nietzsche, Friedrich",On the Genealogy of Morals,Unknown,English,Book,Medium,,,9780140449235.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-008,Table A,B008,"Heidegger, Martin",Being and Time,Unknown,English,Book,Medium,,,9780061575594.0,,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-009,Table A,B009,"Heidegger, Martin",The Question Concerning Technology,Unknown,English,Book,Medium,,,9780061576362.0,,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-010,Table A,B010,"Benjamin, Walter",Illuminations,Schocken,English,Book,High,,,9780805202410.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-011,Table A,B011,"Benjamin, Walter",Reflections,Unknown,English,Book,High,,,9781328470225.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-012,Table A,B012,"Benjamin, Walter",The Arcades Project,Belknap,English,Book,High,,,9780674008021.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-013,Table A,B013,"Bloch, Ernst",Man on His Own,Herder & Herder,English,Book,High,,,9780816491254.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-014,Table A,B014,"Arendt, Hannah",The Human Condition,Unknown,English,Book,High,,,9780226586621.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-015,Table A,B015,"Arendt, Hannah",Eichmann in Jerusalem,Unknown,English,Book,High,,,9780141001326.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-016,Table A,B016,"Foucault, Michel",Discipline and Punish,Unknown,English,Book,High,,,9780679752554.0,,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-017,Table A,B017,"Foucault, Michel",The Order of Things,Unknown,English,Book,High,,,9780679753353.0,,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-018,Table A,B018,"Foucault, Michel",Society Must Be Defended,Unknown,English,Book,Medium,,,9780312422663.0,,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-019,Table A,B019,"Deleuze, Gilles",Difference and Repetition,Unknown,English,Book,Medium,,,9780231081598.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-020,Table A,B020,"Deleuze, Gilles",The Logic of Sense,Unknown,English,Book,Medium,,,9780231059832.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-021,Table A,B021,"Deleuze, Gilles",Cinema 1: The Movement-Image,Unknown,English,Book,Medium,,,9780816612314.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-022,Table A,B022,"Deleuze, Gilles",Cinema 2: The Time-Image,Unknown,English,Book,Medium,,,9780816612321.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-023,Table A,B023,"Baudrillard, Jean",Simulacra and Simulation,Unknown,English,Book,High,,,9780472065219.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-024,Table A,B024,"Lyotard, Jean-François",The Postmodern Condition,Unknown,English,Book,High,,,9780816611737.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-025,Table A,B025,"Debord, Guy",The Society of the Spectacle,Unknown,English,Book,High,,,9781894928008.0,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-026,Table A,B026,"Debord, Guy",Comments on the Society of the Spectacle,Unknown,English,Book,High,,,,9781859840923.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-027,Table A,B027,"Agamben, Giorgio",Homo Sacer,Unknown,English,Book,High,,,,9780804739214.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-028,Table A,B028,"Agamben, Giorgio",State of Exception,Unknown,English,Book,High,,,,9780226009243.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-029,Table A,B029,"Agamben, Giorgio",The Open: Man and Animal,Unknown,English,Book,Medium,,,,9780804739993.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-030,Table A,B030,"Virilio, Paul",Speed and Politics,Unknown,English,Book,High,,,,9781584350255.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-031,Table A,B031,"Virilio, Paul",The Vision Machine,Unknown,English,Book,Medium,,,,9780253203993.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-032,Table A,B032,"Kittler, Friedrich","Gramophone, Film, Typewriter",Unknown,English,Book,High,,,,9780804730990.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-033,Table A,B033,"Kittler, Friedrich",Optical Media,Unknown,English,Book,Medium,,,,9780745623320.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-034,Table A,B034,"Flusser, Vilém",Towards a Philosophy of Photography,Unknown,English,Book,High,,,,9781861891454.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-035,Table A,B035,"Flusser, Vilém",The Shape of Things,Unknown,English,Book,Medium,,,,9781861891560.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-036,Table A,B036,"McLuhan, Marshall",Understanding Media,Unknown,English,Book,High,,,,9780262631594.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-037,Table A,B037,"McLuhan, Marshall",The Medium Is the Massage,Unknown,English,Book,High,,,,9781584230700.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-038,Table A,B038,"Ellul, Jacques",The Technological Society,Unknown,English,Book,High,,,,9780394703909.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-039,Table A,B039,"Simondon, Gilbert",On the Mode of Existence of Technical Objects,Unknown,English,Book,Medium,,,,9781517901648.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-040,Table A,B040,"Stiegler, Bernard","Technics and Time, 1",Unknown,English,Book,Medium,,,,9780804739917.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-041,Table A,B041,"Stiegler, Bernard",Taking Care of Youth and the Generations,Unknown,English,Book,Medium,,,,9780804742276.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-042,Table A,B042,"Latour, Bruno",We Have Never Been Modern,Unknown,English,Book,High,,,,9780674948396.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-043,Table A,B043,"Latour, Bruno",Reassembling the Social,Unknown,English,Book,High,,,,9780199256040.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-044,Table A,B044,"Haraway, Donna",A Cyborg Manifesto,Unknown,English,Book,Medium,,,,9780415966891.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-045,Table A,B045,"Haraway, Donna",Staying with the Trouble,Unknown,English,Book,High,,,,9780822362241.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-046,Table A,B046,"Fisher, Mark",Capitalist Realism,Unknown,English,Book,High,,,,9781846943171.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-047,Table A,B047,"Berardi, Franco",The Soul at Work,Unknown,English,Book,Medium,,,,9781584350774.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-048,Table A,B048,"Berardi, Franco",Futurability,Unknown,English,Book,Medium,,,,9781780994252.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-049,Table A,B049,"Bifo, Franco",After the Future,Unknown,English,Book,Medium,,,,9781608461760.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-050,Table A,B050,"Crary, Jonathan",24/7: Late Capitalism and the Ends of Sleep,Unknown,English,Book,High,,,,9781781683124.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-051,Table A,B051,"Crary, Jonathan",Suspensions of Perception,Unknown,English,Book,High,,,,9780262531160.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-052,Table A,B052,"Crary, Jonathan",Techniques of the Observer,Unknown,English,Book,High,,,,9780262531078.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-053,Table A,B053,"Zuboff, Shoshana",The Age of Surveillance Capitalism,Unknown,English,Book,High,,,,9781610395694.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-054,Table A,B054,"Pasquinelli, Matteo",Animal Spirits,Unknown,English,Book,Medium,,,,9781509508684.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-055,Table A,B055,"Pasquinelli, Matteo",The Nooscope Manifested,Unknown,English,Book,Medium,,,,9781786606258.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-056,Table A,B056,"Parisi, Luciana",Abstract Sex,Unknown,English,Book,Medium,,,,9780826497536.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-057,Table A,B057,"Parisi, Luciana",Contagious Architecture,Unknown,English,Book,Medium,,,,9780262512008.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-058,Table A,B058,"Hayles, N. Katherine",How We Became Posthuman,Unknown,English,Book,High,,,,9780226321390.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-059,Table A,B059,"Hayles, N. Katherine",Unthought,Unknown,English,Book,Medium,,,,9780226447915.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-060,Table A,B060,"Hui, Yuk",On the Existence of Digital Objects,Unknown,English,Book,High,,,,9780816698912.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-061,Table A,B061,"Hui, Yuk",Recursivity and Contingency,Unknown,English,Book,High,,,,9781786605886.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-062,Table A,B062,"Bratton, Benjamin",The Stack,Unknown,English,Book,High,,,,9780262035415.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-063,Table A,B063,"Bratton, Benjamin",The Revenge of the Real,Unknown,English,Book,Medium,,,,9781788736854.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-064,Table A,B064,"Srnicek, Nick",Platform Capitalism,Unknown,English,Book,High,,,,9781509504860.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-065,Table A,B065,"Srnicek, Nick",Inventing the Future,Unknown,English,Book,Medium,,,,9781784780967.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-066,Table A,B066,"Terranova, Tiziana",Network Culture,Unknown,English,Book,Medium,,,,9780745623733.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-067,Table A,B067,"Lovink, Geert",Networks Without a Cause,Unknown,English,Book,Medium,,,,9780745646992.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-068,Table A,B068,"Lovink, Geert",Sad by Design,Unknown,English,Book,High,,,,9780745655833.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-069,Table A,B069,"Chun, Wendy Hui Kyong",Control and Freedom,Unknown,English,Book,Medium,,,,9780262532754.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-070,Table A,B070,"Chun, Wendy Hui Kyong",Updating to Remain the Same,Unknown,English,Book,High,,,,9780262033909.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-071,Table A,B071,"Galloway, Alexander",Protocol,Unknown,English,Book,High,,,,9780262572132.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-072,Table A,B072,"Galloway, Alexander",The Interface Effect,Unknown,English,Book,Medium,,,,9780745662527.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-073,Table A,B073,"Fuller, Matthew",Media Ecologies,Unknown,English,Book,High,,,,9780262062596.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-074,Table A,B074,"Fuller, Matthew",Evil Media,Unknown,English,Book,Medium,,,,9780262514408.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-075,Table A,B075,"Manovich, Lev",The Language of New Media,Unknown,English,Book,High,,,,9780262632553.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-076,Table A,B076,"Manovich, Lev",Software Takes Command,Unknown,English,Book,High,,,,9781608460176.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-077,Table A,B077,"Manovich, Lev",Cultural Analytics,Unknown,English,Book,Medium,,,,9780262042741.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-078,Table A,B078,"Flusser, Vilém",Into the Universe of Technical Images,Unknown,English,Book,High,,,,9780816650156.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-079,Table A,B079,"Mitchell, W. J. T.",The Reconfigured Eye,Unknown,English,Book,Medium,,,,9780262631594.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-080,Table A,B080,"Mitchell, W. J. T.",Iconology,Unknown,English,Book,High,,,,9780226532383.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-081,Table A,B081,"Mitchell, W. J. T.",What Do Pictures Want?,Unknown,English,Book,High,,,,9780226532314.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-082,Table A,B082,"Virilio, Paul",The Information Bomb,Unknown,English,Book,Medium,,,,9781859845492.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-083,Table A,B083,"Virilio, Paul",The Accident of Art,Unknown,English,Book,Medium,,,,9780745654744.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-084,Table A,B084,"Stiegler, Bernard",For a New Critique of Political Economy,Unknown,English,Book,Medium,,,,9780745652788.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-085,Table A,B085,"Stiegler, Bernard","Automatic Society, Vol. 1",Unknown,English,Book,Medium,,,,9781509510304.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-086,Table A,B086,"Hansen, Mark B. N.",New Philosophy for New Media,Unknown,English,Book,High,,,,9780262581523.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-087,Table A,B087,"Hansen, Mark B. N.",Feed-Forward,Unknown,English,Book,Medium,,,,9780226348601.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-088,Table A,B088,"Massumi, Brian",Parables for the Virtual,Unknown,English,Book,High,,,,9780822328797.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-089,Table A,B089,"Massumi, Brian",Politics of Affect,Unknown,English,Book,Medium,,,,9780745669182.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-090,Table A,B090,"Guattari, Félix",The Three Ecologies,Unknown,English,Book,High,,,,9780822312734.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-091,Table A,B091,"Guattari, Félix",Chaosmosis,Unknown,English,Book,High,,,,9780253209834.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-092,Table A,B092,"Braidotti, Rosi",The Posthuman,Unknown,English,Book,High,,,,9780745641584.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-093,Table A,B093,"Braidotti, Rosi",Nomadic Subjects,Unknown,English,Book,Medium,,,,9780231135895.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-094,Table A,B094,"Harney, Stefano",The Undercommons,Unknown,English,Book,High,,,,9781570272527.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-095,Table A,B095,"Mackenzie, Adrian",Transductions,Unknown,English,Book,Medium,,,,9780826494016.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-096,Table A,B096,"Mackenzie, Adrian",Machine Learners,Unknown,English,Book,High,,,,9780262039475.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-097,Table A,B097,"Parikka, Jussi",Insect Media,Unknown,English,Book,Medium,,,,9780816662555.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-098,Table A,B098,"Parikka, Jussi",A Geology of Media,Unknown,English,Book,High,,,,9780816695515.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-099,Table A,B099,"Couldry, Nick",The Costs of Connection,Unknown,English,Book,Medium,,,,9781509509711.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-100,Table A,B100,"Couldry, Nick","Media, Society, World",Unknown,English,Book,Medium,,,,9781509507274.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-101,Table A,B101,"Couldry, Nick",The Mediated Construction of Reality,Unknown,English,Book,High,,,,9781509516726.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-102,Table A,B102,"Couldry, Nick",Media Rituals,Unknown,English,Book,Medium,,,,9780415207000.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-103,Table A,B103,"Dean, Jodi",Publicity's Secret,Unknown,English,Book,Medium,,,,9780804737463.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-104,Table A,B104,"Dean, Jodi",Blog Theory,Unknown,English,Book,High,,,,9780745639970.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-105,Table A,B105,"Dean, Jodi",Crowds and Party,Unknown,English,Book,Medium,,,,9781784780448.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-106,Table A,B106,"Andrejevic, Mark",Infoglut,Unknown,English,Book,Medium,,,,9780415806227.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-107,Table A,B107,"Andrejevic, Mark",Automated Media,Unknown,English,Book,Medium,,,,9781138689625.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-108,Table A,B108,"Zuboff, Shoshana",In the Age of the Smart Machine,Unknown,English,Book,High,,,,9780465046818.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-109,Table A,B109,"Pasquale, Frank",The Black Box Society,Unknown,English,Book,High,,,,9780674970847.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-110,Table A,B110,"Pasquale, Frank",New Laws of Robotics,Unknown,English,Book,Medium,,,,9780674975224.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-111,Table A,B111,"O'Neil, Cathy",Weapons of Math Destruction,Unknown,English,Book,High,,,,9780553418811.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-112,Table A,B112,"Eubanks, Virginia",Automating Inequality,Unknown,English,Book,High,,,,9781250074317.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-113,Table A,B113,"Benjamin, Ruha",Race After Technology,Unknown,English,Book,High,,,,9781509526404.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-114,Table A,B114,"Noble, Safiya Umoja",Algorithms of Oppression,Unknown,English,Book,High,,,,9781479837243.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-115,Table A,B115,"Gray, Mary L.",Ghost Work,Unknown,English,Book,High,,,,9780544952734.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-116,Table A,B116,"Crawford, Kate",Atlas of AI,Unknown,English,Book,High,,,,9780300209570.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-117,Table A,B117,"Broussard, Meredith",Artificial Unintelligence,Unknown,English,Book,Medium,,,,9780262537018.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-118,Table A,B118,"Amoore, Louise",Cloud Ethics,Unknown,English,Book,Medium,,,,9781474450287.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-119,Table A,B119,"Amoore, Louise",The Politics of Possibility,Unknown,English,Book,Medium,,,,9780822337683.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-120,Table A,B120,"Rouvroy, Antoinette",Governing by Algorithms,Unknown,English,Book,Medium,,,,9781786603240.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-121,Table A,B121,"Chun, Wendy Hui Kyong",Discriminating Data,Unknown,English,Book,Medium,,,,9780262043960.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-122,Table A,B122,"Ziewitz, Malte",Governing Algorithms,Unknown,English,Book,Medium,,,,9780262039215.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-123,Table A,B123,"Beer, David",Metric Power,Unknown,English,Book,Medium,,,,9781138646604.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-124,Table A,B124,"Fourcade, Marion",The Ordinal Society,Unknown,English,Book,Medium,,,,9780674972872.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-125,Table A,B125,"Benjamin, Walter",One-Way Street,Unknown,English,Book,High,,,,9781847495945.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-126,Table A,B126,"Benjamin, Walter",Berlin Childhood around 1900,Unknown,English,Book,High,,,,9780674005907.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-127,Table A,B127,"Adorno, Theodor W.",Minima Moralia,Unknown,English,Book,High,,,,9781847493668.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-128,Table A,B128,"Adorno, Theodor W.",Dialectic of Enlightenment,Unknown,English,Book,High,,,,9780807051231.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-129,Table A,B129,"Adorno, Theodor W.",Negative Dialectics,Unknown,English,Book,High,,,,9780826492319.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-130,Table A,B130,"Horkheimer, Max",Eclipse of Reason,Unknown,English,Book,Medium,,,,9780826491671.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-131,Table A,B131,"Marcuse, Herbert",One-Dimensional Man,Unknown,English,Book,High,,,,9780807015462.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-132,Table A,B132,"Marcuse, Herbert",Eros and Civilization,Unknown,English,Book,High,,,,9780807015554.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-133,Table A,B133,"Marcuse, Herbert",An Essay on Liberation,Unknown,English,Book,Medium,,,,9780807015196.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-134,Table A,B134,"Fromm, Erich",Escape from Freedom,Unknown,English,Book,High,,,,9780805031495.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-135,Table A,B135,"Fromm, Erich",The Sane Society,Unknown,English,Book,Medium,,,,9780805036360.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-136,Table A,B136,"Althusser, Louis",Ideology and Ideological State Apparatuses,Unknown,English,Book,Medium,,,,9781781682356.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-137,Table A,B137,"Gramsci, Antonio",Selections from the Prison Notebooks,Unknown,English,Book,High,,,,9780717803972.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-138,Table A,B138,"Lukács, Georg",History and Class Consciousness,Unknown,English,Book,High,,,,9780262620208.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-139,Table A,B139,"Williams, Raymond",Television: Technology and Cultural Form,Unknown,English,Book,High,,,,9780415314562.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-140,Table A,B140,"Williams, Raymond",Marxism and Literature,Unknown,English,Book,High,,,,9780198760654.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-141,Table A,B141,"Hall, Stuart",Representation,Unknown,English,Book,Medium,,,,9780761954323.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-142,Table A,B142,"Hall, Stuart",Policing the Crisis,Unknown,English,Book,High,,,,9780335239494.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-143,Table A,B143,"Spivak, Gayatri Chakravorty",Can the Subaltern Speak?,Unknown,English,Book,Medium,,,,9780231143852.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-144,Table A,B144,"Said, Edward W.",Orientalism,Unknown,English,Book,High,,,,9780394740676.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-145,Table A,B145,"Mbembe, Achille",Necropolitics,Unknown,English,Book,High,,,,9780822373995.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-146,Table A,B146,"Butler, Judith",Gender Trouble,Unknown,English,Book,High,,,,9780415389553.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-147,Table A,B147,"Butler, Judith",Bodies That Matter,Unknown,English,Book,Medium,,,,9780415610152.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-148,Table A,B148,"Butler, Judith",Frames of War,Unknown,English,Book,Medium,,,,9781844673339.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-149,Table A,B149,"Rancière, Jacques",The Politics of Aesthetics,Unknown,English,Book,High,,,,9780826456403.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-150,Table A,B150,"Rancière, Jacques",Disagreement,Unknown,English,Book,Medium,,,,9780816631651.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-151,Table A,B151,"Rancière, Jacques",The Emancipated Spectator,Unknown,English,Book,High,,,,9781844677719.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-152,Table A,B152,"Bourdieu, Pierre",Distinction,Unknown,English,Book,High,,,,9780674212770.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-153,Table A,B153,"Bourdieu, Pierre",Outline of a Theory of Practice,Unknown,English,Book,High,,,,9780521291644.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-154,Table A,B154,"Bourdieu, Pierre",The Logic of Practice,Unknown,English,Book,Medium,,,,9780804720116.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-155,Table A,B155,"Lefebvre, Henri",The Production of Space,Unknown,English,Book,High,,,,9780631181774.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-156,Table A,B156,"Lefebvre, Henri",Critique of Everyday Life,Unknown,English,Book,Medium,,,,9781844671458.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-157,Table A,B157,"De Certeau, Michel",The Practice of Everyday Life,Unknown,English,Book,High,,,,9780521273985.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-158,Table A,B158,"Simmel, Georg",The Metropolis and Mental Life,Unknown,English,Book,Medium,,,,9780226757724.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-159,Table A,B159,"Weber, Max",The Protestant Ethic and the Spirit of Capitalism,Unknown,English,Book,High,,,,9780415254066.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-160,Table A,B160,"Polanyi, Karl",The Great Transformation,Unknown,English,Book,High,,,,9780807056434.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-161,Table A,B161,"Jameson, Fredric","Postmodernism, or, The Cultural Logic of Late Capitalism",Unknown,English,Book,High,,,,9780822310907.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-162,Table A,B162,"Jameson, Fredric",The Political Unconscious,Unknown,English,Book,High,,,,9780807842211.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-163,Table A,B163,"Jameson, Fredric",Archaeologies of the Future,Unknown,English,Book,Medium,,,,9781844670222.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-164,Table A,B164,"Žižek, Slavoj",The Sublime Object of Ideology,Unknown,English,Book,High,,,,9781859843887.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-165,Table A,B165,"Žižek, Slavoj",Welcome to the Desert of the Real,Unknown,English,Book,Medium,,,,9781844670338.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-166,Table A,B166,"Žižek, Slavoj",Living in the End Times,Unknown,English,Book,Medium,,,,9781844677023.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-167,Table A,B167,"Berardi, Franco",Futurability,Unknown,English,Book,Medium,,,,9781780994252.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-168,Table A,B168,"Hardt, Michael",Empire,Unknown,English,Book,High,,,,9780674506718.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-169,Table A,B169,"Hardt, Michael",Multitude,Unknown,English,Book,Medium,,,,9781594200246.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-170,Table A,B170,"Hardt, Michael",Commonwealth,Unknown,English,Book,Medium,,,,9780674060920.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-171,Table A,B171,"Negri, Antonio",Insurgencies,Unknown,English,Book,Medium,,,,9780816649069.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-172,Table A,B172,"Negri, Antonio",Time for Revolution,Unknown,English,Book,Medium,,,,9780822336174.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-173,Table A,B173,"Virno, Paolo",A Grammar of the Multitude,Unknown,English,Book,High,,,,9781584350354.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-174,Table A,B174,"Virno, Paolo",Multitude,Unknown,English,Book,Medium,,,,9780262720410.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-175,Table A,B175,"Lazzarato, Maurizio",The Making of the Indebted Man,Unknown,English,Book,High,,,,9781584350941.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-176,Table A,B176,"Lazzarato, Maurizio",Governing by Debt,Unknown,English,Book,Medium,,,,9780262529280.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-177,Table A,B177,"Fanon, Frantz","Black Skin, White Masks",Unknown,English,Book,High,,,,9780802143009.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-178,Table A,B178,"Fanon, Frantz",The Wretched of the Earth,Unknown,English,Book,High,,,,9780802141326.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-179,Table A,B179,"Césaire, Aimé",Discourse on Colonialism,Unknown,English,Book,High,,,,9781583670255.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-180,Table A,B180,"Wynter, Sylvia",Unsettling the Coloniality of Being,Unknown,English,Book,Medium,,,,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-181,Table A,B181,"Mbembe, Achille",On the Postcolony,Unknown,English,Book,High,,,,9780520204355.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-182,Table A,B182,"Gilroy, Paul",The Black Atlantic,Unknown,English,Book,High,,,,9780674076068.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-183,Table A,B183,"Hall, Stuart",Cultural Identity and Diaspora,Unknown,English,Book,Medium,,,,,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-184,Table A,B184,"hooks, bell",Ain’t I a Woman,Unknown,English,Book,High,,,,9780896081307.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-185,Table A,B185,"hooks, bell",Teaching to Transgress,Unknown,English,Book,High,,,,9780415908082.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-186,Table A,B186,"Crenshaw, Kimberlé",Mapping the Margins,Unknown,English,Book,Medium,,,,,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-187,Table A,B187,"Ahmed, Sara",The Cultural Politics of Emotion,Unknown,English,Book,High,,,,9780748610994.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-188,Table A,B188,"Ahmed, Sara",Queer Phenomenology,Unknown,English,Book,Medium,,,,9780826497888.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-189,Table A,B189,"Muñoz, José Esteban",Cruising Utopia,Unknown,English,Book,High,,,,9780816674634.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-190,Table A,B190,"Muñoz, José Esteban",Disidentifications,Unknown,English,Book,Medium,,,,9780816642688.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-191,Table A,B191,"Berlant, Lauren",Cruel Optimism,Unknown,English,Book,High,,,,9780822348078.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-192,Table A,B192,"Berlant, Lauren",The Female Complaint,Unknown,English,Book,Medium,,,,9780822335306.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-193,Table A,B193,"Povinelli, Elizabeth",The Empire of Love,Unknown,English,Book,Medium,,,,9780822337980.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-194,Table A,B194,"Povinelli, Elizabeth",Geontologies,Unknown,English,Book,High,,,,9780822371311.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-195,Table A,B195,"Tsing, Anna",The Mushroom at the End of the World,Unknown,English,Book,High,,,,9780691178325.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-196,Table A,B196,"Tsing, Anna",Friction,Unknown,English,Book,Medium,,,,9780691120652.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-197,Table A,B197,"Graeber, David","Debt: The First 5,000 Years",Unknown,English,Book,High,,,,9781612191294.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-198,Table A,B198,"Graeber, David",Bullshit Jobs,Unknown,English,Book,High,,,,9781501143319.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-199,Table A,B199,"Sassen, Saskia","Territory, Authority, Rights",Unknown,English,Book,High,,,,9780691120690.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-200,Table A,B200,"Sassen, Saskia",Expulsions,Unknown,English,Book,Medium,,,,9780674369764.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-201,Table A,B201,"Sassen, Saskia",Cities in a World Economy,Unknown,English,Book,High,,,,9781452230250.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-202,Table A,B202,"Castells, Manuel",The Rise of the Network Society,Unknown,English,Book,High,,,,9781405196864.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-203,Table A,B203,"Castells, Manuel",The Power of Identity,Unknown,English,Book,Medium,,,,9781405196871.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-204,Table A,B204,"Castells, Manuel",End of Millennium,Unknown,English,Book,Medium,,,,9781405196888.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-205,Table A,B205,"Srnicek, Nick",Platform Capitalism,Unknown,English,Book,High,,,,9781509504860.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-206,Table A,B206,"Morozov, Evgeny","To Save Everything, Click Here",Unknown,English,Book,High,,,,9781610391382.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-207,Table A,B207,"Morozov, Evgeny",The Net Delusion,Unknown,English,Book,Medium,,,,9781610391061.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-208,Table A,B208,"Vaidhyanathan, Siva",The Googlization of Everything,Unknown,English,Book,High,,,,9780520268821.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-209,Table A,B209,"Vaidhyanathan, Siva",Antisocial Media,Unknown,English,Book,High,,,,9780190054126.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-210,Table A,B210,"Zoff, Shoshana",Surveillance Capitalism (abridged ed.),Unknown,English,Book,Medium,,,,,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-211,Table A,B211,"Lanier, Jaron",You Are Not a Gadget,Unknown,English,Book,High,,,,9780307269645.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-212,Table A,B212,"Lanier, Jaron",Ten Arguments for Deleting Your Social Media Accounts Right Now,Unknown,English,Book,Medium,,,,9781250196682.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-213,Table A,B213,"Bostrom, Nick",Superintelligence,Unknown,English,Book,High,,,,9780198739834.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-214,Table A,B214,"Russell, Stuart",Human Compatible,Unknown,English,Book,High,,,,9780525558613.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-215,Table A,B215,"Floridi, Luciano",The Ethics of Information,Unknown,English,Book,Medium,,,,9780199641327.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-216,Table A,B216,"Floridi, Luciano",The Fourth Revolution,Unknown,English,Book,Medium,,,,9780198719362.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-217,Table A,B217,"Pasquale, Frank",The Eye of the Master,Unknown,English,Book,Medium,,,,9780262046152.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-218,Table A,B218,"Kittler, Friedrich",There Is No Software,Unknown,English,Book,Medium,,,,,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-219,Table A,B219,"Hui, Yuk",Art and Cosmotechnics,Unknown,English,Book,Medium,,,,9781509546676.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-220,Table A,B220,"Parisi, Luciana",Algorithmic Capitalism,Unknown,English,Book,Medium,,,,,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-221,Table A,B221,"Terranova, Tiziana",Red Stack Attack!,Unknown,English,Book,Medium,,,,9780262039161.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-222,Table A,B222,"Galloway, Alexander",Cybernetic Hypothesis,Unknown,English,Book,Medium,,,,9781517905400.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-223,Table A,B223,"Chun, Wendy Hui Kyong",Programmed Visions,Unknown,English,Book,Medium,,,,9780262533287.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-224,Table A,B224,"Amoore, Louise",Algorithmic War,Unknown,English,Book,High,,,,9781107562045.0,,,,,,,"V. Fiction, Speculation & Myth",,Archive
+H-A-225,Table A,B225,"Couldry, Nick",The Costs of Connection,Unknown,English,Book,Medium,,,,9781509509711.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-226,Table A,B226,"Couldry, Nick","Media, Society, World",Unknown,English,Book,Medium,,,,9781509507274.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-227,Table A,B227,"Couldry, Nick",Why Voice Matters,Unknown,English,Book,Medium,,,,9781446258424.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-228,Table A,B228,"Silverstone, Roger",Why Study the Media?,Unknown,English,Book,Medium,,,,9781446202182.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-229,Table A,B229,"Couldry, Nick",Media Rituals,Unknown,English,Book,Medium,,,,9780415207000.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-230,Table A,B230,"Livingstone, Sonia",Making Sense of Television,Unknown,English,Book,Medium,,,,9780415140659.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-231,Table A,B231,"Hall, Stuart",Encoding and Decoding in the Television Discourse,Unknown,English,Book,Medium,,,,,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-232,Table A,B232,"Williams, Raymond",Culture and Society,Unknown,English,Book,High,,,,9780231121737.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-233,Table A,B233,"Williams, Raymond",Keywords,Unknown,English,Book,High,,,,9780192801643.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-234,Table A,B234,"Thompson, E. P.",The Making of the English Working Class,Unknown,English,Book,High,,,,9780394703220.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-235,Table A,B235,"Hobsbawm, Eric",The Age of Extremes,Unknown,English,Book,High,,,,9780679730057.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-236,Table A,B236,"Hobsbawm, Eric",Industry and Empire,Unknown,English,Book,Medium,,,,9780140137562.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-237,Table A,B237,"Polanyi, Karl",The Great Transformation,Unknown,English,Book,High,,,,9780807056434.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-238,Table A,B238,"Arrighi, Giovanni",The Long Twentieth Century,Unknown,English,Book,High,,,,9781859842156.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-239,Table A,B239,"Wallerstein, Immanuel",The Modern World-System I,Unknown,English,Book,High,,,,9780520267572.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-240,Table A,B240,"Wallerstein, Immanuel",The Modern World-System II,Unknown,English,Book,Medium,,,,9780520267596.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-241,Table A,B241,"Wallerstein, Immanuel",The Modern World-System III,Unknown,English,Book,Medium,,,,9780520267602.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-242,Table A,B242,"Harvey, David",The Condition of Postmodernity,Unknown,English,Book,High,,,,9780631162940.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-243,Table A,B243,"Harvey, David",A Brief History of Neoliberalism,Unknown,English,Book,High,,,,9780199283271.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-244,Table A,B244,"Harvey, David",Spaces of Hope,Unknown,English,Book,Medium,,,,9780521675505.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-245,Table A,B245,"Harvey, David",Rebel Cities,Unknown,English,Book,Medium,,,,9781844678822.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-246,Table A,B246,"Sennett, Richard",The Corrosion of Character,Unknown,English,Book,High,,,,9780393310719.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-247,Table A,B247,"Sennett, Richard",The Craftsman,Unknown,English,Book,Medium,,,,9780300108323.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-248,Table A,B248,"Sennett, Richard",Together,Unknown,English,Book,Medium,,,,9780300190663.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-249,Table A,B249,"Bauman, Zygmunt",Liquid Modernity,Unknown,English,Book,High,,,,9780745624105.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-250,Table A,B250,"Bauman, Zygmunt",Liquid Life,Unknown,English,Book,Medium,,,,9780745655307.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-251,Table A,B251,"Bauman, Zygmunt",Liquid Fear,Unknown,English,Book,Medium,,,,9780745635552.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-252,Table A,B252,"Bauman, Zygmunt",Liquid Times,Unknown,English,Book,Medium,,,,9780745648576.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-253,Table A,B253,"Rosa, Hartmut",Social Acceleration,Unknown,English,Book,High,,,,9780231148345.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-254,Table A,B254,"Rosa, Hartmut",Resonance,Unknown,English,Book,High,,,,9781509519925.0,,,,,,,"IV. Art, Aesthetics & Practice",,Archive
+H-A-255,Table A,B255,"Han, Byung-Chul",The Burnout Society,Unknown,English,Book,High,,,,9780804795091.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-256,Table A,B256,"Han, Byung-Chul",Psychopolitics,Unknown,English,Book,Medium,,,,9781784785771.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-257,Table A,B257,"Han, Byung-Chul",In the Swarm,Unknown,English,Book,Medium,,,,9780262529136.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-258,Table A,B258,"Stiegler, Bernard","Automatic Society, Vol. 2",Unknown,English,Book,Medium,,,,9781509512445.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-259,Table A,B259,"Berardi, Franco",Breathing,Unknown,English,Book,Medium,,,,9781584351910.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-260,Table A,B260,"Berardi, Franco",Heroes,Unknown,English,Book,Medium,,,,9781780992975.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-261,Table A,B261,"Dean, Jodi",Comrade,Unknown,English,Book,High,,,,9781788732504.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-262,Table A,B262,"Dean, Jodi","Organize, Fight, Win",Unknown,English,Book,Medium,,,,9781788730470.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-263,Table A,B263,"Hardt, Michael",Assembly,Unknown,English,Book,High,,,,9780190947039.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-264,Table A,B264,"Graeber, David",The Utopia of Rules,Unknown,English,Book,High,,,,9781612193755.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-265,Table A,B265,"Srnicek, Nick",After Work,Unknown,English,Book,Medium,,,,9781784780288.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-266,Table A,B266,"Williams, Alex",Inventing the Future,Unknown,English,Book,Medium,,,,9781784780967.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-267,Table A,B267,"Mason, Paul",Postcapitalism,Unknown,English,Book,High,,,,9780374536732.0,,,,,,,"III. Power, Control & Institutions",,Archive
+H-A-268,Table A,B268,"Srnicek, Nick",Platform Socialism,Unknown,English,Book,Medium,,,,9781509547130.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-269,Table A,B269,"Bridle, James",New Dark Age,Unknown,English,Book,High,,,,9781785030269.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-270,Table A,B270,"Bridle, James",Ways of Being,Unknown,English,Book,High,,,,9780374604486.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-271,Table A,B271,"O'Gorman, Marcel",Necromedia,Unknown,English,Book,Medium,,,,9780816679578.0,,,,,,,"II. Systems, Media & Technology",,Archive
+H-A-272,Table A,B272,"Parikka, Jussi",Operational Images,Unknown,English,Book,Medium,,,,9780262045315.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-273,Table A,B273,"Chun, Wendy Hui Kyong",Control and Freedom,Unknown,English,Book,Medium,,,,9780262532754.0,,,,,,,I. Foundations & Philosophy,,Archive
+H-A-274,Table A,B274,"Pasquinelli, Matteo",The Eye of the Master,Unknown,English,Book,Medium,,,,9781784789021.0,,,,,,,I. Foundations & Philosophy,,Archive
