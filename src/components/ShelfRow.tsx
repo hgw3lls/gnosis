@@ -10,6 +10,7 @@ type ShelfRowProps = {
   shelfNumber: number;
   booksById: Record<string, Book>;
   draggingPlacementId?: string | null;
+  highlightedBookIds?: Set<string> | null;
   dropIndicator: DropIndicator;
   onSelectBook: (bookId: string) => void;
   onDragStart: (payload: DragPayload) => void;
@@ -26,6 +27,7 @@ const ShelfRow = ({
   shelfNumber,
   booksById,
   draggingPlacementId,
+  highlightedBookIds,
   dropIndicator,
   onSelectBook,
   onDragStart,
@@ -94,6 +96,7 @@ const ShelfRow = ({
           if (!book) {
             return null;
           }
+          const isDimmed = highlightedBookIds ? !highlightedBookIds.has(book.id) : false;
           const spine = (
             <Spine
               key={placementId}
@@ -102,6 +105,7 @@ const ShelfRow = ({
               shelfId={shelf.id}
               index={index}
               isDragging={draggingPlacementId === placementId}
+              isDimmed={isDimmed}
               onSelect={() => onSelectBook(book.id)}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}

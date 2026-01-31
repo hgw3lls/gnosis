@@ -12,6 +12,7 @@ type BookcaseProps = {
   draggingPlacementId?: string | null;
   dropIndicator: DropIndicator;
   selectedBookId?: string | null;
+  highlightedBookIds?: Set<string> | null;
   onSelectBook: (bookId: string, bookcaseId: string) => void;
   onCloseDetail: () => void;
   onUpdateBook: (bookId: string, updates: Partial<Book>) => void;
@@ -30,6 +31,7 @@ const Bookcase = ({
   draggingPlacementId,
   dropIndicator,
   selectedBookId,
+  highlightedBookIds,
   onSelectBook,
   onCloseDetail,
   onUpdateBook,
@@ -81,6 +83,7 @@ const Bookcase = ({
               shelfNumber={shelfIndex + 1}
               booksById={booksById}
               draggingPlacementId={draggingPlacementId}
+              highlightedBookIds={highlightedBookIds}
               dropIndicator={dropIndicator}
               onSelectBook={(bookId) => onSelectBook(bookId, bookcase.id)}
               onDragStart={onDragStart}

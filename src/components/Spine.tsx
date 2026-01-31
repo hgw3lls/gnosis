@@ -7,6 +7,7 @@ type SpineProps = {
   shelfId: string;
   index: number;
   isDragging: boolean;
+  isDimmed?: boolean;
   onSelect: () => void;
   onDragStart: (payload: DragPayload) => void;
   onDragEnd: () => void;
@@ -18,6 +19,7 @@ const Spine = ({
   shelfId,
   index,
   isDragging,
+  isDimmed = false,
   onSelect,
   onDragStart,
   onDragEnd,
@@ -48,7 +50,7 @@ const Spine = ({
       aria-label={`${title} by ${author}`}
       className={`relative flex h-40 items-center justify-center border-2 border-black bg-white px-2 text-center text-[10px] uppercase tracking-[0.1em] text-black hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
         isDragging ? 'opacity-60' : ''
-      } whitespace-normal break-words`}
+      } ${isDimmed ? 'opacity-40' : ''} whitespace-normal break-words`}
       style={{
         writingMode: 'vertical-rl',
         textOrientation: 'mixed',

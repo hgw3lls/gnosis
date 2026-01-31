@@ -1,0 +1,63 @@
+import BookDetailPanel from '../../components/BookDetailPanel';
+import type { Book } from '../../types/library';
+import { useLibrary } from '../../state/libraryStore';
+
+type GridModeProps = {
+  selectedBookId: string | null;
+  onSelectBook: (bookId: string) => void;
+  onCloseDetail: () => void;
+  onUpdateBook: (bookId: string, updates: Partial<Book>) => void;
+};
+
+const GridMode = ({ selectedBookId, onSelectBook, onCloseDetail, onUpdateBook }: GridModeProps) => {
+  const { appState, filteredBooks } = useLibrary();
+  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
+
+  return (
+    <section className="mt-8 border-2 border-black p-6" id="mode-panel-grid">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {filteredBooks.map((book) => {
+          const cover = book.coverM || book.coverS;
+          return (
+            <button
+              key={book.id}
+              type="button"
+              onClick={() => onSelectBook(book.id)}
+              className="flex h-full flex-col gap-3 border-2 border-black p-4 text-left text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+            >
+              {cover ? (
+                <img
+                  src={cover}
+                  alt={`Cover for ${book.title}`}
+                  className="h-32 w-full border-2 border-black object-cover"
+                />
+              ) : (
+                <div className="flex h-32 items-center justify-center border-2 border-black text-[10px]">
+                  No cover
+                </div>
+              )}
+              <div className="space-y-1">
+                <p className="text-sm uppercase tracking-[0.2em]">{book.title}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em]">
+                  {book.author || 'Unknown author'}
+                </p>
+                {book.format ? (
+                  <p className="text-[10px] uppercase tracking-[0.3em]">{book.format}</p>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {selectedBook ? (
+        <BookDetailPanel
+          book={selectedBook}
+          onClose={onCloseDetail}
+          onUpdate={(updates) => onUpdateBook(selectedBook.id, updates)}
+        />
+      ) : null}
+    </section>
+  );
+};
+
+export default GridMode;
