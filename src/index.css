@@ -4,14 +4,18 @@
 
 :root {
   color-scheme: light;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #f7f2e8;
+  color: #111111;
+  --ink: #111111;
+  --ink-accent: #e34a2b;
+  --paper: #f7f2e8;
+  --paper-soft: #f1ebdf;
 }
 
 body {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  background-color: #ffffff;
-  color: #000000;
+  @apply font-grotesk;
+  background-color: var(--paper);
+  color: var(--ink);
 }
 
 h1,
@@ -25,26 +29,42 @@ button,
 input,
 select,
 textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  @apply font-monoish;
   border-radius: 0;
   box-shadow: none;
 }
 
 a {
-  color: #000000;
+  color: var(--ink);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
 
 a:hover {
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--ink);
+  color: #f7f2e8;
 }
 
 *:focus-visible {
-  outline: 2px solid #000000;
-  outline-offset: 2px;
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--ink-accent);
+  color: #f7f2e8;
+}
+
+.paper-noise {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.08) 1px, transparent 0);
+  background-size: 120px 120px;
+}
+
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) {
+  .paper-noise {
+    background-image: none;
+  }
 }
 
 ::-webkit-scrollbar {
