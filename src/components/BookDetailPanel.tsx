@@ -1,4 +1,11 @@
 import type { Book } from '../types/library';
+import { cn } from '../utils/cn';
+import { focusRing, inputBase } from '../styles/ui';
+import InkButton from './ui/InkButton';
+import InkPanel from './ui/InkPanel';
+import InkChip from './ui/InkChip';
+import Type from './ui/Type';
+import { getPlateColor } from '../styles/palette';
 
 type BookDetailPanelProps = {
   book: Book;
@@ -12,8 +19,10 @@ const renderField = (label: string, value?: string | string[]) => {
   }
   const display = Array.isArray(value) ? value.join(', ') : value;
   return (
-    <div className="space-y-1 border-b-2 border-black pb-3 text-sm">
-      <p className="text-xs uppercase tracking-[0.3em]">{label}</p>
+    <div className="space-y-1 border-b-rule border-ink pb-3 text-sm">
+      <Type as="p" variant="label">
+        {label}
+      </Type>
       <p>{display}</p>
     </div>
   );
@@ -21,22 +30,34 @@ const renderField = (label: string, value?: string | string[]) => {
 
 const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
   const cover = book.coverL || book.coverM || book.coverS;
+  const tags = [book.primaryShelf, ...(book.tags ?? [])].filter(
+    (tag): tag is string => Boolean(tag),
+  );
 
   return (
-    <div className="mt-6 border-2 border-black p-6">
+    <InkPanel padding="lg" className="mt-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em]">Selected</p>
-          <h3 className="mt-2 text-2xl uppercase tracking-[0.2em]">{book.title}</h3>
-          <p className="mt-1 text-xs uppercase tracking-[0.2em]">{book.author || 'Unknown author'}</p>
+        <div className="space-y-2">
+          <Type as="p" variant="label">
+            Selected
+          </Type>
+          <Type as="h3" variant="h2">
+            {book.title}
+          </Type>
+          <Type as="p" variant="meta">
+            {book.author || 'Unknown author'}
+          </Type>
+          {tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <InkChip key={tag} plate={getPlateColor(tag)}>
+                  {tag}
+                </InkChip>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="border-2 border-black px-4 py-2 text-xs uppercase tracking-[0.3em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
-        >
-          Close
-        </button>
+        <InkButton onClick={onClose}>Close</InkButton>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
         <div className="space-y-4">
@@ -44,19 +65,25 @@ const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
           {renderField('Year', book.publishYear)}
           {renderField('ISBN', book.isbn13)}
           {renderField('Primary Shelf', book.primaryShelf)}
-          <div className="space-y-3 border-b-2 border-black pb-3 text-sm">
-            <p className="text-xs uppercase tracking-[0.3em]">Location</p>
+          <div className="space-y-3 border-b-rule border-ink pb-3 text-sm">
+            <Type as="p" variant="label">
+              Location
+            </Type>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.3em]">Bookcase</span>
+                <Type as="span" variant="meta">
+                  Bookcase
+                </Type>
                 <input
                   value={book.locationBookcase}
                   onChange={(event) => onUpdate({ locationBookcase: event.target.value })}
-                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                  className={cn(inputBase, focusRing, 'px-2 py-1 text-[11px]')}
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.3em]">Shelf (1-12)</span>
+                <Type as="span" variant="meta">
+                  Shelf (1-12)
+                </Type>
                 <input
                   type="number"
                   min={1}
@@ -67,11 +94,13 @@ const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
                       locationShelf: Math.min(12, Math.max(1, Number(event.target.value) || 1)),
                     })
                   }
-                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                  className={cn(inputBase, focusRing, 'px-2 py-1 text-[11px]')}
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.3em]">Position</span>
+                <Type as="span" variant="meta">
+                  Position
+                </Type>
                 <input
                   type="number"
                   min={1}
@@ -79,15 +108,17 @@ const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
                   onChange={(event) =>
                     onUpdate({ locationPosition: Math.max(1, Number(event.target.value) || 1) })
                   }
-                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                  className={cn(inputBase, focusRing, 'px-2 py-1 text-[11px]')}
                 />
               </label>
               <label className="flex flex-col gap-1 sm:col-span-2">
-                <span className="text-[10px] uppercase tracking-[0.3em]">Note</span>
+                <Type as="span" variant="meta">
+                  Note
+                </Type>
                 <input
                   value={book.locationNote ?? ''}
                   onChange={(event) => onUpdate({ locationNote: event.target.value })}
-                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                  className={cn(inputBase, focusRing, 'px-2 py-1 text-[11px]')}
                 />
               </label>
             </div>
@@ -102,11 +133,15 @@ const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
         </div>
         {cover ? (
           <div className="flex items-start justify-start">
-            <img src={cover} alt={`Cover for ${book.title}`} className="w-full border-2 border-black" />
+            <img
+              src={cover}
+              alt={`Cover for ${book.title}`}
+              className="w-full border-rule border-ink"
+            />
           </div>
         ) : null}
       </div>
-    </div>
+    </InkPanel>
   );
 };
 

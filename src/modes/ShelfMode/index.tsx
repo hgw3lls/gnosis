@@ -81,7 +81,7 @@ const ShelfMode = ({
   };
 
   return (
-    <div className="mt-8 flex flex-col gap-10" id="mode-panel-shelf">
+    <div className="flex flex-col gap-10" id="mode-panel-shelf">
       {activeLayout.bookcases.map((bookcase) => (
         <Bookcase
           key={bookcase.id}

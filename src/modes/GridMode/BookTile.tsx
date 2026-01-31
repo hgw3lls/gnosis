@@ -1,7 +1,8 @@
 import type { Book } from '../../types/library';
-import { getLocationLabel } from '../../components/FiltersBar';
-
-const cn = (...values: Array<string | false | undefined>) => values.filter(Boolean).join(' ');
+import { cn } from '../../utils/cn';
+import { focusRing, printInteractive } from '../../styles/ui';
+import InkChip from '../../components/ui/InkChip';
+import { getBookPlateColor } from '../../styles/palette';
 
 type BookTileProps = {
   book: Book;
@@ -9,24 +10,39 @@ type BookTileProps = {
   onSelect: () => void;
 };
 
+const getLocationLabel = (book: Book) => {
+  if (!book.locationBookcase && !book.locationShelf) {
+    return '';
+  }
+  const shelf = book.locationShelf ? `S${book.locationShelf}` : '';
+  const position = book.locationPosition ? `P${book.locationPosition}` : '';
+  return [book.locationBookcase, shelf, position].filter(Boolean).join(' · ');
+};
+
 const BookTile = ({ book, size, onSelect }: BookTileProps) => {
   const locationLabel = getLocationLabel(book);
   const category = book.primaryShelf || book.tags?.[0] || 'Uncategorized';
   const year = book.publishYear || '—';
+  const plate = getBookPlateColor(book, category);
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex h-full flex-col justify-between gap-3 border-2 border-black p-4 text-left text-black',
-        'transition hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-black',
+        'relative flex h-full flex-col justify-between gap-3 border-rule2 border-ink bg-paper p-4 text-left text-ink shadow-print-md',
+        focusRing,
+        printInteractive,
         size === 's' && 'min-h-[160px]',
         size === 'm' && 'min-h-[200px]',
         size === 'l' && 'min-h-[240px]',
       )}
     >
+      <span
+        className="absolute left-0 top-0 h-full w-[6px]"
+        style={{ backgroundColor: plate }}
+        aria-hidden="true"
+      />
       <div className="space-y-2">
         <p className={cn('uppercase tracking-[0.2em]', size === 'l' ? 'text-lg' : 'text-sm')}>
           {book.title}
@@ -36,11 +52,9 @@ const BookTile = ({ book, size, onSelect }: BookTileProps) => {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.3em]">
-        <span className="border-2 border-black px-2 py-1">{year}</span>
-        <span className="border-2 border-black px-2 py-1">{category}</span>
-        {locationLabel ? (
-          <span className="border-2 border-black px-2 py-1">{locationLabel}</span>
-        ) : null}
+        <InkChip>{year}</InkChip>
+        <InkChip plate={getBookPlateColor(book, category)}>{category}</InkChip>
+        {locationLabel ? <InkChip>{locationLabel}</InkChip> : null}
       </div>
     </button>
   );
