@@ -1,6 +1,15 @@
 import type { Bookcase, LibraryLayout, Shelf } from '../types/library';
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const normalizeShelfLabels = (labels: string[] | undefined, shelfCount: number) => {
+  const next = labels ? [...labels] : [];
+  if (next.length < shelfCount) {
+    for (let i = next.length; i < shelfCount; i += 1) {
+      next.push(`Shelf ${i + 1}`);
+    }
+  }
+  return next.slice(0, shelfCount);
+};
 
 const createId = (prefix: string) => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -24,6 +33,7 @@ export const reflowBookcaseShelves = (layout: LibraryLayout, bookcaseId: string)
   const shelfCount = clamp(bookcase.settings.shelfCount, 1, 12);
   let nextShelfIds = [...bookcase.shelfIds];
   const nextShelvesById: Record<string, Shelf> = { ...layout.shelvesById };
+  const shelfLabels = normalizeShelfLabels(bookcase.settings.shelfLabels, shelfCount);
 
   if (shelfCount > nextShelfIds.length) {
     const newIds = Array.from({ length: shelfCount - nextShelfIds.length }, () => createId('shelf'));
@@ -53,7 +63,11 @@ export const reflowBookcaseShelves = (layout: LibraryLayout, bookcaseId: string)
   const nextBookcase: Bookcase = {
     ...bookcase,
     shelfIds: nextShelfIds,
-    settings: { ...bookcase.settings, shelfCount },
+    settings: {
+      ...bookcase.settings,
+      shelfCount,
+      shelfLabels,
+    },
   };
 
   return {
@@ -73,11 +87,19 @@ export const setBookcaseShelfCount = (
     return layout;
   }
 
+  const normalizedCount = clamp(shelfCount, 1, 12);
   const nextLayout: LibraryLayout = {
     ...layout,
     bookcases: layout.bookcases.map((item) =>
       item.id === bookcaseId
-        ? { ...item, settings: { ...item.settings, shelfCount: clamp(shelfCount, 1, 12) } }
+        ? {
+            ...item,
+            settings: {
+              ...item.settings,
+              shelfCount: normalizedCount,
+              shelfLabels: normalizeShelfLabels(item.settings.shelfLabels, normalizedCount),
+            },
+          }
         : item,
     ),
   };

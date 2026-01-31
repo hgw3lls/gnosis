@@ -104,6 +104,16 @@ const getDefaultShelfCount = (count: number) => {
   return clamp(base, 1, 12);
 };
 
+const normalizeShelfLabels = (labels: string[] | undefined, shelfCount: number) => {
+  const next = labels ? [...labels] : [];
+  if (next.length < shelfCount) {
+    for (let i = next.length; i < shelfCount; i += 1) {
+      next.push(`Shelf ${i + 1}`);
+    }
+  }
+  return next.slice(0, shelfCount);
+};
+
 const distributeItems = (items: string[], shelfIds: string[]): Record<string, Shelf> => {
   const shelves: Record<string, Shelf> = {};
   shelfIds.forEach((id) => {
@@ -193,9 +203,15 @@ export const buildLibraryLayout = ({
         id: bookcaseId,
         name: category,
         shelfIds: [],
-        settings: { shelfCount: previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length) },
+        settings: {
+          shelfCount: previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length),
+          shelfLabels: normalizeShelfLabels(
+            previous?.settings.shelfLabels,
+            previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length),
+          ),
+        },
       });
-    });
+  });
 
   overrideTargets.forEach((bookIds, bookcaseId) => {
     const existing = bookcaseItemsById.get(bookcaseId);
@@ -207,6 +223,10 @@ export const buildLibraryLayout = ({
     const name = previous?.name ?? '(Uncategorized)';
     const settings = {
       shelfCount: previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length),
+      shelfLabels: normalizeShelfLabels(
+        previous?.settings.shelfLabels,
+        previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length),
+      ),
     };
     bookcaseItemsById.set(bookcaseId, [...bookIds]);
     bookcases.push({ id: bookcaseId, name, shelfIds: [], settings });
@@ -221,7 +241,10 @@ export const buildLibraryLayout = ({
     const caseShelves = distributeItems(items, shelfIds);
     Object.assign(shelvesById, caseShelves);
     bookcase.shelfIds = shelfIds;
-    bookcase.settings = { shelfCount };
+    bookcase.settings = {
+      shelfCount,
+      shelfLabels: normalizeShelfLabels(bookcase.settings.shelfLabels, shelfCount),
+    };
   });
 
   return { libraryId, bookcases, shelvesById, placementOverrides };
@@ -295,6 +318,7 @@ export const reflowBookcaseShelves = (
 ): { bookcase: Bookcase; shelvesById: Record<string, Shelf> } => {
   const existingItems = bookcase.shelfIds.flatMap((id) => shelvesById[id]?.bookIds ?? []);
   const shelfCount = clamp(nextShelfCount, 1, 12);
+  const shelfLabels = normalizeShelfLabels(bookcase.settings.shelfLabels, shelfCount);
   let nextShelfIds = [...bookcase.shelfIds];
   const nextShelvesById = { ...shelvesById };
 
@@ -319,7 +343,11 @@ export const reflowBookcaseShelves = (
     bookcase: {
       ...bookcase,
       shelfIds: nextShelfIds,
-      settings: { shelfCount },
+      settings: {
+        ...bookcase.settings,
+        shelfCount,
+        shelfLabels,
+      },
     },
     shelvesById: nextShelvesById,
   };

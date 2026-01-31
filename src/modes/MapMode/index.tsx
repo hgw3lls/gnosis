@@ -1,12 +1,13 @@
 import BookDetailPanel from '../../components/BookDetailPanel';
+import InkButton from '../../components/ui/InkButton';
 import InkChip from '../../components/ui/InkChip';
 import InkPanel from '../../components/ui/InkPanel';
 import Type from '../../components/ui/Type';
 import { useLibrary } from '../../state/libraryStore';
 import type { Book } from '../../types/library';
+import { focusRing, inputBase } from '../../styles/ui';
 import { cn } from '../../utils/cn';
 
-const BOOKCASES = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 const SHELVES = Array.from({ length: 12 }, (_, index) => index + 1);
 
 type MapModeProps = {
@@ -22,7 +23,7 @@ const buildShelfMap = (books: Book[]) => {
 
   books.forEach((book) => {
     const bookcase = book.locationBookcase?.trim() ?? '';
-    if (!BOOKCASES.includes(bookcase as (typeof BOOKCASES)[number])) {
+    if (!bookcase) {
       unmapped.push(book);
       return;
     }
@@ -48,42 +49,83 @@ const buildShelfMap = (books: Book[]) => {
 };
 
 const MapMode = ({ selectedBookId, onSelectBook, onCloseDetail, onUpdateBook }: MapModeProps) => {
+  const {
+    appState,
+    activeLayout,
+    filteredBooks,
+    exportCsv,
+    setBookcaseShelfCount,
+    updateBookcaseName,
+    updateShelfLabel,
+  } = useLibrary();
+  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
+  const { byCase, unmapped } = buildShelfMap(filteredBooks);
+  const bookcases = activeLayout?.bookcases ?? [];
+
   const { appState, filteredBooks } = useLibrary();
   const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
   const { byCase, unmapped } = buildShelfMap(filteredBooks);
 
+
   return (
     <section className="space-y-6" id="mode-panel-map">
       <InkPanel padding="lg">
-        <div className="border-b-rule border-ink pb-4">
-          <Type as="p" variant="label">
-            Library map
-          </Type>
-          <Type as="h2" variant="h2" className="mt-2">
-            Bookcases A–F · Shelves 1–12
-          </Type>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b-rule border-ink pb-4">
+          <div>
+            <Type as="p" variant="label">
+              Library map
+            </Type>
+            <Type as="h2" variant="h2" className="mt-2">
+              Bookcases · Shelves 1–12
+            </Type>
+          </div>
+          <InkButton onClick={exportCsv}>Export updated CSV</InkButton>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3 xl:grid-cols-6">
-          {BOOKCASES.map((bookcase) => {
-            const shelves = byCase.get(bookcase);
+          {bookcases.map((bookcase) => {
+            const shelves = byCase.get(bookcase.name);
+            const shelfCount = bookcase.settings.shelfCount;
+            const labels = bookcase.settings.shelfLabels ?? [];
             return (
-              <InkPanel key={bookcase} padding="md" className="space-y-4">
-                <div className="flex items-center justify-between">
+              <InkPanel key={bookcase.id} padding="md" className="space-y-4">
+                <div className="space-y-2">
                   <Type as="p" variant="label">
                     Bookcase
                   </Type>
-                  <Type as="p" variant="h3">
-                    {bookcase}
-                  </Type>
+                  <input
+                    value={bookcase.name}
+                    onChange={(event) => updateBookcaseName(bookcase.id, event.target.value)}
+                    className={cn(inputBase, focusRing, 'w-full text-sm')}
+                  />
+                  <label className="flex items-center gap-2">
+                    <Type as="span" variant="meta">
+                      Shelves
+                    </Type>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={shelfCount}
+                      onChange={(event) =>
+                        setBookcaseShelfCount(bookcase.id, Number(event.target.value))
+                      }
+                      className={cn(inputBase, focusRing, 'w-20 px-2 py-1 text-[11px]')}
+                    />
+                  </label>
                 </div>
                 <div className="space-y-3">
-                  {SHELVES.map((shelfNumber) => {
+                  {SHELVES.slice(0, shelfCount).map((shelfNumber, shelfIndex) => {
                     const shelfBooks = shelves?.get(shelfNumber) ?? [];
+                    const shelfLabel = labels[shelfIndex] ?? `Shelf ${shelfNumber}`;
                     return (
-                      <div key={`${bookcase}-${shelfNumber}`} className="space-y-2">
-                        <Type as="p" variant="meta">
-                          Shelf {shelfNumber}
-                        </Type>
+                      <div key={`${bookcase.id}-${shelfNumber}`} className="space-y-2">
+                        <input
+                          value={shelfLabel}
+                          onChange={(event) =>
+                            updateShelfLabel(bookcase.id, shelfIndex, event.target.value)
+                          }
+                          className={cn(inputBase, focusRing, 'w-full text-[10px]')}
+                        />
                         {shelfBooks.length > 0 ? (
                           <div className="flex flex-col gap-2">
                             {shelfBooks.map((book) => (
