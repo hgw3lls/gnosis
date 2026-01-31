@@ -1,0 +1,230 @@
+<<<<<<< ours
+import type { Book } from '../types/library';
+
+const trimValue = (value: string | undefined) => value?.trim() ?? '';
+=======
+import Papa from 'papaparse';
+import type { Book, LibraryState, ShelfCode } from '../types/library';
+import type { CsvRow } from '../types';
+import { SHELVES } from '../types/library';
+import { inferShelfFromPrimary, normalizeShelfCode } from './shelves';
+import { uniqueIdFromFields } from './ids';
+
+const escapeCsvValue = (value: string) => {
+  const needsQuotes = /[",\n\r]/.test(value);
+  const escaped = value.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
+};
+
+export const normalizeRow = (row: CsvRow, header: string[]): CsvRow => {
+  const normalized: CsvRow = {};
+  header.forEach((column) => {
+    normalized[column] = row[column] ?? '';
+  });
+  Object.entries(row).forEach(([key, value]) => {
+    if (!(key in normalized)) {
+      normalized[key] = value ?? '';
+    }
+  });
+  return normalized;
+};
+
+export const parseCsv = (
+  text: string,
+): { header: string[]; rows: CsvRow[] } => {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          currentField += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        currentField += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === ',') {
+      currentRow.push(currentField);
+      currentField = '';
+      continue;
+    }
+
+    if (char === '\n') {
+      currentRow.push(currentField);
+      rows.push(currentRow);
+      currentRow = [];
+      currentField = '';
+      continue;
+    }
+
+    if (char === '\r') {
+      if (text[i + 1] === '\n') {
+        continue;
+      }
+      currentRow.push(currentField);
+      rows.push(currentRow);
+      currentRow = [];
+      currentField = '';
+      continue;
+    }
+
+    currentField += char;
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField);
+    rows.push(currentRow);
+  }
+
+  const header = rows.shift() ?? [];
+  const dataRows = rows.filter((row) =>
+    row.some((value) => value.trim().length > 0),
+  );
+  const parsedRows = dataRows.map((row) => {
+    const rowMap: CsvRow = {};
+    header.forEach((column, index) => {
+      rowMap[column] = row[index] ?? '';
+    });
+    return normalizeRow(rowMap, header);
+  });
+
+  return { header, rows: parsedRows };
+};
+
+export const stringifyCsv = (header: string[], rows: CsvRow[]): string => {
+  const lines = [header.map(escapeCsvValue).join(',')];
+  rows.forEach((row) => {
+    const normalized = normalizeRow(row, header);
+    const values = header.map((column) => escapeCsvValue(normalized[column]));
+    lines.push(values.join(','));
+  });
+  return lines.join('\n');
+};
+
+const requiredColumns = [
+  'Title',
+  'Author',
+  'Primary_Shelf',
+  'Shelf_Code',
+  'Tags',
+  'Use_Status',
+  'ISBN',
+  'Year',
+  'Publisher',
+  'Notes',
+];
+>>>>>>> theirs
+
+const parseCsvLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      const nextChar = line[i + 1];
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+};
+
+export const parseCsvText = (
+  csvText: string,
+): { rows: Record<string, string>[]; columns: string[] } => {
+  const lines = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const dataLines = lines.filter((line) => line.trim().length > 0);
+  if (dataLines.length === 0) {
+    return { rows: [], columns: [] };
+  }
+  const columns = parseCsvLine(dataLines[0]).map((column, index) => {
+    const trimmed = column.trim();
+    if (index === 0) {
+      return trimmed.replace(/^\uFEFF/, '');
+    }
+    return trimmed;
+  });
+  const rows: Record<string, string>[] = [];
+
+  for (let i = 1; i < dataLines.length; i += 1) {
+    const values = parseCsvLine(dataLines[i]);
+    const row: Record<string, string> = {};
+    columns.forEach((column, index) => {
+      row[column] = trimValue(values[index] ?? '');
+    });
+    rows.push(row);
+  }
+
+  return { rows, columns };
+};
+
+const quoteValue = (value: string) => {
+  if (value.includes('"')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  if (value.includes(',') || value.includes('\n')) {
+    return `"${value}"`;
+  }
+  return value;
+};
+
+export const exportBooksToCsv = (books: Book[], columns: string[]): string => {
+  const resolvedColumns =
+    columns.length > 0 ? columns : Array.from(new Set(books.flatMap((book) => Object.keys(book.raw))));
+  const header = resolvedColumns.join(',');
+  const lines = books.map((book) => {
+    const row = { ...book.raw };
+    row.Title = book.title ?? row.Title ?? '';
+    row.Author = book.author ?? row.Author ?? '';
+    row.Publisher = book.publisher ?? row.Publisher ?? '';
+    row.Language = book.language ?? row.Language ?? '';
+    row.Format = book.format ?? row.Format ?? '';
+    row.Confidence = book.confidence ?? row.Confidence ?? '';
+    row.Notes = book.notes ?? row.Notes ?? '';
+    row.Publish_Year = book.publishYear ?? row.Publish_Year ?? '';
+    row.Page_Count = book.pageCount ?? row.Page_Count ?? '';
+    row.Subjects = book.subjects ? book.subjects.join(', ') : row.Subjects ?? '';
+    row.Tags = book.tags ? book.tags.join(', ') : row.Tags ?? '';
+    row.Use_Status = book.useStatus ?? row.Use_Status ?? '';
+    row.Source = book.source ?? row.Source ?? '';
+    row.ISBN_13 = book.isbn13 ?? row.ISBN_13 ?? '';
+    row.OpenLibrary_OLID = book.olid ?? row.OpenLibrary_OLID ?? '';
+    row.Cover_S = book.coverS ?? row.Cover_S ?? '';
+    row.Cover_M = book.coverM ?? row.Cover_M ?? '';
+    row.Cover_L = book.coverL ?? row.Cover_L ?? '';
+    row.Primary_Shelf = book.primaryShelf ?? row.Primary_Shelf ?? '';
+    resolvedColumns.forEach((column) => {
+      if (!(column in row)) {
+        row[column] = '';
+      }
+    });
+    return resolvedColumns.map((column) => quoteValue(row[column] ?? '')).join(',');
+  });
+  return [header, ...lines].join('\n');
+};

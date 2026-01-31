@@ -7,12 +7,7 @@
 }
 
 body {
-<<<<<<< ours
   font-family: 'Inter', system-ui, sans-serif;
-=======
-  font-family: 'Space Mono', 'Courier New', monospace;
-  letter-spacing: 0.04em;
->>>>>>> theirs
 }
 
 ::-webkit-scrollbar {

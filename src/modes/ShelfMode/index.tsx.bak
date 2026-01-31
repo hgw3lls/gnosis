@@ -1,4 +1,3 @@
-<<<<<<< ours
 import { useState } from 'react';
 import type { DragEvent } from 'react';
 import Bookcase from '../../components/Bookcase';
@@ -6,12 +5,6 @@ import type { Book, DragPayload } from '../../types/library';
 import { useLibrary } from '../../state/libraryStore';
 
 type DropIndicator = { shelfId: string; index: number } | null;
-=======
-import BookDetailPanel from '../../components/BookDetailPanel';
-import type { Book } from '../../types/library';
-import { useLibrary } from '../../state/libraryStore';
-import ShelfView from './ShelfView';
->>>>>>> theirs
 
 type ShelfModeProps = {
   selectedBookId: string | null;
@@ -23,15 +16,11 @@ type ShelfModeProps = {
 
 const ShelfMode = ({
   selectedBookId,
-<<<<<<< ours
   selectedBookcaseId,
-=======
->>>>>>> theirs
   onSelectBook,
   onCloseDetail,
   onUpdateBook,
 }: ShelfModeProps) => {
-<<<<<<< ours
   const {
     appState,
     activeLayout,
@@ -114,23 +103,6 @@ const ShelfMode = ({
           onDrop={handleDrop}
         />
       ))}
-=======
-  const { appState } = useLibrary();
-  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
-
-  return (
-    <div className="mt-8 flex flex-col gap-6" id="mode-panel-shelf">
-      <ShelfView
-        onSelectBook={onSelectBook}
-      />
-      {selectedBook ? (
-        <BookDetailPanel
-          book={selectedBook}
-          onClose={onCloseDetail}
-          onUpdate={(updates) => onUpdateBook(selectedBook.id, updates)}
-        />
-      ) : null}
->>>>>>> theirs
     </div>
   );
 };

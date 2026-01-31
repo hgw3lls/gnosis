@@ -1,25 +1,11 @@
-<<<<<<< ours
 export const downloadBlob = (filename: string, data: string, type: string) => {
   const blob = new Blob([data], { type });
-=======
-export const downloadTextFile = (
-  filename: string,
-  content: string,
-  mime = 'text/plain',
-) => {
-  const blob = new Blob([content], { type: mime });
->>>>>>> theirs
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
-<<<<<<< ours
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-=======
-  anchor.rel = 'noopener';
-  anchor.click();
->>>>>>> theirs
   URL.revokeObjectURL(url);
 };

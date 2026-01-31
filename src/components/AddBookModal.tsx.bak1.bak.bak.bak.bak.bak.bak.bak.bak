@@ -1,0 +1,169 @@
+import { useState } from 'react';
+import type { Book, ShelfCode } from '../types/library';
+import { SHELVES } from '../types/library';
+import { uniqueIdFromFields } from '../utils/ids';
+
+interface AddBookModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (book: Book) => void;
+}
+
+const AddBookModal = ({ isOpen, onClose, onAdd }: AddBookModalProps) => {
+  const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
+  const [shelfCode, setShelfCode] = useState<ShelfCode>('I');
+  const [tags, setTags] = useState('');
+  const [useStatus, setUseStatus] = useState('');
+  const [notes, setNotes] = useState('');
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const handleSubmit = () => {
+    if (!title.trim()) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const primaryShelf = `${shelfCode}. ${SHELVES.find((shelf) => shelf.code === shelfCode)?.name ?? ''}`;
+    const tagList = tags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
+    const id = uniqueIdFromFields([title, author, now]);
+
+    onAdd({
+      id,
+      title: title.trim(),
+      author: author.trim(),
+      shelfCode,
+      primaryShelf,
+      tags: tagList,
+      useStatus,
+      notes,
+      createdAt: now,
+      updatedAt: now,
+      raw: {},
+    });
+    setTitle('');
+    setAuthor('');
+    setShelfCode('I');
+    setTags('');
+    setUseStatus('');
+    setNotes('');
+    onClose();
+  };
+
+  return (
+<<<<<<< ours
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-950 p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Add new book</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-slate-700 px-3 py-1 text-sm text-slate-300"
+=======
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-lg border-4 border-black bg-white p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold uppercase tracking-widest text-black">Add new book</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border-2 border-black px-3 py-1 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
+>>>>>>> theirs
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-4 space-y-3">
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Title"
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+          />
+          <input
+            value={author}
+            onChange={(event) => setAuthor(event.target.value)}
+            placeholder="Author"
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+          />
+          <select
+            value={shelfCode}
+            onChange={(event) => setShelfCode(event.target.value as ShelfCode)}
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+          >
+            {SHELVES.map((shelf) => (
+              <option key={shelf.code} value={shelf.code}>
+                {shelf.code}. {shelf.name}
+              </option>
+            ))}
+          </select>
+          <input
+            value={tags}
+            onChange={(event) => setTags(event.target.value)}
+            placeholder="Tags (comma-separated)"
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+          />
+          <input
+            value={useStatus}
+            onChange={(event) => setUseStatus(event.target.value)}
+            placeholder="Use status"
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+          />
+          <textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Notes"
+<<<<<<< ours
+            className="w-full rounded-md border border-slate-800 bg-slate-900 px-3 py-2"
+=======
+            className="w-full border-2 border-black bg-white px-3 py-2 text-black"
+>>>>>>> theirs
+            rows={3}
+          />
+        </div>
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSubmit}
+<<<<<<< ours
+            className="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950"
+=======
+            className="border-2 border-black bg-[#ffd400] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-black hover:bg-black hover:text-white"
+>>>>>>> theirs
+          >
+            Add book
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AddBookModal;

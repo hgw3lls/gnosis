@@ -11,13 +11,9 @@ import type {
 } from './types/library';
 import { parseCsvText, exportBooksToCsv } from './utils/csv';
 import { downloadBlob } from './utils/download';
-<<<<<<< ours
 import { buildLayoutForLibrary, rebuildStateFromCsv } from './utils/libraryBuild';
 import { moveBook } from './utils/dnd';
 import { setBookcaseShelfCount } from './utils/layoutSettings';
-=======
-import { buildLibraryLayout, rebuildStateFromCsv, reflowBookcaseShelves } from './utils/libraryBuild';
->>>>>>> theirs
 import { clearState, loadState, saveState } from './utils/storage';
 
 type DropIndicator = { shelfId: string; index: number } | null;
@@ -147,24 +143,11 @@ const App = () => {
   const jsonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-<<<<<<< ours
-=======
-    const stored = loadState();
-    const normalizedStored = normalizeStoredState(stored);
-    if (normalizedStored && validateAppState(normalizedStored)) {
-      setAppState(normalizedStored);
-      return;
-    }
->>>>>>> theirs
     const loadCsv = async () => {
       const response = await fetch('/library.csv');
       const text = await response.text();
       const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-<<<<<<< ours
       const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
-=======
-      const nextState = rebuildStateFromCsv({ booksById, rowOrder, columns });
->>>>>>> theirs
       setAppState(nextState);
     };
 
@@ -251,7 +234,6 @@ const App = () => {
       if (!layout) {
         return prev;
       }
-<<<<<<< ours
       const targetShelf = layout.shelvesById[targetShelfId];
       if (!targetShelf) {
         return prev;
@@ -269,74 +251,11 @@ const App = () => {
       if (nextLayout === layout) {
         return prev;
       }
-=======
-      const targetBookcase = layout.bookcases.find((bookcase) =>
-        bookcase.shelfIds.includes(targetShelfId),
-      );
-      if (!targetBookcase) {
-        return prev;
-      }
-      const isCrossBookcase = payload.fromBookcaseId !== targetBookcase.id;
-      const resolvedPlacementId = isCrossBookcase ? payload.bookId : placementId;
-      const nextShelves = Object.fromEntries(
-        Object.entries(layout.shelvesById).map(([id, shelf]) => {
-          const filteredBookIds = isCrossBookcase
-            ? shelf.bookIds.filter((entry) => getBookIdFromPlacement(entry) !== payload.bookId)
-            : shelf.bookIds;
-          return [id, { ...shelf, bookIds: filteredBookIds }];
-        }),
-      );
-      const sourceShelf = nextShelves[payload.fromShelfId];
-      const targetShelf = nextShelves[targetShelfId];
-      if (!sourceShelf || !targetShelf) {
-        return prev;
-      }
-      const filteredSource = sourceShelf.bookIds.filter((id) => id !== placementId);
-      const baseTarget =
-        payload.fromShelfId === targetShelfId
-          ? [...filteredSource]
-          : [...targetShelf.bookIds.filter((id) => id !== resolvedPlacementId)];
-      let insertIndex = Math.max(
-        0,
-        Math.min(
-          dropIndicator && dropIndicator.shelfId === targetShelfId
-            ? dropIndicator.index
-            : baseTarget.length,
-          baseTarget.length,
-        ),
-      );
-      if (payload.fromShelfId === targetShelfId && insertIndex > payload.fromIndex) {
-        insertIndex -= 1;
-      }
-      baseTarget.splice(insertIndex, 0, resolvedPlacementId);
-
-      nextShelves[payload.fromShelfId] = {
-        ...sourceShelf,
-        bookIds: payload.fromShelfId === targetShelfId ? baseTarget : filteredSource,
-      };
-      if (payload.fromShelfId !== targetShelfId) {
-        nextShelves[targetShelfId] = { ...targetShelf, bookIds: baseTarget };
-      }
-
-      const nextOverrides = { ...layout.placementOverrides };
-      if (isCrossBookcase) {
-        nextOverrides[payload.bookId] = targetBookcase.id;
-      }
-
->>>>>>> theirs
       return {
         ...prev,
         layoutsByLibraryId: {
           ...prev.layoutsByLibraryId,
-<<<<<<< ours
           [layout.libraryId]: nextLayout,
-=======
-          [layout.libraryId]: {
-            ...layout,
-            shelvesById: nextShelves,
-            placementOverrides: nextOverrides,
-          },
->>>>>>> theirs
         },
       };
     });
@@ -350,11 +269,7 @@ const App = () => {
     const response = await fetch('/library.csv');
     const text = await response.text();
     const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-<<<<<<< ours
     const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
-=======
-    const nextState = rebuildStateFromCsv({ booksById, rowOrder, columns });
->>>>>>> theirs
     setAppState(nextState);
     setSelectedBookId(null);
     setSelectedBookcaseId(null);
@@ -400,16 +315,7 @@ const App = () => {
     reader.onload = () => {
       const text = String(reader.result);
       const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-<<<<<<< ours
       const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
-=======
-      const nextState = rebuildStateFromCsv({
-        booksById,
-        rowOrder,
-        columns,
-        previousState: appState,
-      });
->>>>>>> theirs
       setAppState(nextState);
     };
     reader.readAsText(file);
@@ -429,16 +335,7 @@ const App = () => {
     const nextLibraries = [...appState.libraries, newLibrary];
     const nextLayouts = {
       ...appState.layoutsByLibraryId,
-<<<<<<< ours
       [newLibrary.id]: buildLayoutForLibrary(appState.booksById, appState.rowOrder, newLibrary),
-=======
-      [newLibrary.id]: buildLibraryLayout({
-        libraryId: newLibrary.id,
-        booksById: appState.booksById,
-        rowOrder: appState.rowOrder,
-        libDef: newLibrary,
-      }),
->>>>>>> theirs
     };
     setAppState({
       ...appState,

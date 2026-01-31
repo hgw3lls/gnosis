@@ -39,10 +39,6 @@ const App = () => {
   const [showAuthor, setShowAuthor] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [draggingIds, setDraggingIds] = useState<string[]>([]);
-<<<<<<< ours
-=======
-  const [booksPerRow, setBooksPerRow] = useState(14);
->>>>>>> theirs
   const saveTimeout = useRef<number>();
 
   const sensors = useSensors(
@@ -467,13 +463,8 @@ const App = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">
         <header className="space-y-2">
-<<<<<<< ours
           <h1 className="text-2xl font-semibold">Visual Bookshelf</h1>
           <p className="text-sm text-slate-400">
-=======
-          <h1 className="text-3xl font-bold uppercase tracking-[0.4em]">Visual Bookshelf</h1>
-          <p className="text-sm uppercase tracking-widest text-slate-400">
->>>>>>> theirs
             Drag, drop, and edit your library. Changes are saved locally.
           </p>
         </header>
@@ -499,13 +490,6 @@ const App = () => {
           onRedo={redo}
           canUndo={canUndo}
           canRedo={canRedo}
-<<<<<<< ours
-=======
-          booksPerRow={booksPerRow}
-          onBooksPerRowChange={(value) =>
-            setBooksPerRow(Math.min(30, Math.max(4, value || 4)))
-          }
->>>>>>> theirs
         />
         {view === 'bookcase' ? (
           <DndContext
@@ -527,10 +511,6 @@ const App = () => {
                   onBookClick={handleBookClick}
                   onBookOpen={handleBookOpen}
                   onBookKeyDown={handleBookKeyDown}
-<<<<<<< ours
-=======
-                  booksPerRow={booksPerRow}
->>>>>>> theirs
                 />
               ))}
             </div>

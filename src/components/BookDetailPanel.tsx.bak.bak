@@ -43,19 +43,12 @@ const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
           {renderField('Publisher', book.publisher)}
           {renderField('Year', book.publishYear)}
           {renderField('ISBN', book.isbn13)}
-<<<<<<< ours
           {renderField('Primary Shelf', book.primaryShelf)}
-=======
->>>>>>> theirs
           <div className="space-y-3 border-b-2 border-black pb-3 text-sm">
             <p className="text-xs uppercase tracking-[0.3em]">Location</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1">
-<<<<<<< ours
                 <span className="text-[10px] uppercase tracking-[0.3em]">Bookcase</span>
-=======
-                <span className="text-[10px] uppercase tracking-[0.3em]">Bookcase (Primary Shelf)</span>
->>>>>>> theirs
                 <input
                   value={book.locationBookcase}
                   onChange={(event) => onUpdate({ locationBookcase: event.target.value })}
