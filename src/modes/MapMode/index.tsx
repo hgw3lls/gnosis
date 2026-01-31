@@ -62,6 +62,11 @@ const MapMode = ({ selectedBookId, onSelectBook, onCloseDetail, onUpdateBook }: 
   const { byCase, unmapped } = buildShelfMap(filteredBooks);
   const bookcases = activeLayout?.bookcases ?? [];
 
+  const { appState, filteredBooks } = useLibrary();
+  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
+  const { byCase, unmapped } = buildShelfMap(filteredBooks);
+
+
   return (
     <section className="space-y-6" id="mode-panel-map">
       <InkPanel padding="lg">
