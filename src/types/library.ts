@@ -64,6 +64,7 @@ export type LibraryLayout = {
 
 export type AppState = {
   booksById: Record<string, Book>;
+  rowOrder: string[];
   libraries: LibraryDefinition[];
   layoutsByLibraryId: Record<string, LibraryLayout>;
   activeLibraryId: string;
@@ -72,10 +73,6 @@ export type AppState = {
 
 export type DragPayload = {
   bookId: string;
-  fromLibraryId: string;
-  fromBookcaseId: string;
   fromShelfId: string;
   fromIndex: number;
-  placementKey?: string;
-  placementId?: string;
 };

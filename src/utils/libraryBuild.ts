@@ -3,10 +3,8 @@ import type {
   Book,
   Bookcase,
   BookcaseSettings,
-  CategorizeField,
   LibraryDefinition,
   LibraryLayout,
-  MultiCategoryMode,
   Shelf,
 } from '../types/library';
 
@@ -20,69 +18,11 @@ const createId = (prefix: string) => {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 };
 
-const getBookFieldValue = (book: Book, field: CategorizeField): string => {
-  switch (field) {
-    case 'Primary_Shelf':
-      return book.primaryShelf ?? '';
-    case 'Format':
-      return book.format ?? '';
-    case 'Language':
-      return book.language ?? '';
-    case 'Source':
-      return book.source ?? '';
-    case 'Use_Status':
-      return book.useStatus ?? '';
-    case 'Tags':
-      return (book.tags ?? []).join(', ');
-    default:
-      return '';
-  }
+const getOrderedBookIds = (booksById: Record<string, Book>, rowOrder: string[]) => {
+  const ordered = rowOrder.filter((id) => id in booksById);
+  const missing = Object.keys(booksById).filter((id) => !rowOrder.includes(id));
+  return [...ordered, ...missing];
 };
-
-const splitMultiValues = (value: string): string[] =>
-  value
-    .split(/[;,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-const getCategoriesForBook = (
-  book: Book,
-  field: CategorizeField,
-  mode: MultiCategoryMode | undefined,
-): string[] => {
-  const value = getBookFieldValue(book, field);
-  if (field !== 'Tags') {
-    return [value];
-  }
-  const tags = splitMultiValues(value);
-  if (tags.length === 0) {
-    return [''];
-  }
-  if (mode === 'first') {
-    return [tags[0]];
-  }
-  if (mode === 'split') {
-    return [tags.join(' + ')];
-  }
-  return tags;
-};
-
-const normalizeCategoryName = (value: string) => (value.trim() === '' ? '(Uncategorized)' : value.trim());
-
-const sortBooks = (books: Book[]) =>
-  [...books].sort((a, b) => {
-    const authorA = (a.author ?? '').toLowerCase();
-    const authorB = (b.author ?? '').toLowerCase();
-    if (authorA && authorB && authorA !== authorB) {
-      return authorA.localeCompare(authorB);
-    }
-    const titleA = a.title.toLowerCase();
-    const titleB = b.title.toLowerCase();
-    if (titleA !== titleB) {
-      return titleA.localeCompare(titleB);
-    }
-    return a.rowOrder - b.rowOrder;
-  });
 
 const getDefaultShelfCount = (count: number) => {
   const base = Math.ceil(count / 18);
@@ -104,62 +44,44 @@ const distributeItems = (items: string[], shelfIds: string[]): Record<string, Sh
 
 export const buildLayoutForLibrary = (
   booksById: Record<string, Book>,
+  rowOrder: string[],
   library: LibraryDefinition,
 ): LibraryLayout => {
-  const books = sortBooks(Object.values(booksById));
-  const categoryMap = new Map<string, string[]>();
+  const orderedBookIds = getOrderedBookIds(booksById, rowOrder);
+  const shelfCount = getDefaultShelfCount(orderedBookIds.length);
+  const shelfIds = Array.from({ length: shelfCount }, () => createId('shelf'));
+  const settings: BookcaseSettings = { shelfCount };
+  const shelvesById = distributeItems(orderedBookIds, shelfIds);
+  const bookcase: Bookcase = {
+    id: createId('bookcase'),
+    name: library.name,
+    shelfIds,
+    settings,
+  };
 
-  books.forEach((book) => {
-    const categories = getCategoriesForBook(book, library.categorize, library.multiCategoryMode);
-    categories.forEach((category) => {
-      const normalized = normalizeCategoryName(category);
-      const placementId =
-        library.categorize === 'Tags' && category.trim()
-          ? `${book.id}::tag:${category.trim()}`
-          : book.id;
-      const list = categoryMap.get(normalized) ?? [];
-      list.push(placementId);
-      categoryMap.set(normalized, list);
-    });
-  });
-
-  const bookcases: Bookcase[] = [];
-  const shelvesById: Record<string, Shelf> = {};
-
-  Array.from(categoryMap.entries()).forEach(([category, bookIds]) => {
-    const shelfCount = getDefaultShelfCount(bookIds.length);
-    const shelfIds = Array.from({ length: shelfCount }, () => createId('shelf'));
-    const settings: BookcaseSettings = { shelfCount };
-    const caseShelves = distributeItems(bookIds, shelfIds);
-    Object.assign(shelvesById, caseShelves);
-    bookcases.push({
-      id: createId('bookcase'),
-      name: category,
-      shelfIds,
-      settings,
-    });
-  });
-
-  return { libraryId: library.id, bookcases, shelvesById };
+  return { libraryId: library.id, bookcases: [bookcase], shelvesById };
 };
 
 export const buildLayouts = (
   booksById: Record<string, Book>,
+  rowOrder: string[],
   libraries: LibraryDefinition[],
 ): Record<string, LibraryLayout> => {
   return Object.fromEntries(
-    libraries.map((library) => [library.id, buildLayoutForLibrary(booksById, library)]),
+    libraries.map((library) => [library.id, buildLayoutForLibrary(booksById, rowOrder, library)]),
   );
 };
 
 export const rebuildStateFromCsv = (
   booksById: Record<string, Book>,
+  rowOrder: string[],
   columns: string[],
 ): AppState => {
   const libraries = createDefaultLibraries();
-  const layoutsByLibraryId = buildLayouts(booksById, libraries);
+  const layoutsByLibraryId = buildLayouts(booksById, rowOrder, libraries);
   return {
     booksById,
+    rowOrder,
     libraries,
     layoutsByLibraryId,
     activeLibraryId: libraries[0]?.id ?? '',
@@ -168,17 +90,7 @@ export const rebuildStateFromCsv = (
 };
 
 export const createDefaultLibraries = (): LibraryDefinition[] => [
-  { id: 'library-primary', name: 'By Primary Shelf', categorize: 'Primary_Shelf' },
-  { id: 'library-format', name: 'By Format', categorize: 'Format' },
-  { id: 'library-language', name: 'By Language', categorize: 'Language' },
-  { id: 'library-source', name: 'By Source', categorize: 'Source' },
-  { id: 'library-status', name: 'By Status', categorize: 'Use_Status' },
-  {
-    id: 'library-tags',
-    name: 'By Tags',
-    categorize: 'Tags',
-    multiCategoryMode: 'duplicate',
-  },
+  { id: 'library-primary', name: 'Primary', categorize: 'Primary_Shelf' },
 ];
 
 export const reflowBookcaseShelves = (

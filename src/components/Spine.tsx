@@ -5,45 +5,32 @@ type SpineProps = {
   book: Book;
   placementId: string;
   shelfId: string;
-  bookcaseId: string;
-  libraryId: string;
   index: number;
   isDragging: boolean;
   onSelect: () => void;
   onDragStart: (payload: DragPayload) => void;
   onDragEnd: () => void;
-  onDragOver: (event: DragEvent<HTMLButtonElement>, index: number) => void;
 };
 
 const Spine = ({
   book,
   placementId,
   shelfId,
-  bookcaseId,
-  libraryId,
   index,
   isDragging,
   onSelect,
   onDragStart,
   onDragEnd,
-  onDragOver,
 }: SpineProps) => {
   const title = book.title || 'Untitled';
   const author = book.author ?? 'Unknown author';
   const charCount = Math.min(title.length, 60);
-  const placementKey = placementId.startsWith(`${book.id}::`)
-    ? placementId.replace(`${book.id}::`, '')
-    : undefined;
 
   const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
     const payload: DragPayload = {
-      bookId: book.id,
-      fromLibraryId: libraryId,
-      fromBookcaseId: bookcaseId,
+      bookId: placementId,
       fromShelfId: shelfId,
       fromIndex: index,
-      placementKey,
-      placementId,
     };
     event.dataTransfer.setData('application/json', JSON.stringify(payload));
     event.dataTransfer.effectAllowed = 'move';
@@ -57,7 +44,7 @@ const Spine = ({
       onClick={onSelect}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
-      onDragOver={(event) => onDragOver(event, index)}
+      data-spine-index={index}
       aria-label={`${title} by ${author}`}
       className={`relative flex h-40 items-center justify-center border-2 border-black bg-white px-2 text-center text-[10px] uppercase tracking-[0.1em] text-black hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
         isDragging ? 'opacity-60' : ''

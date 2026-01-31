@@ -7,20 +7,24 @@ import type {
   Book,
   DragPayload,
   LibraryDefinition,
-  LibraryLayout,
   MultiCategoryMode,
 } from './types/library';
 import { parseCsvText, exportBooksToCsv } from './utils/csv';
 import { downloadBlob } from './utils/download';
-import { buildLayoutForLibrary, rebuildStateFromCsv, reflowBookcaseShelves } from './utils/libraryBuild';
+import { buildLayoutForLibrary, rebuildStateFromCsv } from './utils/libraryBuild';
+import { moveBook } from './utils/dnd';
+import { setBookcaseShelfCount } from './utils/layoutSettings';
 import { clearState, loadState, saveState } from './utils/storage';
 
 type DropIndicator = { shelfId: string; index: number } | null;
 
-const buildBooksFromCsv = (csvText: string): { booksById: Record<string, Book>; columns: string[] } => {
+const buildBooksFromCsv = (
+  csvText: string,
+): { booksById: Record<string, Book>; columns: string[]; rowOrder: string[] } => {
   const { rows, columns } = parseCsvText(csvText);
   const booksById: Record<string, Book> = {};
   const seenIds = new Set<string>();
+  const rowOrder: string[] = [];
 
   rows.forEach((row, index) => {
     const getValue = (key: string) => row[key] ?? '';
@@ -35,6 +39,7 @@ const buildBooksFromCsv = (csvText: string): { booksById: Record<string, Book>; 
       suffix += 1;
     }
     seenIds.add(id);
+    rowOrder.push(id);
 
     const tagsRaw = getValue('Tags');
     const subjectsRaw = getValue('Subjects');
@@ -74,7 +79,7 @@ const buildBooksFromCsv = (csvText: string): { booksById: Record<string, Book>; 
     booksById[id] = book;
   });
 
-  return { booksById, columns };
+  return { booksById, columns, rowOrder };
 };
 
 const validateAppState = (state: AppState | null): state is AppState => {
@@ -82,8 +87,9 @@ const validateAppState = (state: AppState | null): state is AppState => {
     return false;
   }
   return Boolean(
-    state.activeLibraryId &&
+      state.activeLibraryId &&
       state.booksById &&
+      state.rowOrder &&
       state.libraries &&
       state.layoutsByLibraryId &&
       state.csvColumns,
@@ -104,18 +110,19 @@ const App = () => {
   const jsonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    const loadCsv = async () => {
+      const response = await fetch('/library.csv');
+      const text = await response.text();
+      const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
+      const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
+      setAppState(nextState);
+    };
+
     const stored = loadState();
     if (validateAppState(stored)) {
       setAppState(stored);
       return;
     }
-    const loadCsv = async () => {
-      const response = await fetch('/library.csv');
-      const text = await response.text();
-      const { booksById, columns } = buildBooksFromCsv(text);
-      const nextState = rebuildStateFromCsv(booksById, columns);
-      setAppState(nextState);
-    };
     loadCsv();
   }, []);
 
@@ -141,22 +148,10 @@ const App = () => {
       if (!layout) {
         return prev;
       }
-      const bookcase = layout.bookcases.find((item) => item.id === bookcaseId);
-      if (!bookcase) {
+      const nextLayout = setBookcaseShelfCount(layout, bookcaseId, nextCount);
+      if (nextLayout === layout) {
         return prev;
       }
-      const { bookcase: updatedBookcase, shelvesById } = reflowBookcaseShelves(
-        bookcase,
-        layout.shelvesById,
-        nextCount,
-      );
-      const nextLayout: LibraryLayout = {
-        ...layout,
-        bookcases: layout.bookcases.map((item) =>
-          item.id === bookcaseId ? updatedBookcase : item,
-        ),
-        shelvesById,
-      };
       return {
         ...prev,
         layoutsByLibraryId: { ...prev.layoutsByLibraryId, [layout.libraryId]: nextLayout },
@@ -165,7 +160,7 @@ const App = () => {
   };
 
   const handleDragStart = (payload: DragPayload) => {
-    setDraggingPlacementId(payload.placementId ?? payload.bookId);
+    setDraggingPlacementId(payload.bookId);
   };
 
   const handleDragEnd = () => {
@@ -173,34 +168,14 @@ const App = () => {
     setDropIndicator(null);
   };
 
-  const handleDragOverShelf = (event: DragEvent<HTMLDivElement>, shelfId: string) => {
-    event.preventDefault();
-    if (!activeLayout) {
-      return;
-    }
-    const shelf = activeLayout.shelvesById[shelfId];
-    if (!shelf) {
-      return;
-    }
-    setDropIndicator({ shelfId, index: shelf.bookIds.length });
+  const handleDragOverShelf = (shelfId: string, index: number) => {
+    setDropIndicator({ shelfId, index });
   };
 
   const handleDragLeaveShelf = (_event: DragEvent<HTMLDivElement>, shelfId: string) => {
     if (dropIndicator?.shelfId === shelfId) {
       setDropIndicator(null);
     }
-  };
-
-  const handleDragOverSpine = (
-    event: DragEvent<HTMLButtonElement>,
-    shelfId: string,
-    index: number,
-  ) => {
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const midpoint = rect.left + rect.width / 2;
-    const nextIndex = event.clientX < midpoint ? index : index + 1;
-    setDropIndicator({ shelfId, index: nextIndex });
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>, targetShelfId: string) => {
@@ -218,11 +193,6 @@ const App = () => {
     } catch {
       return;
     }
-    if (payload.fromLibraryId !== appState.activeLibraryId) {
-      return;
-    }
-    const placementId = payload.placementId ?? payload.bookId;
-
     setAppState((prev) => {
       if (!prev) {
         return prev;
@@ -231,44 +201,28 @@ const App = () => {
       if (!layout) {
         return prev;
       }
-      const sourceShelf = layout.shelvesById[payload.fromShelfId];
       const targetShelf = layout.shelvesById[targetShelfId];
-      if (!sourceShelf || !targetShelf) {
+      if (!targetShelf) {
         return prev;
       }
-      const nextShelves = { ...layout.shelvesById };
-      const filteredSource = sourceShelf.bookIds.filter((id) => id !== placementId);
-      const baseTarget =
-        payload.fromShelfId === targetShelfId
-          ? [...filteredSource]
-          : [...targetShelf.bookIds.filter((id) => id !== placementId)];
-      let insertIndex = Math.max(
-        0,
-        Math.min(
-          dropIndicator && dropIndicator.shelfId === targetShelfId
-            ? dropIndicator.index
-            : baseTarget.length,
-          baseTarget.length,
-        ),
-      );
-      if (payload.fromShelfId === targetShelfId && insertIndex > payload.fromIndex) {
-        insertIndex -= 1;
+      const targetIndex =
+        dropIndicator && dropIndicator.shelfId === targetShelfId
+          ? dropIndicator.index
+          : targetShelf.bookIds.length;
+      const nextLayout = moveBook(layout, {
+        bookId: payload.bookId,
+        fromShelfId: payload.fromShelfId,
+        toShelfId: targetShelfId,
+        toIndex: targetIndex,
+      });
+      if (nextLayout === layout) {
+        return prev;
       }
-      baseTarget.splice(insertIndex, 0, placementId);
-
-      nextShelves[payload.fromShelfId] = {
-        ...sourceShelf,
-        bookIds: payload.fromShelfId === targetShelfId ? baseTarget : filteredSource,
-      };
-      if (payload.fromShelfId !== targetShelfId) {
-        nextShelves[targetShelfId] = { ...targetShelf, bookIds: baseTarget };
-      }
-
       return {
         ...prev,
         layoutsByLibraryId: {
           ...prev.layoutsByLibraryId,
-          [layout.libraryId]: { ...layout, shelvesById: nextShelves },
+          [layout.libraryId]: nextLayout,
         },
       };
     });
@@ -281,8 +235,8 @@ const App = () => {
     clearState();
     const response = await fetch('/library.csv');
     const text = await response.text();
-    const { booksById, columns } = buildBooksFromCsv(text);
-    const nextState = rebuildStateFromCsv(booksById, columns);
+    const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
+    const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
     setAppState(nextState);
     setSelectedBookId(null);
     setSelectedBookcaseId(null);
@@ -324,8 +278,8 @@ const App = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result);
-      const { booksById, columns } = buildBooksFromCsv(text);
-      const nextState = rebuildStateFromCsv(booksById, columns);
+      const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
+      const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
       setAppState(nextState);
     };
     reader.readAsText(file);
@@ -345,7 +299,7 @@ const App = () => {
     const nextLibraries = [...appState.libraries, newLibrary];
     const nextLayouts = {
       ...appState.layoutsByLibraryId,
-      [newLibrary.id]: buildLayoutForLibrary(appState.booksById, newLibrary),
+      [newLibrary.id]: buildLayoutForLibrary(appState.booksById, appState.rowOrder, newLibrary),
     };
     setAppState({
       ...appState,
@@ -523,7 +477,6 @@ const App = () => {
               bookcase={bookcase}
               shelvesById={activeLayout.shelvesById}
               booksById={appState.booksById}
-              libraryId={appState.activeLibraryId}
               draggingPlacementId={draggingPlacementId}
               dropIndicator={dropIndicator}
               selectedBookId={selectedBookcaseId === bookcase.id ? selectedBookId : null}
@@ -541,7 +494,6 @@ const App = () => {
               onDragOverShelf={handleDragOverShelf}
               onDragLeaveShelf={handleDragLeaveShelf}
               onDrop={handleDrop}
-              onDragOverSpine={handleDragOverSpine}
             />
           ))}
         </div>

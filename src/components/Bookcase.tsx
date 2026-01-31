@@ -9,7 +9,6 @@ type BookcaseProps = {
   bookcase: BookcaseType;
   shelvesById: Record<string, Shelf>;
   booksById: Record<string, Book>;
-  libraryId: string;
   draggingPlacementId?: string | null;
   dropIndicator: DropIndicator;
   selectedBookId?: string | null;
@@ -18,17 +17,15 @@ type BookcaseProps = {
   onShelfCountChange: (bookcaseId: string, nextCount: number) => void;
   onDragStart: (payload: DragPayload) => void;
   onDragEnd: () => void;
-  onDragOverShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragOverShelf: (shelfId: string, index: number) => void;
   onDragLeaveShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
   onDrop: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
-  onDragOverSpine: (event: DragEvent<HTMLButtonElement>, shelfId: string, index: number) => void;
 };
 
 const Bookcase = ({
   bookcase,
   shelvesById,
   booksById,
-  libraryId,
   draggingPlacementId,
   dropIndicator,
   selectedBookId,
@@ -40,7 +37,6 @@ const Bookcase = ({
   onDragOverShelf,
   onDragLeaveShelf,
   onDrop,
-  onDragOverSpine,
 }: BookcaseProps) => {
   const shelfCount = bookcase.settings.shelfCount;
   const totalBooks = bookcase.shelfIds.reduce(
@@ -81,8 +77,6 @@ const Bookcase = ({
               key={shelfId}
               shelf={shelf}
               booksById={booksById}
-              libraryId={libraryId}
-              bookcaseId={bookcase.id}
               draggingPlacementId={draggingPlacementId}
               dropIndicator={dropIndicator}
               onSelectBook={(bookId) => onSelectBook(bookId, bookcase.id)}
@@ -91,7 +85,6 @@ const Bookcase = ({
               onDragOverShelf={onDragOverShelf}
               onDragLeaveShelf={onDragLeaveShelf}
               onDrop={onDrop}
-              onDragOverSpine={onDragOverSpine}
             />
           );
         })}
