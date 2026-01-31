@@ -50,7 +50,7 @@ const buildShelfMap = (books: Book[]) => {
 
 const MapMode = ({ selectedBookId, onSelectBook, onCloseDetail, onUpdateBook }: MapModeProps) => {
   const {
-    appState,
+    appState: libraryState,
     activeLayout,
     filteredBooks,
     exportCsv,
@@ -58,14 +58,9 @@ const MapMode = ({ selectedBookId, onSelectBook, onCloseDetail, onUpdateBook }: 
     updateBookcaseName,
     updateShelfLabel,
   } = useLibrary();
-  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
+  const selectedBook = selectedBookId ? libraryState?.booksById[selectedBookId] : null;
   const { byCase, unmapped } = buildShelfMap(filteredBooks);
   const bookcases = activeLayout?.bookcases ?? [];
-
-  const { appState, filteredBooks } = useLibrary();
-  const selectedBook = selectedBookId ? appState?.booksById[selectedBookId] : null;
-  const { byCase, unmapped } = buildShelfMap(filteredBooks);
-
 
   return (
     <section className="space-y-6" id="mode-panel-map">
