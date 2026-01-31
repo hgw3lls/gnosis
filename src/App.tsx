@@ -11,7 +11,7 @@ import type {
 } from './types/library';
 import { parseCsvText, exportBooksToCsv } from './utils/csv';
 import { downloadBlob } from './utils/download';
-import { buildLayoutForLibrary, rebuildStateFromCsv } from './utils/libraryBuild';
+import { buildLayouts, rebuildStateFromCsv } from './utils/libraryBuild';
 import { moveBook } from './utils/dnd';
 import { setBookcaseShelfCount } from './utils/layoutSettings';
 import { clearState, loadState, saveState } from './utils/storage';
@@ -335,7 +335,7 @@ const App = () => {
     const nextLibraries = [...appState.libraries, newLibrary];
     const nextLayouts = {
       ...appState.layoutsByLibraryId,
-      [newLibrary.id]: buildLayoutForLibrary(appState.booksById, appState.rowOrder, newLibrary),
+      [newLibrary.id]: buildLayouts(appState.booksById, appState.rowOrder, newLibrary),
     };
     setAppState({
       ...appState,
