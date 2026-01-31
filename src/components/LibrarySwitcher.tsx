@@ -1,4 +1,7 @@
 import type { LibraryDefinition } from '../types/library';
+import { cn } from '../utils/cn';
+import { focusRing, selectBase } from '../styles/ui';
+import Type from './ui/Type';
 
 type LibrarySwitcherProps = {
   libraries: LibraryDefinition[];
@@ -8,14 +11,14 @@ type LibrarySwitcherProps = {
 
 const LibrarySwitcher = ({ libraries, activeLibraryId, onChange }: LibrarySwitcherProps) => (
   <div className="flex flex-wrap items-center gap-3">
-    <label htmlFor="library-select" className="text-xs uppercase tracking-[0.3em]">
+    <Type as="label" htmlFor="library-select" variant="label">
       Library
-    </label>
+    </Type>
     <select
       id="library-select"
       value={activeLibraryId}
       onChange={(event) => onChange(event.target.value)}
-      className="min-w-[220px] border-2 border-black bg-white px-3 py-2 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+      className={cn(selectBase, focusRing, 'min-w-[220px]')}
     >
       {libraries.map((library) => (
         <option key={library.id} value={library.id}>

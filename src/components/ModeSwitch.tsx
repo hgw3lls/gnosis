@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MODE_PATHS, MODE_STORAGE_KEY, getModeFromPath } from '../routes';
+import InkButton from './ui/InkButton';
+import { cn } from '../utils/cn';
 
 const ModeSwitch = () => {
   const location = useLocation();
@@ -16,20 +18,18 @@ const ModeSwitch = () => {
       {Object.entries(MODE_PATHS).map(([mode, path]) => {
         const isActive = currentMode === mode;
         return (
-          <button
+          <InkButton
             key={mode}
-            type="button"
             onClick={() => {
               localStorage.setItem(MODE_STORAGE_KEY, mode);
               navigate(path);
             }}
             aria-pressed={isActive}
-            className={`border-2 border-black px-3 py-2 text-xs uppercase tracking-[0.3em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
-              isActive ? 'bg-black text-white' : 'hover:bg-black hover:text-white'
-            }`}
+            variant={isActive ? 'primary' : 'ghost'}
+            className={cn('min-w-[84px]')}
           >
             {mode}
-          </button>
+          </InkButton>
         );
       })}
     </div>

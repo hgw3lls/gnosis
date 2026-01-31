@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import GridMode from './modes/GridMode';
 import IndexMode from './modes/IndexMode';
+import MapMode from './modes/MapMode';
 import ShelfMode from './modes/ShelfMode';
 import type { Book } from './types/library';
 
@@ -10,12 +11,13 @@ export const MODE_PATHS = {
   shelf: '/shelf',
   grid: '/grid',
   index: '/index',
+  map: '/map',
 } as const;
 
 export type BrowseMode = keyof typeof MODE_PATHS;
 
 const resolveMode = (value: string | null): BrowseMode => {
-  if (value === 'grid' || value === 'index' || value === 'shelf') {
+  if (value === 'grid' || value === 'index' || value === 'shelf' || value === 'map') {
     return value;
   }
   return 'shelf';
@@ -27,6 +29,9 @@ export const getModeFromPath = (pathname: string): BrowseMode | null => {
   }
   if (pathname.startsWith('/index')) {
     return 'index';
+  }
+  if (pathname.startsWith('/map')) {
+    return 'map';
   }
   if (pathname.startsWith('/shelf')) {
     return 'shelf';
@@ -85,6 +90,17 @@ export const AppRoutes = ({
       path="/index"
       element={
         <IndexMode
+          selectedBookId={selectedBookId}
+          onSelectBook={onSelectBook}
+          onCloseDetail={onCloseDetail}
+          onUpdateBook={onUpdateBook}
+        />
+      }
+    />
+    <Route
+      path="/map"
+      element={
+        <MapMode
           selectedBookId={selectedBookId}
           onSelectBook={onSelectBook}
           onCloseDetail={onCloseDetail}

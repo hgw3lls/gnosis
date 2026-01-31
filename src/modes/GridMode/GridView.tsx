@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useLibrary } from '../../state/libraryStore';
 import BookTile from './BookTile';
-import { FiltersBar, applyGridFilters, useFiltersBarState } from '../../components/FiltersBar';
+import {
+  GridFiltersBar,
+  applyGridFilters,
+  useGridFiltersState,
+} from '../../components/GridFiltersBar';
+import InkButton from '../../components/ui/InkButton';
+import InkPanel from '../../components/ui/InkPanel';
+import Type from '../../components/ui/Type';
 
 const DENSITY_KEY = 'gnosis-grid-density';
 
@@ -11,7 +18,7 @@ const GridView = ({ onSelectBook }: { onSelectBook: (bookId: string) => void }) 
     const stored = localStorage.getItem(DENSITY_KEY);
     return stored === 's' || stored === 'l' ? stored : 'm';
   });
-  const filters = useFiltersBarState();
+  const filters = useGridFiltersState();
 
   const books = useMemo(() => Object.values(appState?.booksById ?? {}), [appState]);
   const tagOptions = useMemo(() => {
@@ -45,36 +52,33 @@ const GridView = ({ onSelectBook }: { onSelectBook: (bookId: string) => void }) 
         : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
 
   return (
-    <section className="mt-8" id="mode-panel-grid">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-black px-4 py-3 text-xs uppercase tracking-[0.3em]">
+    <section className="space-y-6" id="mode-panel-grid">
+      <InkPanel padding="md" className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span>Tile size</span>
+          <Type as="span" variant="label">
+            Tile size
+          </Type>
           {(['s', 'm', 'l'] as const).map((value) => (
-            <button
+            <InkButton
               key={value}
-              type="button"
               onClick={() => {
                 setDensity(value);
                 localStorage.setItem(DENSITY_KEY, value);
               }}
-              className={`border-2 border-black px-3 py-2 text-xs uppercase tracking-[0.3em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
-                density === value ? 'bg-black text-white' : 'hover:bg-black hover:text-white'
-              }`}
+              variant={density === value ? 'primary' : 'ghost'}
             >
               {value.toUpperCase()}
-            </button>
+            </InkButton>
           ))}
         </div>
-        <div className="text-[10px] uppercase tracking-[0.3em]">
+        <Type as="span" variant="meta">
           {filteredBooks.length} titles
-        </div>
-      </div>
+        </Type>
+      </InkPanel>
 
-      <div className="mt-4">
-        <FiltersBar tagOptions={tagOptions} statusOptions={statusOptions} />
-      </div>
+      <GridFiltersBar tagOptions={tagOptions} statusOptions={statusOptions} />
 
-      <div className={`mt-6 grid gap-4 ${gridClasses}`}>
+      <div className={`grid gap-4 ${gridClasses}`}>
         {filteredBooks.map((book) => (
           <BookTile key={book.id} book={book} size={density} onSelect={() => onSelectBook(book.id)} />
         ))}
