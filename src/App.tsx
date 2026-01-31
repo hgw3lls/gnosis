@@ -1,4 +1,3 @@
-import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
 import LibrarySwitcher from './components/LibrarySwitcher';
 import InkButton from './components/ui/InkButton';
@@ -24,16 +23,6 @@ const App = () => {
     createLibrary,
     updateBook,
   } = useLibrary();
-  const [authToken, setAuthToken] = useState<string | null>(() =>
-    localStorage.getItem('gnosis_auth_token'),
-  );
-  const [authUser, setAuthUser] = useState<string | null>(() =>
-    localStorage.getItem('gnosis_auth_user'),
-  );
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [selectedBookcaseId, setSelectedBookcaseId] = useState<string | null>(null);
   const [showCreateLibrary, setShowCreateLibrary] = useState(false);
@@ -44,114 +33,6 @@ const App = () => {
   const [newLibraryMode, setNewLibraryMode] = useState<MultiCategoryMode>('duplicate');
   const csvInputRef = useRef<HTMLInputElement | null>(null);
   const jsonInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail, password: authPassword }),
-      });
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-      const data = (await response.json()) as { token?: string; user?: { email?: string } };
-      if (!data.token) {
-        throw new Error('Missing token');
-      }
-      setAuthToken(data.token);
-      const nextUser = data.user?.email ?? authEmail;
-      setAuthUser(nextUser);
-      localStorage.setItem('gnosis_auth_token', data.token);
-      localStorage.setItem('gnosis_auth_user', nextUser);
-      setAuthEmail('');
-      setAuthPassword('');
-    } catch {
-      setAuthError('Unable to sign in. Check your credentials or backend status.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    if (authToken) {
-      try {
-        await fetch('/api/logout', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-      } catch {
-        // Ignore network errors on logout.
-      }
-    }
-    setAuthToken(null);
-    setAuthUser(null);
-    localStorage.removeItem('gnosis_auth_token');
-    localStorage.removeItem('gnosis_auth_user');
-  };
-
-  if (!authToken) {
-    return (
-      <main className="min-h-screen bg-paper px-6 py-16 text-ink">
-        <div className="mx-auto flex max-w-md flex-col gap-6">
-          <div className="text-center">
-            <Type as="h1" variant="display">
-              GNOSIS
-            </Type>
-            <Type as="p" variant="meta" className="mt-2 text-ink/70">
-              Sign in to your library backend
-            </Type>
-          </div>
-          <InkPanel padding="lg" className="space-y-5">
-            <form className="space-y-4" onSubmit={handleLogin}>
-              <div className="space-y-2">
-                <Type as="label" htmlFor="auth-email" variant="label">
-                  Email
-                </Type>
-                <input
-                  id="auth-email"
-                  type="email"
-                  autoComplete="email"
-                  value={authEmail}
-                  onChange={(event) => setAuthEmail(event.target.value)}
-                  className={cn(inputBase, focusRing, 'w-full')}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Type as="label" htmlFor="auth-password" variant="label">
-                  Password
-                </Type>
-                <input
-                  id="auth-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={authPassword}
-                  onChange={(event) => setAuthPassword(event.target.value)}
-                  className={cn(inputBase, focusRing, 'w-full')}
-                  required
-                />
-              </div>
-              {authError ? (
-                <Type as="p" variant="meta" className="text-red-600">
-                  {authError}
-                </Type>
-              ) : null}
-              <InkButton type="submit" variant="primary" disabled={authLoading}>
-                {authLoading ? 'Signing in…' : 'Sign in'}
-              </InkButton>
-            </form>
-            <Type as="p" variant="meta" className="text-ink/60">
-              Demo login: admin@example.com / gnosis
-            </Type>
-          </InkPanel>
-        </div>
-      </main>
-    );
-  }
 
   if (!appState || !activeLayout) {
     return (
@@ -195,14 +76,6 @@ const App = () => {
 
   const tools = (
     <div className="flex flex-wrap items-center gap-3">
-      {authUser ? (
-        <Type as="span" variant="meta" className="text-ink/70">
-          Signed in as {authUser}
-        </Type>
-      ) : null}
-      <InkButton variant="ghost" onClick={handleLogout}>
-        Log out
-      </InkButton>
       <InkButton onClick={() => csvInputRef.current?.click()}>Import CSV</InkButton>
       <InkButton onClick={() => jsonInputRef.current?.click()}>Import JSON</InkButton>
       <InkButton onClick={exportCsv}>Export CSV</InkButton>
