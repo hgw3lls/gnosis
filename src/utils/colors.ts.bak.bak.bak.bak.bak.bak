@@ -1,6 +1,7 @@
 import type { ShelfCode } from '../types/library';
 
 const shelfPalette: Record<ShelfCode, string> = {
+<<<<<<< ours
   I: '#0ea5e9',
   II: '#22c55e',
   III: '#f97316',
@@ -28,4 +29,23 @@ export const getContrastingText = (rgb: string) => {
     .map((value) => Number(value.trim()));
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? '#0f172a' : '#f8fafc';
+=======
+  I: '#0055ff',
+  II: '#ffd400',
+  III: '#ff2d2d',
+  IV: '#0a0a0a',
+  V: '#0055ff',
+  VI: '#ffd400',
+};
+
+export const getShelfColor = (shelf: ShelfCode) => shelfPalette[shelf];
+
+export const getContrastingText = (rgb: string) => {
+  const [r, g, b] = rgb
+    .replace('#', '')
+    .match(/.{1,2}/g)
+    ?.map((value) => parseInt(value, 16)) ?? [0, 0, 0];
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#0a0a0a' : '#f7f7f2';
+>>>>>>> theirs
 };

@@ -7,15 +7,18 @@ import type {
   LibraryLayout,
   Shelf,
 } from '../types/library';
+import { defaultLibraries } from './libraryDefs';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
-const createId = (prefix: string) => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
+const createStableId = (prefix: string, seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
   }
-  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+  return `${prefix}-${Math.abs(hash).toString(36)}`;
 };
 
 const getOrderedBookIds = (booksById: Record<string, Book>, rowOrder: string[]) => {
@@ -26,8 +29,7 @@ const getOrderedBookIds = (booksById: Record<string, Book>, rowOrder: string[]) 
 
 const getDefaultShelfCount = (count: number) => {
   const base = Math.ceil(count / 18);
-  const adjusted = count >= 18 ? Math.max(2, base) : base;
-  return clamp(adjusted, 1, 12);
+  return clamp(base, 1, 12);
 };
 
 const distributeItems = (items: string[], shelfIds: string[]): Record<string, Shelf> => {
@@ -42,7 +44,23 @@ const distributeItems = (items: string[], shelfIds: string[]): Record<string, Sh
   return shelves;
 };
 
-export const buildLayoutForLibrary = (
+type BuildLibraryLayoutArgs = {
+  libraryId: string;
+  booksById: Record<string, Book>;
+  rowOrder: string[];
+  libDef: LibraryDefinition;
+  previousLayout?: LibraryLayout;
+};
+
+const getPlacementId = (book: Book, category: string, libDef: LibraryDefinition) => {
+  if (libDef.categorize === 'Tags' && category.trim()) {
+    return `${book.id}::tag:${category.trim()}`;
+  }
+  return book.id;
+};
+
+const normalizeOverrides = (
+  overrides: Record<string, string> | undefined,
   booksById: Record<string, Book>,
   rowOrder: string[],
   library: LibraryDefinition,
@@ -84,7 +102,7 @@ export const rebuildStateFromCsv = (
     rowOrder,
     libraries,
     layoutsByLibraryId,
-    activeLibraryId: libraries[0]?.id ?? '',
+    activeLibraryId,
     csvColumns: columns,
   };
 };
@@ -104,7 +122,10 @@ export const reflowBookcaseShelves = (
   const nextShelvesById = { ...shelvesById };
 
   if (shelfCount > nextShelfIds.length) {
-    const newIds = Array.from({ length: shelfCount - nextShelfIds.length }, () => createId('shelf'));
+    const newIds = Array.from(
+      { length: shelfCount - nextShelfIds.length },
+      (_value, index) => createShelfId(bookcase.id, nextShelfIds.length + index),
+    );
     nextShelfIds = [...nextShelfIds, ...newIds];
   } else if (shelfCount < nextShelfIds.length) {
     const removedIds = nextShelfIds.slice(shelfCount);

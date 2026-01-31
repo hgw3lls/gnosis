@@ -38,6 +38,22 @@ a {
 a:hover {
   background-color: #000000;
   color: #ffffff;
+<<<<<<< ours
+=======
+}
+
+.spine-offset {
+  position: relative;
+}
+
+.spine-offset::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid #000000;
+  transform: translate(2px, 2px);
+  pointer-events: none;
+>>>>>>> theirs
 }
 
 ::-webkit-scrollbar {

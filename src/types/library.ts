@@ -29,7 +29,6 @@ export type Book = {
   coverM?: string;
   coverL?: string;
   primaryShelf?: string;
-  rowOrder: number;
   raw: Record<string, string>;
 };
 
@@ -60,6 +59,7 @@ export type LibraryLayout = {
   libraryId: string;
   bookcases: Bookcase[];
   shelvesById: Record<string, Shelf>;
+  placementOverrides: Record<string, string>;
 };
 
 export type AppState = {
