@@ -31,7 +31,6 @@ const EMPTY_STATE: LibraryState = {
 
 const SPINE_BOOKS: SpineBook[] = [
   { id: 'spine-1', title: 'Atlas of Concrete', author: 'R. Kline', spine: 'thin', height: 'short' },
-<<<<<<< ours
   { id: 'spine-2', title: 'Raw Typography', author: 'L. Serra', spine: 'med', height: 'tall' },
   { id: 'spine-3', title: 'Steel & Paper', author: 'M. Osei', spine: 'thick', height: 'med' },
   { id: 'spine-4', title: 'Brutal Forms', author: 'A. Patel', spine: 'thin', height: 'med' },
@@ -39,15 +38,6 @@ const SPINE_BOOKS: SpineBook[] = [
   { id: 'spine-6', title: 'Index of Space', author: 'K. Watanabe', spine: 'med', height: 'short' },
   { id: 'spine-7', title: 'Hard Lines', author: 'E. Novak', spine: 'thin', height: 'tall' },
   { id: 'spine-8', title: 'Found Objects', author: 'S. Adeyemi', spine: 'med', height: 'med', spineWidth: 44 },
-=======
-  { id: 'spine-2', title: 'Raw Typography', author: 'L. Serra', spine: 'med', height: 'tall', offset: true },
-  { id: 'spine-3', title: 'Steel & Paper', author: 'M. Osei', spine: 'thick', height: 'med' },
-  { id: 'spine-4', title: 'Brutal Forms', author: 'A. Patel', spine: 'thin', height: 'med' },
-  { id: 'spine-5', title: 'Monolith', author: 'J. Cho', spine: 'thick', height: 'tall', spineWidth: 54, offset: true },
-  { id: 'spine-6', title: 'Index of Space', author: 'K. Watanabe', spine: 'med', height: 'short' },
-  { id: 'spine-7', title: 'Hard Lines', author: 'E. Novak', spine: 'thin', height: 'tall' },
-  { id: 'spine-8', title: 'Found Objects', author: 'S. Adeyemi', spine: 'med', height: 'med', spineWidth: 44, offset: true },
->>>>>>> theirs
   { id: 'spine-9', title: 'Public Matter', author: 'D. Nguyen', spine: 'thick', height: 'short' },
   { id: 'spine-10', title: 'Black Baseline', author: 'T. Ruiz', spine: 'med', height: 'tall' },
   { id: 'spine-11', title: 'Static Noise', author: 'C. Long', spine: 'thin', height: 'short', spineWidth: 28 },

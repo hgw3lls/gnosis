@@ -69,7 +69,12 @@ const buildBooksFromCsv = (
       .split(/[;,]/)
       .map((subject) => subject.trim())
       .filter(Boolean);
+<<<<<<< ours
     const locationBookcase = getValue('Location_Bookcase') || 'Primary';
+=======
+    const locationBookcase =
+      getValue('Location_Bookcase') || getValue('Primary_Shelf') || 'Primary';
+>>>>>>> theirs
     const locationShelfRaw = parseNumber(getValue('Location_Shelf'));
     const locationShelf =
       locationShelfRaw && locationShelfRaw >= 1 && locationShelfRaw <= 12
@@ -107,7 +112,11 @@ const buildBooksFromCsv = (
       coverS: getValue('Cover_S') || undefined,
       coverM: getValue('Cover_M') || undefined,
       coverL: getValue('Cover_L') || undefined,
+<<<<<<< ours
       primaryShelf: getValue('Primary_Shelf') || undefined,
+=======
+      primaryShelf: getValue('Primary_Shelf') || locationBookcase || undefined,
+>>>>>>> theirs
       locationBookcase,
       locationShelf,
       locationPosition,
@@ -159,7 +168,15 @@ const normalizeStoredState = (state: AppState | null): AppState | null => {
     }
     const fallbackPosition = index + 1;
     const locationBookcase =
+<<<<<<< ours
       book.locationBookcase || book.raw?.Location_Bookcase || 'Primary';
+=======
+      book.locationBookcase ||
+      book.raw?.Location_Bookcase ||
+      book.raw?.Primary_Shelf ||
+      book.primaryShelf ||
+      'Primary';
+>>>>>>> theirs
     const locationShelfRaw = Number.parseInt(book.raw?.Location_Shelf ?? '', 10);
     const locationShelf =
       Number.isFinite(locationShelfRaw) && locationShelfRaw >= 1 && locationShelfRaw <= 12
@@ -183,6 +200,10 @@ const normalizeStoredState = (state: AppState | null): AppState | null => {
         Location_Shelf: String(locationShelf),
         Location_Position: String(locationPosition),
         Location_Note: locationNote,
+<<<<<<< ours
+=======
+        Primary_Shelf: locationBookcase,
+>>>>>>> theirs
       },
     };
   });
@@ -384,6 +405,11 @@ const App = () => {
       if (updates.locationBookcase !== undefined) {
         nextBook.locationBookcase = updates.locationBookcase || 'Primary';
         nextBook.raw.Location_Bookcase = nextBook.locationBookcase;
+<<<<<<< ours
+=======
+        nextBook.primaryShelf = nextBook.locationBookcase;
+        nextBook.raw.Primary_Shelf = nextBook.locationBookcase;
+>>>>>>> theirs
       }
       if (updates.locationShelf !== undefined) {
         const normalizedShelf = Math.min(12, Math.max(1, updates.locationShelf));

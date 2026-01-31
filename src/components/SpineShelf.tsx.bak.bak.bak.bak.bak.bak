@@ -7,6 +7,10 @@ export type Book = {
   spine?: 'thin' | 'med' | 'thick';
   height?: 'short' | 'med' | 'tall';
   spineWidth?: number;
+<<<<<<< ours
+=======
+  offset?: boolean;
+>>>>>>> theirs
 };
 
 type SpineShelfProps = {
@@ -43,7 +47,13 @@ const SpineShelf: FC<SpineShelfProps> = ({ books, onSelect }) => {
               onClick={() => onSelect(book)}
               style={inlineWidth}
               aria-label={`${book.title}${book.author ? ` by ${book.author}` : ''}`}
+<<<<<<< ours
               className={`group relative flex ${heightClass} ${widthClass} flex-none items-center justify-center border-2 border-black bg-white text-black shadow-none outline-none hover:bg-black hover:text-white focus-visible:ring-2 focus-visible:ring-black`}
+=======
+              className={`group relative flex ${heightClass} ${widthClass} flex-none items-center justify-center border-2 border-black bg-white text-black shadow-none outline-none hover:bg-black hover:text-white focus-visible:ring-2 focus-visible:ring-black ${
+                book.offset ? 'spine-offset' : ''
+              }`}
+>>>>>>> theirs
             >
               {showGutterLine ? (
                 <span
