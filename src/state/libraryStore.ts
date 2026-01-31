@@ -195,12 +195,32 @@ const normalizeStoredState = (state: AppState | null): AppState | null => {
       csvColumns.push(column);
     }
   });
+  const normalizeShelfLabels = (labels: string[] | undefined, shelfCount: number) => {
+    const next = labels ? [...labels] : [];
+    if (next.length < shelfCount) {
+      for (let i = next.length; i < shelfCount; i += 1) {
+        next.push(`Shelf ${i + 1}`);
+      }
+    }
+    return next.slice(0, shelfCount);
+  };
+
   const layoutsByLibraryId = Object.fromEntries(
     Object.entries(state.layoutsByLibraryId ?? {}).map(([libraryId, layout]) => [
       libraryId,
       {
         ...layout,
         placementOverrides: layout.placementOverrides ?? {},
+        bookcases: layout.bookcases.map((bookcase) => ({
+          ...bookcase,
+          settings: {
+            ...bookcase.settings,
+            shelfLabels: normalizeShelfLabels(
+              bookcase.settings.shelfLabels,
+              bookcase.settings.shelfCount,
+            ),
+          },
+        })),
       },
     ]),
   );
@@ -240,6 +260,8 @@ type LibraryContextValue = {
   setBookcaseShelfCount: (bookcaseId: string, nextCount: number) => void;
   moveBook: (payload: DragPayload, targetShelfId: string, targetIndex: number) => void;
   updateBook: (bookId: string, updates: Partial<Book>) => void;
+  updateBookcaseName: (bookcaseId: string, nextName: string) => void;
+  updateShelfLabel: (bookcaseId: string, shelfIndex: number, label: string) => void;
   resetFromCsv: () => void;
   exportCsv: () => void;
   exportJson: () => void;
@@ -493,6 +515,89 @@ export const LibraryProvider = ({ children }: { children: React.ReactNode }) => 
     });
   }, []);
 
+  const updateBookcaseName = useCallback((bookcaseId: string, nextName: string) => {
+    setAppState((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const layout = prev.layoutsByLibraryId[prev.activeLibraryId];
+      if (!layout) {
+        return prev;
+      }
+      const target = layout.bookcases.find((caseItem) => caseItem.id === bookcaseId);
+      if (!target) {
+        return prev;
+      }
+      const trimmed = nextName.trim() || target.name;
+      if (trimmed === target.name) {
+        return prev;
+      }
+      const nextLayout = {
+        ...layout,
+        bookcases: layout.bookcases.map((caseItem) =>
+          caseItem.id === bookcaseId ? { ...caseItem, name: trimmed } : caseItem,
+        ),
+      };
+      const nextBooksById = { ...prev.booksById };
+      Object.values(nextBooksById).forEach((book) => {
+        if (book.locationBookcase === target.name) {
+          nextBooksById[book.id] = {
+            ...book,
+            locationBookcase: trimmed,
+            raw: {
+              ...book.raw,
+              Location_Bookcase: trimmed,
+            },
+          };
+        }
+      });
+      return {
+        ...prev,
+        booksById: nextBooksById,
+        layoutsByLibraryId: {
+          ...prev.layoutsByLibraryId,
+          [layout.libraryId]: nextLayout,
+        },
+      };
+    });
+  }, []);
+
+  const updateShelfLabel = useCallback((bookcaseId: string, shelfIndex: number, label: string) => {
+    setAppState((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const layout = prev.layoutsByLibraryId[prev.activeLibraryId];
+      if (!layout) {
+        return prev;
+      }
+      const nextLayout = {
+        ...layout,
+        bookcases: layout.bookcases.map((caseItem) => {
+          if (caseItem.id !== bookcaseId) {
+            return caseItem;
+          }
+          const shelfLabels = [...(caseItem.settings.shelfLabels ?? [])];
+          shelfLabels[shelfIndex] = label;
+          return {
+            ...caseItem,
+            settings: {
+              ...caseItem.settings,
+              shelfLabels,
+            },
+          };
+        }),
+      };
+      return {
+        ...prev,
+        layoutsByLibraryId: {
+          ...prev.layoutsByLibraryId,
+          [layout.libraryId]: nextLayout,
+        },
+      };
+    });
+  }, []);
+
   const resetFromCsv = useCallback(async () => {
     clearState();
     const response = await fetch('/library.csv');
@@ -601,6 +706,8 @@ export const LibraryProvider = ({ children }: { children: React.ReactNode }) => 
     setBookcaseShelfCount: handleSetBookcaseShelfCount,
     moveBook,
     updateBook,
+    updateBookcaseName,
+    updateShelfLabel,
     resetFromCsv,
     exportCsv,
     exportJson,

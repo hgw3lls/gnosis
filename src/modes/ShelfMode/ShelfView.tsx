@@ -89,14 +89,14 @@ const ShelfView = ({ onSelectBook }: ShelfViewProps) => {
 
   return (
     <section className="mt-8" id="mode-panel-shelf">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-black px-4 py-3 text-xs uppercase tracking-[0.3em]">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-rule2 border-ink px-4 py-3 text-xs uppercase tracking-[0.3em]">
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2">
             <span>Density</span>
             <select
               value={density}
               onChange={(event) => setDensity(event.target.value as 'compact' | 'comfy')}
-              className="border-2 border-black bg-white px-2 py-1 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              className="border-rule border-ink bg-paper px-2 py-1 text-xs uppercase tracking-[0.2em] hover:bg-ink hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
             >
               <option value="compact">Compact</option>
               <option value="comfy">Comfy</option>
@@ -111,7 +111,7 @@ const ShelfView = ({ onSelectBook }: ShelfViewProps) => {
                   shelfRefs.current[targetId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
-              className="border-2 border-black bg-white px-2 py-1 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              className="border-rule border-ink bg-paper px-2 py-1 text-xs uppercase tracking-[0.2em] hover:bg-ink hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
             >
               <option value="">Select shelf</option>
               {shelves.map((shelf) => (
@@ -129,8 +129,8 @@ const ShelfView = ({ onSelectBook }: ShelfViewProps) => {
 
       <div className="mt-6 flex flex-col gap-8">
         {activeLayout.bookcases.map((bookcase) => (
-          <div key={bookcase.id} className="border-2 border-black p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-4">
+          <div key={bookcase.id} className="border-rule2 border-ink p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b-rule border-ink pb-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em]">Bookcase</p>
                 <h2 className="mt-2 text-2xl uppercase tracking-[0.2em]">{bookcase.name}</h2>
@@ -264,7 +264,7 @@ const ShelfRail = ({
   return (
     <div
       ref={setShelfRef}
-      className="flex flex-col gap-2 border-b-2 border-black pb-4"
+      className="flex flex-col gap-2 border-b-rule border-ink pb-4"
       onDragOver={(event) => {
         event.preventDefault();
         const container = containerRef.current;
@@ -285,11 +285,11 @@ const ShelfRail = ({
       onDrop={(event) => onDrop(event, shelf.id)}
     >
       <div className="flex items-center gap-4 text-xs uppercase tracking-[0.3em]">
-        <div className="flex w-28 flex-col border-2 border-black px-2 py-2 text-left">
+        <div className="flex w-28 flex-col border-rule2 border-ink px-2 py-2 text-left">
           <span>Shelf {shelfIndex + 1}</span>
           <span className="text-[10px]">{shelfCount} books</span>
         </div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-black/60">{shelfLabel}</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-ink/60">{shelfLabel}</div>
       </div>
       <div
         ref={containerRef}
@@ -322,7 +322,7 @@ const ShelfRail = ({
               <div key={placementId} className="flex items-end gap-2">
                 {showIndicator ? (
                   <div
-                    className="h-44 w-[4px] bg-black"
+                    className="h-44 w-[4px] bg-ink"
                     aria-hidden="true"
                   />
                 ) : null}
@@ -343,14 +343,14 @@ const ShelfRail = ({
             );
           })}
           {indicatorIndex === shelf.bookIds.length ? (
-            <div className="h-44 w-[4px] bg-black" aria-hidden="true" />
+            <div className="h-44 w-[4px] bg-ink" aria-hidden="true" />
           ) : null}
           {virtualRange.spacerRight > 0 ? (
             <div style={{ width: virtualRange.spacerRight }} aria-hidden="true" />
           ) : null}
         </div>
       </div>
-      <div className="h-[6px] w-full bg-black" aria-hidden="true" />
+      <div className="h-[6px] w-full bg-ink" aria-hidden="true" />
     </div>
   );
 };

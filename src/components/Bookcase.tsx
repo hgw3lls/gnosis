@@ -1,7 +1,11 @@
 import type { DragEvent } from 'react';
 import type { Book, Bookcase as BookcaseType, DragPayload, Shelf } from '../types/library';
+import { cn } from '../utils/cn';
+import { focusRing, inputBase } from '../styles/ui';
 import ShelfRow from './ShelfRow';
 import BookDetailPanel from './BookDetailPanel';
+import InkPanel from './ui/InkPanel';
+import Type from './ui/Type';
 
 type DropIndicator = { shelfId: string; index: number } | null;
 
@@ -50,15 +54,23 @@ const Bookcase = ({
   const selectedBook = selectedBookId ? booksById[selectedBookId] : null;
 
   return (
-    <section className="border-2 border-black p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-black pb-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em]">Bookcase</p>
-          <h2 className="mt-2 text-2xl uppercase tracking-[0.2em]">{bookcase.name}</h2>
-          <p className="mt-1 text-xs uppercase tracking-[0.2em]">{totalBooks} books</p>
+    <InkPanel padding="lg" className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b-rule border-ink pb-4">
+        <div className="space-y-2">
+          <Type as="p" variant="label">
+            Bookcase
+          </Type>
+          <Type as="h2" variant="h2">
+            {bookcase.name}
+          </Type>
+          <Type as="p" variant="meta">
+            {totalBooks} books
+          </Type>
         </div>
-        <div className="flex items-center gap-3 text-xs uppercase tracking-[0.3em]">
-          <label htmlFor={`shelf-count-${bookcase.id}`}>Shelves</label>
+        <div className="flex items-center gap-3">
+          <Type as="label" htmlFor={`shelf-count-${bookcase.id}`} variant="label">
+            Shelves
+          </Type>
           <input
             id={`shelf-count-${bookcase.id}`}
             type="number"
@@ -66,11 +78,11 @@ const Bookcase = ({
             max={12}
             value={shelfCount}
             onChange={(event) => onShelfCountChange(bookcase.id, Number(event.target.value))}
-            className="w-20 border-2 border-black px-2 py-1 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+            className={cn(inputBase, focusRing, 'w-20 px-2 py-1 text-[11px]')}
           />
         </div>
       </div>
-      <div className="mt-6 space-y-6">
+      <div className="space-y-6">
         {bookcase.shelfIds.map((shelfId, shelfIndex) => {
           const shelf = shelvesById[shelfId];
           if (!shelf) {
@@ -102,7 +114,7 @@ const Bookcase = ({
           onUpdate={(updates) => onUpdateBook(selectedBook.id, updates)}
         />
       ) : null}
-    </section>
+    </InkPanel>
   );
 };
 
