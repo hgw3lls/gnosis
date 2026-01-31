@@ -46,56 +46,70 @@ const getToken = (req) => {
 };
 
 const server = createServer(async (req, res) => {
-  if (!req.url) {
+  try {
+    if (!req.url) {
+      sendJson(res, 404, { error: 'Not found' });
+      return;
+    }
+
+    if (req.method === 'OPTIONS') {
+      sendJson(res, 204, {});
+      return;
+    }
+
+    if (req.url === '/api/health' && req.method === 'GET') {
+      sendJson(res, 200, { status: 'ok' });
+      return;
+    }
+
+    if (req.url === '/api/login') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' });
+        return;
+      }
+      const body = await parseBody(req);
+      if (!body.email || !body.password) {
+        sendJson(res, 400, { error: 'Email and password required' });
+        return;
+      }
+      const user = users.find(
+        (entry) => entry.email === body.email && entry.password === body.password,
+      );
+      if (!user) {
+        sendJson(res, 401, { error: 'Invalid credentials' });
+        return;
+      }
+      const token = randomUUID();
+      tokens.set(token, { email: user.email, issuedAt: Date.now() });
+      sendJson(res, 200, { token, user: { email: user.email } });
+      return;
+    }
+
+    if (req.url === '/api/logout' && req.method === 'POST') {
+      const token = getToken(req);
+      if (token) {
+        tokens.delete(token);
+      }
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.url === '/api/me' && req.method === 'GET') {
+      const token = getToken(req);
+      if (!token || !tokens.has(token)) {
+        sendJson(res, 401, { error: 'Unauthorized' });
+        return;
+      }
+      sendJson(res, 200, { user: tokens.get(token) });
+      return;
+    }
+
     sendJson(res, 404, { error: 'Not found' });
-    return;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Backend error', error);
+    sendJson(res, 500, { error: 'Internal server error' });
   }
-
-  if (req.method === 'OPTIONS') {
-    sendJson(res, 204, {});
-    return;
-  }
-
-  if (req.url === '/api/health' && req.method === 'GET') {
-    sendJson(res, 200, { status: 'ok' });
-    return;
-  }
-
-  if (req.url === '/api/login' && req.method === 'POST') {
-    const body = await parseBody(req);
-    const user = users.find(
-      (entry) => entry.email === body.email && entry.password === body.password,
-    );
-    if (!user) {
-      sendJson(res, 401, { error: 'Invalid credentials' });
-      return;
-    }
-    const token = randomUUID();
-    tokens.set(token, { email: user.email, issuedAt: Date.now() });
-    sendJson(res, 200, { token, user: { email: user.email } });
-    return;
-  }
-
-  if (req.url === '/api/logout' && req.method === 'POST') {
-    const token = getToken(req);
-    if (token) {
-      tokens.delete(token);
-    }
-    sendJson(res, 200, { ok: true });
-    return;
-  }
-
-  if (req.url === '/api/me' && req.method === 'GET') {
-    const token = getToken(req);
-    if (!token || !tokens.has(token)) {
-      sendJson(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-    sendJson(res, 200, { user: tokens.get(token) });
-    return;
-  }
-
-  sendJson(res, 404, { error: 'Not found' });
 });
 
 server.listen(PORT, () => {
