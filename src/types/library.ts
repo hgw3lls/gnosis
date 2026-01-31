@@ -43,6 +43,7 @@ export type Shelf = {
 
 export type BookcaseSettings = {
   shelfCount: number;
+  shelfLabels?: string[];
 };
 
 export type Bookcase = {

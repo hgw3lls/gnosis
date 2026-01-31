@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import type { DragEvent } from 'react';
 import type { Book, DragPayload, Shelf } from '../types/library';
+import { cn } from '../utils/cn';
 import Spine from './Spine';
+import InkChip from './ui/InkChip';
 
 type DropIndicator = { shelfId: string; index: number } | null;
 
@@ -83,13 +85,20 @@ const ShelfRow = ({
 
   return (
     <div
-      className={`relative flex w-full flex-col gap-2 border-b-2 border-black pb-4 ${
-        showIndicator ? 'outline outline-2 outline-dashed outline-black' : ''
-      }`}
+      className={cn(
+        'relative flex w-full flex-col gap-2 border-b-rule border-ink pb-4',
+        showIndicator && 'outline outline-2 outline-dashed outline-ink',
+      )}
       onDragOver={handleDragOver}
       onDragLeave={(event) => onDragLeaveShelf(event, shelf.id)}
       onDrop={(event) => onDrop(event, shelf.id)}
     >
+      <div className="flex items-center gap-3">
+        <InkChip>{`Shelf ${shelfNumber}`}</InkChip>
+        <span className="text-[10px] uppercase tracking-[0.3em] text-ink/60">
+          {orderedLength} books
+        </span>
+      </div>
       <div ref={shelfRef} className="flex min-h-[190px] items-end gap-4 overflow-x-auto pb-2">
         {orderedList.map((placementId, index) => {
           const book = booksById[getBookId(placementId)];
@@ -116,13 +125,13 @@ const ShelfRow = ({
           }
           return (
             <div key={`${placementId}-indicator`} className="flex items-end gap-4">
-              <div className="h-40 w-[2px] bg-black" aria-hidden="true" />
+              <div className="h-40 w-[2px] bg-ink" aria-hidden="true" />
               {spine}
             </div>
           );
         })}
         {showIndicator && indicatorIndex === orderedLength ? (
-          <div className="h-40 w-[2px] bg-black" aria-hidden="true" />
+          <div className="h-40 w-[2px] bg-ink" aria-hidden="true" />
         ) : null}
       </div>
     </div>

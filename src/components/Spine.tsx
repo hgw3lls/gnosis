@@ -1,5 +1,8 @@
 import type { DragEvent } from 'react';
 import type { Book, DragPayload } from '../types/library';
+import { cn } from '../utils/cn';
+import { focusRing, printInteractive } from '../styles/ui';
+import { getBookPlateColor, getPlateTextColor } from '../styles/palette';
 
 type SpineProps = {
   book: Book;
@@ -27,6 +30,8 @@ const Spine = ({
   const title = book.title || 'Untitled';
   const author = book.author ?? 'Unknown author';
   const charCount = Math.min(title.length, 60);
+  const plate = getBookPlateColor(book, book.primaryShelf || title);
+  const textColor = getPlateTextColor(plate);
 
   const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
     const payload: DragPayload = {
@@ -48,18 +53,29 @@ const Spine = ({
       onDragEnd={onDragEnd}
       data-spine-index={index}
       aria-label={`${title} by ${author}`}
-      className={`relative flex h-40 items-center justify-center border-2 border-black bg-white px-2 text-center text-[10px] uppercase tracking-[0.1em] text-black hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
-        isDragging ? 'opacity-60' : ''
-      } ${isDimmed ? 'opacity-40' : ''} whitespace-normal break-words`}
+      className={cn(
+        'relative flex h-40 items-center justify-center border-rule2 border-ink px-2 text-center text-[10px] uppercase tracking-[0.2em] text-ink',
+        'whitespace-normal break-words shadow-print-md',
+        focusRing,
+        printInteractive,
+        isDragging && 'opacity-60',
+        isDimmed && 'opacity-40',
+      )}
       style={{
         writingMode: 'vertical-rl',
         textOrientation: 'mixed',
         transform: 'rotate(180deg)',
         width: `clamp(28px, calc(18px + ${charCount} * 1.1px), 110px)`,
         fontSize: `clamp(10px, calc(14px - ${charCount} * 0.06px), 14px)`,
+        backgroundColor: plate,
+        color: textColor,
       }}
     >
-      <span className="absolute left-1 top-2 h-[85%] w-[2px] bg-black" aria-hidden="true" />
+      <span
+        className="absolute left-1 top-2 h-[85%] w-[2px]"
+        style={{ backgroundColor: textColor }}
+        aria-hidden="true"
+      />
       <span className="leading-tight">{title}</span>
     </button>
   );
