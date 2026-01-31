@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GNOSIS Admin</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 40px;
+        background: #f7f2ea;
+        color: #1e1b16;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        letter-spacing: 0.12em;
+      }
+
+      p {
+        margin: 0 0 24px;
+        color: rgba(30, 27, 22, 0.7);
+      }
+
+      .panel {
+        border: 1px solid rgba(30, 27, 22, 0.12);
+        border-radius: 16px;
+        padding: 20px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(30, 27, 22, 0.08);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      button {
+        border: 1px solid #1e1b16;
+        background: #1e1b16;
+        color: #fdfbf7;
+        padding: 10px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      button.secondary {
+        background: transparent;
+        color: #1e1b16;
+      }
+
+      pre {
+        background: #f3ede4;
+        padding: 16px;
+        border-radius: 12px;
+        white-space: pre-wrap;
+        margin: 0;
+      }
+
+      .meta {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>GNOSIS ADMIN</h1>
+      <p class="meta">Backway into the backend (no login required)</p>
+      <div class="panel">
+        <div class="actions">
+          <button type="button" id="health">Ping /api/health</button>
+          <button type="button" id="me" class="secondary">Fetch /api/me</button>
+          <button type="button" id="open-app" class="secondary">Open app</button>
+        </div>
+        <pre id="output">Awaiting request...</pre>
+      </div>
+    </main>
+    <script>
+      const output = document.getElementById('output');
+      const format = (data) => JSON.stringify(data, null, 2);
+      const setOutput = (data) => {
+        output.textContent = typeof data === 'string' ? data : format(data);
+      };
+
+      document.getElementById('health').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/health');
+          setOutput(await response.json());
+        } catch (error) {
+          setOutput(`Error: ${error}`);
+        }
+      });
+
+      document.getElementById('me').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/me');
+          setOutput(await response.json());
+        } catch (error) {
+          setOutput(`Error: ${error}`);
+        }
+      });
+
+      document.getElementById('open-app').addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    </script>
+  </body>
+</html>
