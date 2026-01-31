@@ -1,62 +1,119 @@
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
-import type { Book, ShelfCode } from '../types/library';
-import BookSpine from './BookSpine';
+import { useState } from 'react';
+import type { DragEvent } from 'react';
+import type { Book, Shelf } from '../types/bookcase';
+import Spine from './Spine';
 
-interface ShelfRowProps {
-  shelfCode: ShelfCode;
-  shelfLabel: string;
-  bookIds: string[];
-  books: Record<string, Book>;
-  selectedIds: Set<string>;
-  showAuthor: boolean;
-  onBookClick: (bookId: string, event: React.MouseEvent<HTMLButtonElement>) => void;
-  onBookOpen: (bookId: string) => void;
-  onBookKeyDown: (bookId: string, event: React.KeyboardEvent<HTMLButtonElement>) => void;
-}
+type DropIndicator = { shelfId: string; index: number } | null;
+
+type ShelfRowProps = {
+  shelf: Shelf;
+  booksById: Record<string, Book>;
+  activeBookId?: string | null;
+  draggingBookId?: string | null;
+  dropIndicator: DropIndicator;
+  onDrop: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragOverShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragOverSpine: (
+    event: DragEvent<HTMLDivElement>,
+    shelfId: string,
+    index: number,
+  ) => void;
+  onDragLeaveShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragStart: (bookId: string, shelfId: string, index: number) => void;
+  onDragEnd: () => void;
+  onSelectBook: (bookId: string) => void;
+};
 
 const ShelfRow = ({
-  shelfCode,
-  shelfLabel,
-  bookIds,
-  books,
-  selectedIds,
-  showAuthor,
-  onBookClick,
-  onBookOpen,
-  onBookKeyDown,
+  shelf,
+  booksById,
+  activeBookId,
+  draggingBookId,
+  dropIndicator,
+  onDrop,
+  onDragOverShelf,
+  onDragOverSpine,
+  onDragLeaveShelf,
+  onDragStart,
+  onDragEnd,
+  onSelectBook,
 }: ShelfRowProps) => {
-  const { setNodeRef, isOver } = useDroppable({ id: shelfCode });
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const indicatorIndex =
+    dropIndicator && dropIndicator.shelfId === shelf.id
+      ? dropIndicator.index
+      : null;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-200">
-          {shelfCode}. {shelfLabel}
-        </h2>
-        <span className="text-xs text-slate-400">{bookIds.length} books</span>
-      </div>
-      <div
-        ref={setNodeRef}
-        className={`min-h-[140px] rounded-xl border border-dashed px-2 py-3 transition ${
-          isOver ? 'border-emerald-400/70 bg-emerald-500/10' : 'border-slate-800'
-        }`}
-      >
-        <SortableContext items={bookIds} strategy={rectSortingStrategy}>
-          <div className="flex flex-wrap gap-2">
-            {bookIds.map((bookId) => (
-              <BookSpine
-                key={bookId}
-                book={books[bookId]}
-                selected={selectedIds.has(bookId)}
-                showAuthor={showAuthor}
-                onClick={(event) => onBookClick(bookId, event)}
-                onDoubleClick={() => onBookOpen(bookId)}
-                onKeyDown={(event) => onBookKeyDown(bookId, event)}
+    <div
+      className={`border-2 border-black p-3 ${
+        isDragOver ? 'outline outline-2 outline-dashed outline-black' : ''
+      }`}
+      onDragEnter={() => setIsDragOver(true)}
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node)) {
+          return;
+        }
+        setIsDragOver(false);
+        onDragLeaveShelf(event, shelf.id);
+      }}
+      onDragOver={(event) => {
+        setIsDragOver(true);
+        onDragOverShelf(event, shelf.id);
+      }}
+      onDrop={(event) => {
+        setIsDragOver(false);
+        onDrop(event, shelf.id);
+      }}
+      aria-label="Shelf"
+    >
+      <div className="flex items-end gap-3 overflow-x-auto border-b-2 border-black pb-3">
+        {shelf.bookIds.map((bookId, index) => {
+          const book = booksById[bookId];
+          if (!book) {
+            return null;
+          }
+
+          const showIndicator = indicatorIndex === index;
+          return (
+            <div
+              key={bookId}
+              className="flex items-end gap-3"
+              data-index={index}
+              onDragOver={(event) => onDragOverSpine(event, shelf.id, index)}
+            >
+              {showIndicator ? (
+                <span
+                  className="h-40 w-[2px] bg-black"
+                  aria-hidden="true"
+                />
+              ) : null}
+              <Spine
+                book={book}
+                isActive={activeBookId === bookId}
+                isDragging={draggingBookId === bookId}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData(
+                    'application/json',
+                    JSON.stringify({
+                      bookId,
+                      fromShelfId: shelf.id,
+                      fromIndex: index,
+                    }),
+                  );
+                  onDragStart(bookId, shelf.id, index);
+                }}
+                onDragEnd={onDragEnd}
+                onSelect={() => onSelectBook(bookId)}
               />
-            ))}
-          </div>
-        </SortableContext>
+            </div>
+          );
+        })}
+        {indicatorIndex === shelf.bookIds.length ? (
+          <span className="h-40 w-[2px] bg-black" aria-hidden="true" />
+        ) : null}
       </div>
     </div>
   );
