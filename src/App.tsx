@@ -17,6 +17,7 @@ import SidePanel from './components/SidePanel';
 import TableView from './components/TableView';
 import Toolbar from './components/Toolbar';
 import AddBookModal from './components/AddBookModal';
+import SpineShelf, { Book as SpineBook } from './components/SpineShelf';
 import { parseLibraryCsv, exportLibraryCsv } from './utils/csv';
 import { clearState, loadState, saveState } from './utils/storage';
 import { shelfNameByCode } from './utils/shelves';
@@ -27,6 +28,21 @@ const EMPTY_STATE: LibraryState = {
   shelves: { I: [], II: [], III: [], IV: [], V: [], VI: [] },
   columns: [],
 };
+
+const SPINE_BOOKS: SpineBook[] = [
+  { id: 'spine-1', title: 'Atlas of Concrete', author: 'R. Kline', spine: 'thin', height: 'short' },
+  { id: 'spine-2', title: 'Raw Typography', author: 'L. Serra', spine: 'med', height: 'tall' },
+  { id: 'spine-3', title: 'Steel & Paper', author: 'M. Osei', spine: 'thick', height: 'med' },
+  { id: 'spine-4', title: 'Brutal Forms', author: 'A. Patel', spine: 'thin', height: 'med' },
+  { id: 'spine-5', title: 'Monolith', author: 'J. Cho', spine: 'thick', height: 'tall', spineWidth: 54 },
+  { id: 'spine-6', title: 'Index of Space', author: 'K. Watanabe', spine: 'med', height: 'short' },
+  { id: 'spine-7', title: 'Hard Lines', author: 'E. Novak', spine: 'thin', height: 'tall' },
+  { id: 'spine-8', title: 'Found Objects', author: 'S. Adeyemi', spine: 'med', height: 'med', spineWidth: 44 },
+  { id: 'spine-9', title: 'Public Matter', author: 'D. Nguyen', spine: 'thick', height: 'short' },
+  { id: 'spine-10', title: 'Black Baseline', author: 'T. Ruiz', spine: 'med', height: 'tall' },
+  { id: 'spine-11', title: 'Static Noise', author: 'C. Long', spine: 'thin', height: 'short', spineWidth: 28 },
+  { id: 'spine-12', title: 'Edge Study', author: 'P. Ibrahim', spine: 'thick', height: 'med' },
+];
 
 const App = () => {
   const { state, setPresent, undo, redo, canUndo, canRedo } = useHistoryState();
@@ -39,6 +55,7 @@ const App = () => {
   const [showAuthor, setShowAuthor] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [draggingIds, setDraggingIds] = useState<string[]>([]);
+  const [selectedSpineBook, setSelectedSpineBook] = useState<SpineBook | null>(null);
   const saveTimeout = useRef<number>();
 
   const sensors = useSensors(
@@ -462,6 +479,39 @@ const App = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">
+        <section className="border-2 border-black bg-white p-6 text-black">
+          <header className="space-y-2">
+            <h1 className="text-3xl font-mono font-semibold uppercase tracking-tight">Spine Shelf</h1>
+            <p className="text-xs font-mono uppercase tracking-wide text-black/70">
+              Minimal catalog of brutalist spines.
+            </p>
+          </header>
+          <div className="mt-4">
+            <SpineShelf books={SPINE_BOOKS} onSelect={setSelectedSpineBook} />
+          </div>
+          <div className="mt-6 border-2 border-black p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-mono font-semibold uppercase">
+                  {selectedSpineBook?.title ?? 'Select a spine'}
+                </h2>
+                <p className="text-sm font-mono uppercase text-black/70">
+                  {selectedSpineBook?.author ?? 'Author'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSpineBook(null)}
+                className="border-2 border-black px-3 py-1 text-xs font-mono uppercase transition hover:bg-black hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-black/80">
+              A stark inventory note: clean edges, hard light, and a catalogue of utilitarian forms.
+            </p>
+          </div>
+        </section>
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold">Visual Bookshelf</h1>
           <p className="text-sm text-slate-400">
