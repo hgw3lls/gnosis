@@ -88,19 +88,41 @@
           <button type="button" id="open-app" class="secondary">Open app</button>
         </div>
         <pre id="output">Awaiting request...</pre>
+        <p id="status" class="meta" style="margin-top: 16px">
+          Backend status: checking...
+        </p>
       </div>
     </main>
     <script>
       const output = document.getElementById('output');
+      const status = document.getElementById('status');
       const format = (data) => JSON.stringify(data, null, 2);
       const setOutput = (data) => {
         output.textContent = typeof data === 'string' ? data : format(data);
       };
+      const setStatus = (text) => {
+        status.textContent = text;
+      };
+
+      const fetchApi = async (path) => {
+        try {
+          const response = await fetch(path);
+          if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+          }
+          setStatus('Backend status: connected.');
+          return await response.json();
+        } catch (error) {
+          setStatus(
+            'Backend status: unavailable. Start it with `npm run server` on port 5174.',
+          );
+          throw error;
+        }
+      };
 
       document.getElementById('health').addEventListener('click', async () => {
         try {
-          const response = await fetch('/api/health');
-          setOutput(await response.json());
+          setOutput(await fetchApi('/api/health'));
         } catch (error) {
           setOutput(`Error: ${error}`);
         }
@@ -108,8 +130,7 @@
 
       document.getElementById('me').addEventListener('click', async () => {
         try {
-          const response = await fetch('/api/me');
-          setOutput(await response.json());
+          setOutput(await fetchApi('/api/me'));
         } catch (error) {
           setOutput(`Error: ${error}`);
         }
@@ -118,6 +139,8 @@
       document.getElementById('open-app').addEventListener('click', () => {
         window.location.href = '/';
       });
+
+      fetchApi('/api/health').then(setOutput).catch(() => {});
     </script>
   </body>
 </html>
