@@ -1,40 +1,81 @@
-export type ShelfCode =
-  | 'I'
-  | 'II'
-  | 'III'
-  | 'IV'
-  | 'V'
-  | 'VI';
+export type CategorizeField =
+  | 'Primary_Shelf'
+  | 'Format'
+  | 'Language'
+  | 'Source'
+  | 'Use_Status'
+  | 'Tags';
 
-export const SHELVES: { code: ShelfCode; name: string }[] = [
-  { code: 'I', name: 'Foundations & Philosophy' },
-  { code: 'II', name: 'Systems, Media & Technology' },
-  { code: 'III', name: 'Power, Control & Institutions' },
-  { code: 'IV', name: 'Art, Aesthetics & Practice' },
-  { code: 'V', name: 'Fiction, Speculation & Myth' },
-  { code: 'VI', name: 'Methods, Reference & Tools' },
-];
+export type MultiCategoryMode = 'duplicate' | 'first' | 'split';
 
 export type Book = {
   id: string;
   title: string;
-  author: string;
-  shelfCode: ShelfCode;
-  primaryShelf: string;
-  tags: string[];
-  useStatus: string;
-  notes: string;
-  isbn?: string;
-  year?: string;
+  author?: string;
   publisher?: string;
+  language?: string;
+  format?: string;
+  confidence?: string;
+  notes?: string;
+  publishYear?: string;
   pageCount?: string;
-  createdAt: string;
-  updatedAt: string;
+  subjects?: string[];
+  tags?: string[];
+  useStatus?: string;
+  source?: string;
+  isbn13?: string;
+  olid?: string;
+  coverS?: string;
+  coverM?: string;
+  coverL?: string;
+  primaryShelf?: string;
+  rowOrder: number;
   raw: Record<string, string>;
 };
 
-export type LibraryState = {
-  books: Record<string, Book>;
-  shelves: Record<ShelfCode, string[]>;
-  columns: string[];
+export type Shelf = {
+  id: string;
+  bookIds: string[];
+};
+
+export type BookcaseSettings = {
+  shelfCount: number;
+};
+
+export type Bookcase = {
+  id: string;
+  name: string;
+  shelfIds: string[];
+  settings: BookcaseSettings;
+};
+
+export type LibraryDefinition = {
+  id: string;
+  name: string;
+  categorize: CategorizeField;
+  multiCategoryMode?: MultiCategoryMode;
+};
+
+export type LibraryLayout = {
+  libraryId: string;
+  bookcases: Bookcase[];
+  shelvesById: Record<string, Shelf>;
+};
+
+export type AppState = {
+  booksById: Record<string, Book>;
+  libraries: LibraryDefinition[];
+  layoutsByLibraryId: Record<string, LibraryLayout>;
+  activeLibraryId: string;
+  csvColumns: string[];
+};
+
+export type DragPayload = {
+  bookId: string;
+  fromLibraryId: string;
+  fromBookcaseId: string;
+  fromShelfId: string;
+  fromIndex: number;
+  placementKey?: string;
+  placementId?: string;
 };

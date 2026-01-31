@@ -1,50 +1,77 @@
 import type { DragEvent } from 'react';
-import type { Book } from '../types/bookcase';
+import type { Book, DragPayload } from '../types/library';
 
 type SpineProps = {
   book: Book;
-  isActive?: boolean;
-  isDragging?: boolean;
-  onDragStart: (event: DragEvent<HTMLButtonElement>) => void;
-  onDragEnd: () => void;
+  placementId: string;
+  shelfId: string;
+  bookcaseId: string;
+  libraryId: string;
+  index: number;
+  isDragging: boolean;
   onSelect: () => void;
+  onDragStart: (payload: DragPayload) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLButtonElement>, index: number) => void;
 };
 
-const Spine = ({ book, isActive, isDragging, onDragStart, onDragEnd, onSelect }: SpineProps) => {
-  const charCount = Math.min(book.title.length, 40);
+const Spine = ({
+  book,
+  placementId,
+  shelfId,
+  bookcaseId,
+  libraryId,
+  index,
+  isDragging,
+  onSelect,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+}: SpineProps) => {
+  const title = book.title || 'Untitled';
+  const author = book.author ?? 'Unknown author';
+  const charCount = Math.min(title.length, 60);
+  const placementKey = placementId.startsWith(`${book.id}::`)
+    ? placementId.replace(`${book.id}::`, '')
+    : undefined;
+
+  const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
+    const payload: DragPayload = {
+      bookId: book.id,
+      fromLibraryId: libraryId,
+      fromBookcaseId: bookcaseId,
+      fromShelfId: shelfId,
+      fromIndex: index,
+      placementKey,
+      placementId,
+    };
+    event.dataTransfer.setData('application/json', JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = 'move';
+    onDragStart(payload);
+  };
 
   return (
     <button
       type="button"
       draggable
-      aria-pressed={isActive}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
       onClick={onSelect}
-      style={
-        {
-          '--chars': charCount,
-          width: 'clamp(28px, calc(18px + var(--chars) * 1.2px), 90px)',
-        } as React.CSSProperties
-      }
-      className={`relative flex h-40 flex-none items-center justify-center border-2 border-black bg-white px-1 text-black transition-colors hover:bg-black hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black ${
+      onDragStart={handleDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={(event) => onDragOver(event, index)}
+      aria-label={`${title} by ${author}`}
+      className={`relative flex h-40 items-center justify-center border-2 border-black bg-white px-2 text-center text-[10px] uppercase tracking-[0.1em] text-black hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black ${
         isDragging ? 'opacity-60' : ''
-      } ${isActive ? 'bg-black text-white' : ''}`}
+      } whitespace-normal break-words`}
+      style={{
+        writingMode: 'vertical-rl',
+        textOrientation: 'mixed',
+        transform: 'rotate(180deg)',
+        width: `clamp(28px, calc(18px + ${charCount} * 1.1px), 110px)`,
+        fontSize: `clamp(10px, calc(14px - ${charCount} * 0.06px), 14px)`,
+      }}
     >
-      <span
-        className="text-center font-mono font-semibold uppercase tracking-[0.2em]"
-        style={
-          {
-            writingMode: 'vertical-rl',
-            transform: 'rotate(180deg)',
-            fontSize: 'clamp(10px, calc(14px - (var(--chars) * 0.08px)), 14px)',
-            whiteSpace: 'normal',
-            maxHeight: '100%',
-          } as React.CSSProperties
-        }
-      >
-        {book.title}
-      </span>
+      <span className="absolute left-1 top-2 h-[85%] w-[2px] bg-black" aria-hidden="true" />
+      <span className="leading-tight">{title}</span>
     </button>
   );
 };

@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import type { DragEvent } from 'react';
-import type { Book, Shelf } from '../types/bookcase';
+import type { Book, DragPayload, Shelf } from '../types/library';
 import Spine from './Spine';
 
 type DropIndicator = { shelfId: string; index: number } | null;
@@ -8,111 +7,83 @@ type DropIndicator = { shelfId: string; index: number } | null;
 type ShelfRowProps = {
   shelf: Shelf;
   booksById: Record<string, Book>;
-  activeBookId?: string | null;
-  draggingBookId?: string | null;
+  libraryId: string;
+  bookcaseId: string;
+  draggingPlacementId?: string | null;
   dropIndicator: DropIndicator;
-  onDrop: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
-  onDragOverShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
-  onDragOverSpine: (
-    event: DragEvent<HTMLDivElement>,
-    shelfId: string,
-    index: number,
-  ) => void;
-  onDragLeaveShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
-  onDragStart: (bookId: string, shelfId: string, index: number) => void;
-  onDragEnd: () => void;
   onSelectBook: (bookId: string) => void;
+  onDragStart: (payload: DragPayload) => void;
+  onDragEnd: () => void;
+  onDragOverShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragLeaveShelf: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDrop: (event: DragEvent<HTMLDivElement>, shelfId: string) => void;
+  onDragOverSpine: (event: DragEvent<HTMLButtonElement>, shelfId: string, index: number) => void;
 };
+
+const getBookId = (placementId: string) => placementId.split('::')[0];
 
 const ShelfRow = ({
   shelf,
   booksById,
-  activeBookId,
-  draggingBookId,
+  libraryId,
+  bookcaseId,
+  draggingPlacementId,
   dropIndicator,
-  onDrop,
-  onDragOverShelf,
-  onDragOverSpine,
-  onDragLeaveShelf,
+  onSelectBook,
   onDragStart,
   onDragEnd,
-  onSelectBook,
+  onDragOverShelf,
+  onDragLeaveShelf,
+  onDrop,
+  onDragOverSpine,
 }: ShelfRowProps) => {
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  const indicatorIndex =
-    dropIndicator && dropIndicator.shelfId === shelf.id
-      ? dropIndicator.index
-      : null;
+  const indicatorIndex = dropIndicator?.shelfId === shelf.id ? dropIndicator.index : null;
+  const showIndicator = indicatorIndex !== null && indicatorIndex !== undefined;
+  const list = shelf.bookIds;
 
   return (
     <div
-      className={`border-2 border-black p-3 ${
-        isDragOver ? 'outline outline-2 outline-dashed outline-black' : ''
+      className={`relative flex w-full flex-col gap-2 border-b-2 border-black pb-4 ${
+        showIndicator ? 'outline outline-2 outline-dashed outline-black' : ''
       }`}
-      onDragEnter={() => setIsDragOver(true)}
-      onDragLeave={(event) => {
-        if (event.currentTarget.contains(event.relatedTarget as Node)) {
-          return;
-        }
-        setIsDragOver(false);
-        onDragLeaveShelf(event, shelf.id);
-      }}
-      onDragOver={(event) => {
-        setIsDragOver(true);
-        onDragOverShelf(event, shelf.id);
-      }}
-      onDrop={(event) => {
-        setIsDragOver(false);
-        onDrop(event, shelf.id);
-      }}
-      aria-label="Shelf"
+      onDragOver={(event) => onDragOverShelf(event, shelf.id)}
+      onDragLeave={(event) => onDragLeaveShelf(event, shelf.id)}
+      onDrop={(event) => onDrop(event, shelf.id)}
     >
-      <div className="flex items-end gap-3 overflow-x-auto border-b-2 border-black pb-3">
-        {shelf.bookIds.map((bookId, index) => {
-          const book = booksById[bookId];
+      <div className="flex min-h-[190px] items-end gap-4 overflow-x-auto pb-2">
+        {list.map((placementId, index) => {
+          const book = booksById[getBookId(placementId)];
           if (!book) {
             return null;
           }
-
-          const showIndicator = indicatorIndex === index;
+          const spine = (
+            <Spine
+              key={placementId}
+              book={book}
+              placementId={placementId}
+              shelfId={shelf.id}
+              bookcaseId={bookcaseId}
+              libraryId={libraryId}
+              index={index}
+              isDragging={draggingPlacementId === placementId}
+              onSelect={() => onSelectBook(book.id)}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onDragOver={(event, itemIndex) => onDragOverSpine(event, shelf.id, itemIndex)}
+            />
+          );
+          if (!showIndicator || indicatorIndex !== index) {
+            return spine;
+          }
           return (
-            <div
-              key={bookId}
-              className="flex items-end gap-3"
-              data-index={index}
-              onDragOver={(event) => onDragOverSpine(event, shelf.id, index)}
-            >
-              {showIndicator ? (
-                <span
-                  className="h-40 w-[2px] bg-black"
-                  aria-hidden="true"
-                />
-              ) : null}
-              <Spine
-                book={book}
-                isActive={activeBookId === bookId}
-                isDragging={draggingBookId === bookId}
-                onDragStart={(event) => {
-                  event.dataTransfer.effectAllowed = 'move';
-                  event.dataTransfer.setData(
-                    'application/json',
-                    JSON.stringify({
-                      bookId,
-                      fromShelfId: shelf.id,
-                      fromIndex: index,
-                    }),
-                  );
-                  onDragStart(bookId, shelf.id, index);
-                }}
-                onDragEnd={onDragEnd}
-                onSelect={() => onSelectBook(bookId)}
-              />
+            <div key={`${placementId}-indicator`} className="flex items-end gap-4">
+              <div className="h-40 w-[2px] bg-black" aria-hidden="true" />
+              {spine}
             </div>
           );
         })}
-        {indicatorIndex === shelf.bookIds.length ? (
-          <span className="h-40 w-[2px] bg-black" aria-hidden="true" />
+        {showIndicator && indicatorIndex === list.length ? (
+          <div className="h-40 w-[2px] bg-black" aria-hidden="true" />
         ) : null}
       </div>
     </div>

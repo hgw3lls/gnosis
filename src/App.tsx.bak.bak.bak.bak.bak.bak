@@ -1,0 +1,623 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import type { Book, LibraryState, ShelfCode } from './types/library';
+import { SHELVES } from './types/library';
+import ShelfRow from './components/ShelfRow';
+import SidePanel from './components/SidePanel';
+import TableView from './components/TableView';
+import Toolbar from './components/Toolbar';
+import AddBookModal from './components/AddBookModal';
+import { parseLibraryCsv, exportLibraryCsv } from './utils/csv';
+import { clearState, loadState, saveState } from './utils/storage';
+import { shelfNameByCode } from './utils/shelves';
+import { useHistory } from './hooks/useHistory';
+
+const EMPTY_STATE: LibraryState = {
+  books: {},
+  shelves: { I: [], II: [], III: [], IV: [], V: [], VI: [] },
+  columns: [],
+};
+
+const App = () => {
+  const { state, setPresent, undo, redo, canUndo, canRedo } = useHistoryState();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeBookId, setActiveBookId] = useState<string | null>(null);
+  const [view, setView] = useState<'bookcase' | 'table'>('bookcase');
+  const [search, setSearch] = useState('');
+  const [filterShelf, setFilterShelf] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [showAuthor, setShowAuthor] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [draggingIds, setDraggingIds] = useState<string[]>([]);
+<<<<<<< ours
+=======
+  const [booksPerRow, setBooksPerRow] = useState(14);
+>>>>>>> theirs
+  const saveTimeout = useRef<number>();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const useStatuses = useMemo(() => {
+    const statuses = new Set<string>();
+    Object.values(state.books).forEach((book) => {
+      if (book.useStatus) {
+        statuses.add(book.useStatus);
+      }
+    });
+    return Array.from(statuses.values()).sort();
+  }, [state.books]);
+
+  const loadFromCsv = useCallback(async () => {
+    try {
+      const response = await fetch('/library.csv');
+      if (!response.ok) {
+        throw new Error('Missing CSV');
+      }
+      const text = await response.text();
+      const parsed = parseLibraryCsv(text);
+      setPresent(parsed, false);
+      return;
+    } catch {
+      const fallback = parseLibraryCsv('Title,Author,Primary_Shelf\nSample Book,Unknown,I. Foundations & Philosophy');
+      setPresent(fallback, false);
+    }
+  }, [setPresent]);
+
+  useEffect(() => {
+    const stored = loadState();
+    if (stored) {
+      setPresent(stored, false);
+      return;
+    }
+    loadFromCsv();
+  }, [loadFromCsv, setPresent]);
+
+  useEffect(() => {
+    window.clearTimeout(saveTimeout.current);
+    saveTimeout.current = window.setTimeout(() => {
+      saveState(state);
+    }, 500);
+  }, [state]);
+
+  const isVisible = useCallback(
+    (book: Book) => {
+      const query = search.trim().toLowerCase();
+      if (query) {
+        const haystack = `${book.title} ${book.author} ${book.tags.join(' ')}`.toLowerCase();
+        if (!haystack.includes(query)) {
+          return false;
+        }
+      }
+      if (filterShelf && book.shelfCode !== filterShelf) {
+        return false;
+      }
+      if (filterStatus && book.useStatus !== filterStatus) {
+        return false;
+      }
+      return true;
+    },
+    [filterShelf, filterStatus, search],
+  );
+
+  const filteredShelves = useMemo(() => {
+    return Object.fromEntries(
+      (Object.keys(state.shelves) as ShelfCode[]).map((code) => [
+        code,
+        state.shelves[code].filter((id) => isVisible(state.books[id])),
+      ]),
+    ) as Record<ShelfCode, string[]>;
+  }, [isVisible, state.books, state.shelves]);
+
+  const handleBookClick = (bookId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.shiftKey) {
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        if (next.has(bookId)) {
+          next.delete(bookId);
+        } else {
+          next.add(bookId);
+        }
+        return next;
+      });
+    } else {
+      setSelectedIds(new Set([bookId]));
+    }
+    setActiveBookId(bookId);
+  };
+
+  const handleBookOpen = (bookId: string) => {
+    setActiveBookId(bookId);
+  };
+
+  const handleBookKeyDown = (bookId: string, event: React.KeyboardEvent<HTMLButtonElement>) => {
+    const shelf = findShelfForBook(bookId, state.shelves);
+    if (!shelf) {
+      return;
+    }
+    const shelfIndex = SHELVES.findIndex((entry) => entry.code === shelf);
+    const currentIndex = state.shelves[shelf].indexOf(bookId);
+
+    if (event.altKey) {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        moveWithinShelf(bookId, shelf, Math.max(0, currentIndex - 1));
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        moveWithinShelf(bookId, shelf, Math.min(state.shelves[shelf].length - 1, currentIndex + 1));
+      }
+      if (event.key === 'ArrowUp' && shelfIndex > 0) {
+        event.preventDefault();
+        moveToShelf(bookId, SHELVES[shelfIndex - 1].code, currentIndex);
+      }
+      if (event.key === 'ArrowDown' && shelfIndex < SHELVES.length - 1) {
+        event.preventDefault();
+        moveToShelf(bookId, SHELVES[shelfIndex + 1].code, currentIndex);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const nextId = state.shelves[shelf][Math.max(0, currentIndex - 1)];
+      setSelectedIds(new Set([nextId]));
+      setActiveBookId(nextId);
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      const nextId = state.shelves[shelf][Math.min(state.shelves[shelf].length - 1, currentIndex + 1)];
+      setSelectedIds(new Set([nextId]));
+      setActiveBookId(nextId);
+    }
+    if (event.key === 'ArrowUp' && shelfIndex > 0) {
+      event.preventDefault();
+      const nextShelf = SHELVES[shelfIndex - 1].code;
+      const nextId = state.shelves[nextShelf][Math.min(currentIndex, state.shelves[nextShelf].length - 1)];
+      if (nextId) {
+        setSelectedIds(new Set([nextId]));
+        setActiveBookId(nextId);
+      }
+    }
+    if (event.key === 'ArrowDown' && shelfIndex < SHELVES.length - 1) {
+      event.preventDefault();
+      const nextShelf = SHELVES[shelfIndex + 1].code;
+      const nextId = state.shelves[nextShelf][Math.min(currentIndex, state.shelves[nextShelf].length - 1)];
+      if (nextId) {
+        setSelectedIds(new Set([nextId]));
+        setActiveBookId(nextId);
+      }
+    }
+  };
+
+  const applyBookUpdate = (bookId: string, updates: Partial<Book>) => {
+    const existing = state.books[bookId];
+    if (!existing) {
+      return;
+    }
+    const nextBook = {
+      ...existing,
+      ...updates,
+      raw: {
+        ...existing.raw,
+        Title: updates.title ?? existing.title,
+        Author: updates.author ?? existing.author,
+        Primary_Shelf: updates.primaryShelf ?? existing.primaryShelf,
+        Shelf_Code: updates.shelfCode ?? existing.shelfCode,
+        Tags: updates.tags ? updates.tags.join(', ') : existing.tags.join(', '),
+        Use_Status: updates.useStatus ?? existing.useStatus,
+        ISBN: updates.isbn ?? existing.isbn ?? '',
+        Year: updates.year ?? existing.year ?? '',
+        Publisher: updates.publisher ?? existing.publisher ?? '',
+        Notes: updates.notes ?? existing.notes,
+      },
+    } as Book;
+
+    const updated = {
+      ...state,
+      books: {
+        ...state.books,
+        [bookId]: nextBook,
+      },
+    };
+
+    if (updates.shelfCode && updates.shelfCode !== existing.shelfCode) {
+      const shelves = { ...updated.shelves };
+      shelves[existing.shelfCode] = shelves[existing.shelfCode].filter((id) => id !== bookId);
+      shelves[updates.shelfCode as ShelfCode] = [
+        bookId,
+        ...shelves[updates.shelfCode as ShelfCode],
+      ];
+      updated.shelves = shelves;
+    }
+
+    setPresent(updated);
+  };
+
+  const handleDelete = (bookId: string) => {
+    const confirmDelete = window.confirm('Delete this book?');
+    if (!confirmDelete) {
+      return;
+    }
+    const shelves = { ...state.shelves };
+    (Object.keys(shelves) as ShelfCode[]).forEach((code) => {
+      shelves[code] = shelves[code].filter((id) => id !== bookId);
+    });
+    const { [bookId]: _, ...restBooks } = state.books;
+    setPresent({ ...state, books: restBooks, shelves });
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      next.delete(bookId);
+      return next;
+    });
+    if (activeBookId === bookId) {
+      setActiveBookId(null);
+    }
+  };
+
+  const moveWithinShelf = (bookId: string, shelf: ShelfCode, targetIndex: number) => {
+    const shelfIds = state.shelves[shelf];
+    const currentIndex = shelfIds.indexOf(bookId);
+    if (currentIndex === -1 || currentIndex === targetIndex) {
+      return;
+    }
+    const updatedShelf = arrayMove(shelfIds, currentIndex, targetIndex);
+    setPresent({ ...state, shelves: { ...state.shelves, [shelf]: updatedShelf } });
+  };
+
+  const moveToShelf = (bookId: string, targetShelf: ShelfCode, index: number) => {
+    const sourceShelf = findShelfForBook(bookId, state.shelves);
+    if (!sourceShelf) {
+      return;
+    }
+    const shelves = { ...state.shelves };
+    shelves[sourceShelf] = shelves[sourceShelf].filter((id) => id !== bookId);
+    const targetList = [...shelves[targetShelf]];
+    const insertIndex = Math.min(Math.max(index, 0), targetList.length);
+    targetList.splice(insertIndex, 0, bookId);
+    shelves[targetShelf] = targetList;
+
+    const book = state.books[bookId];
+    const updatedBook = {
+      ...book,
+      shelfCode: targetShelf,
+      primaryShelf: `${targetShelf}. ${shelfNameByCode(targetShelf)}`,
+      updatedAt: new Date().toISOString(),
+      raw: {
+        ...book.raw,
+        Primary_Shelf: `${targetShelf}. ${shelfNameByCode(targetShelf)}`,
+        Shelf_Code: targetShelf,
+      },
+    };
+
+    setPresent({
+      ...state,
+      shelves,
+      books: { ...state.books, [bookId]: updatedBook },
+    });
+  };
+
+  const handleAddBook = (book: Book) => {
+    const shelves = { ...state.shelves };
+    shelves[book.shelfCode] = [book.id, ...shelves[book.shelfCode]];
+    const columns = state.columns.length
+      ? state.columns
+      : [
+          'Title',
+          'Author',
+          'Primary_Shelf',
+          'Shelf_Code',
+          'Tags',
+          'Use_Status',
+          'ISBN',
+          'Year',
+          'Publisher',
+          'Notes',
+        ];
+    const raw = Object.fromEntries(columns.map((column) => [column, '']));
+    raw.Title = book.title;
+    raw.Author = book.author;
+    raw.Primary_Shelf = book.primaryShelf;
+    raw.Shelf_Code = book.shelfCode;
+    raw.Tags = book.tags.join(', ');
+    raw.Use_Status = book.useStatus;
+    raw.Notes = book.notes;
+    const newBook = { ...book, raw };
+
+    setPresent({
+      ...state,
+      books: { ...state.books, [book.id]: newBook },
+      shelves,
+      columns,
+    });
+    setSelectedIds(new Set([book.id]));
+    setActiveBookId(book.id);
+  };
+
+  const handleImportCsv = async (file: File) => {
+    const text = await file.text();
+    const parsed = parseLibraryCsv(text);
+    setPresent(parsed, false);
+  };
+
+  const handleImportJson = async (file: File) => {
+    const text = await file.text();
+    const parsed = JSON.parse(text) as LibraryState;
+    setPresent(parsed, false);
+  };
+
+  const handleExportCsv = () => {
+    const csv = exportLibraryCsv(state);
+    downloadFile(csv, 'library-export.csv', 'text/csv');
+  };
+
+  const handleExportJson = () => {
+    const payload = JSON.stringify(state, null, 2);
+    downloadFile(payload, 'library-export.json', 'application/json');
+  };
+
+  const handleReset = async () => {
+    const confirmReset = window.confirm('Reset to library.csv? This will discard local edits.');
+    if (!confirmReset) {
+      return;
+    }
+    clearState();
+    await loadFromCsv();
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = String(event.active.id);
+    const ids = selectedIds.has(activeId) ? getOrderedSelection(state.shelves, selectedIds) : [activeId];
+    setDraggingIds(ids);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) {
+      setDraggingIds([]);
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const ids = selectedIds.has(activeId) ? getOrderedSelection(state.shelves, selectedIds) : [activeId];
+
+    const sourceShelf = findShelfForBook(activeId, state.shelves);
+    const targetShelf = isShelfCode(overId)
+      ? (overId as ShelfCode)
+      : findShelfForBook(overId, state.shelves);
+
+    if (!sourceShelf || !targetShelf) {
+      setDraggingIds([]);
+      return;
+    }
+
+    if (sourceShelf === targetShelf && ids.length === 1) {
+      const oldIndex = state.shelves[sourceShelf].indexOf(activeId);
+      const newIndex = isShelfCode(overId)
+        ? state.shelves[sourceShelf].length - 1
+        : state.shelves[sourceShelf].indexOf(overId);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const updatedShelf = arrayMove(state.shelves[sourceShelf], oldIndex, newIndex);
+        setPresent({ ...state, shelves: { ...state.shelves, [sourceShelf]: updatedShelf } });
+      }
+      setDraggingIds([]);
+      return;
+    }
+
+    const shelves = { ...state.shelves };
+    const orderedIds = ids.filter((id) => state.books[id]);
+    const targetList = shelves[targetShelf].filter((id) => !orderedIds.includes(id));
+    const insertIndex = isShelfCode(overId)
+      ? targetList.length
+      : Math.max(0, targetList.indexOf(overId));
+
+    (Object.keys(shelves) as ShelfCode[]).forEach((code) => {
+      shelves[code] = shelves[code].filter((id) => !orderedIds.includes(id));
+    });
+
+    const updatedTarget = [...targetList];
+    updatedTarget.splice(insertIndex, 0, ...orderedIds);
+    shelves[targetShelf] = updatedTarget;
+
+    let updatedBooks = state.books;
+    if (sourceShelf !== targetShelf) {
+      updatedBooks = { ...state.books };
+      orderedIds.forEach((id) => {
+        const book = updatedBooks[id];
+        updatedBooks[id] = {
+          ...book,
+          shelfCode: targetShelf,
+          primaryShelf: `${targetShelf}. ${shelfNameByCode(targetShelf)}`,
+          updatedAt: new Date().toISOString(),
+          raw: {
+            ...book.raw,
+            Primary_Shelf: `${targetShelf}. ${shelfNameByCode(targetShelf)}`,
+            Shelf_Code: targetShelf,
+          },
+        };
+      });
+    }
+
+    setPresent({
+      ...state,
+      shelves,
+      books: updatedBooks,
+    });
+    setDraggingIds([]);
+  };
+
+  const handleDragCancel = () => setDraggingIds([]);
+
+  const activeBook = activeBookId ? state.books[activeBookId] : null;
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">
+        <header className="space-y-2">
+<<<<<<< ours
+          <h1 className="text-2xl font-semibold">Visual Bookshelf</h1>
+          <p className="text-sm text-slate-400">
+=======
+          <h1 className="text-3xl font-bold uppercase tracking-[0.4em]">Visual Bookshelf</h1>
+          <p className="text-sm uppercase tracking-widest text-slate-400">
+>>>>>>> theirs
+            Drag, drop, and edit your library. Changes are saved locally.
+          </p>
+        </header>
+        <Toolbar
+          search={search}
+          onSearchChange={setSearch}
+          filterShelf={filterShelf}
+          onFilterShelfChange={setFilterShelf}
+          filterStatus={filterStatus}
+          onFilterStatusChange={setFilterStatus}
+          view={view}
+          onViewChange={setView}
+          onAddBook={() => setShowAddModal(true)}
+          onExportCsv={handleExportCsv}
+          onExportJson={handleExportJson}
+          onImportCsv={handleImportCsv}
+          onImportJson={handleImportJson}
+          onReset={handleReset}
+          useStatuses={useStatuses}
+          onToggleAuthor={() => setShowAuthor((value) => !value)}
+          showAuthor={showAuthor}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+<<<<<<< ours
+=======
+          booksPerRow={booksPerRow}
+          onBooksPerRowChange={(value) =>
+            setBooksPerRow(Math.min(30, Math.max(4, value || 4)))
+          }
+>>>>>>> theirs
+        />
+        {view === 'bookcase' ? (
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="space-y-4">
+              {SHELVES.map((shelf) => (
+                <ShelfRow
+                  key={shelf.code}
+                  shelfCode={shelf.code}
+                  shelfLabel={shelf.name}
+                  bookIds={filteredShelves[shelf.code]}
+                  books={state.books}
+                  selectedIds={selectedIds}
+                  showAuthor={showAuthor}
+                  onBookClick={handleBookClick}
+                  onBookOpen={handleBookOpen}
+                  onBookKeyDown={handleBookKeyDown}
+<<<<<<< ours
+=======
+                  booksPerRow={booksPerRow}
+>>>>>>> theirs
+                />
+              ))}
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {draggingIds.length > 0 ? (
+                <div className="flex gap-2">
+                  {draggingIds.slice(0, 3).map((id) => {
+                    const book = state.books[id];
+                    return (
+                      <div
+                        key={id}
+                        className="h-32 w-10 rounded-md border border-slate-700 bg-slate-800 text-[0.6rem] text-slate-200"
+                      >
+                        <span className="flex h-full items-center justify-center" style={{ writingMode: 'vertical-rl' }}>
+                          {book.title}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {draggingIds.length > 3 ? (
+                    <div className="flex h-32 items-center text-xs text-slate-300">
+                      +{draggingIds.length - 3} more
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        ) : (
+          <TableView
+            books={Object.values(state.books).filter(isVisible)}
+            onRowClick={(bookId) => {
+              setActiveBookId(bookId);
+              setSelectedIds(new Set([bookId]));
+            }}
+          />
+        )}
+      </div>
+      <SidePanel
+        book={activeBook}
+        isOpen={Boolean(activeBookId)}
+        onClose={() => setActiveBookId(null)}
+        onSave={applyBookUpdate}
+        onDelete={handleDelete}
+        useStatuses={useStatuses}
+      />
+      <AddBookModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddBook}
+      />
+    </div>
+  );
+};
+
+const downloadFile = (content: string, filename: string, type: string) => {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const isShelfCode = (value: string): value is ShelfCode =>
+  ['I', 'II', 'III', 'IV', 'V', 'VI'].includes(value);
+
+const findShelfForBook = (bookId: string, shelves: Record<ShelfCode, string[]>) => {
+  return (Object.keys(shelves) as ShelfCode[]).find((code) => shelves[code].includes(bookId));
+};
+
+const getOrderedSelection = (shelves: Record<ShelfCode, string[]>, selected: Set<string>) => {
+  const ordered: string[] = [];
+  (Object.keys(shelves) as ShelfCode[]).forEach((code) => {
+    shelves[code].forEach((id) => {
+      if (selected.has(id)) {
+        ordered.push(id);
+      }
+    });
+  });
+  return ordered;
+};
+
+const useHistoryState = () => {
+  const { state, setPresent, undo, redo, canUndo, canRedo } = useHistory<LibraryState>(EMPTY_STATE);
+  return { state: state.present, setPresent, undo, redo, canUndo, canRedo };
+};
+
+export default App;

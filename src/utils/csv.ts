@@ -1,139 +1,102 @@
-import Papa from 'papaparse';
-import type { Book, LibraryState, ShelfCode } from '../types/library';
-import { SHELVES } from '../types/library';
-import { inferShelfFromPrimary, normalizeShelfCode } from './shelves';
-import { uniqueIdFromFields } from './ids';
+import type { Book } from '../types/library';
 
-const requiredColumns = [
-  'Title',
-  'Author',
-  'Primary_Shelf',
-  'Shelf_Code',
-  'Tags',
-  'Use_Status',
-  'ISBN',
-  'Year',
-  'Publisher',
-  'Notes',
-];
+const trimValue = (value: string | undefined) => value?.trim() ?? '';
 
-const trimValue = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : '';
-
-const ensureColumns = (columns: string[]) => {
-  const merged = [...columns];
-  requiredColumns.forEach((column) => {
-    if (!merged.includes(column)) {
-      merged.push(column);
+const parseCsvLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      const nextChar = line[i + 1];
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
     }
-  });
-  return merged;
+  }
+  result.push(current);
+  return result;
 };
 
-export const parseLibraryCsv = (csvText: string): LibraryState => {
-  const parsed = Papa.parse<Record<string, string>>(csvText, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  const columns = ensureColumns(parsed.meta.fields ?? []);
-  const shelves: Record<ShelfCode, string[]> = {
-    I: [],
-    II: [],
-    III: [],
-    IV: [],
-    V: [],
-    VI: [],
-  };
-  const books: Record<string, Book> = {};
-  const seenIds = new Set<string>();
-
-  (parsed.data ?? []).forEach((row, index) => {
-    const title = trimValue(row.Title || row.title || row['Book Title']);
-    const author = trimValue(row.Author || row.author);
-    const primaryShelf =
-      trimValue(row.Primary_Shelf || row.primary_shelf) ||
-      trimValue(row.Shelf || row.shelf) ||
-      SHELVES[0].name;
-    const shelfCode = normalizeShelfCode(
-      trimValue(row.Shelf_Code) || inferShelfFromPrimary(primaryShelf),
-    );
-
-    const idBase = uniqueIdFromFields([
-      title,
-      author,
-      trimValue(row.ISBN || row.ISBN_13 || row.isbn),
-      String(index),
-    ]);
-    let id = idBase;
-    let suffix = 1;
-    while (seenIds.has(id)) {
-      id = `${idBase}-${suffix}`;
-      suffix += 1;
+export const parseCsvText = (
+  csvText: string,
+): { rows: Record<string, string>[]; columns: string[] } => {
+  const lines = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const dataLines = lines.filter((line) => line.trim().length > 0);
+  if (dataLines.length === 0) {
+    return { rows: [], columns: [] };
+  }
+  const columns = parseCsvLine(dataLines[0]).map((column, index) => {
+    const trimmed = column.trim();
+    if (index === 0) {
+      return trimmed.replace(/^\uFEFF/, '');
     }
-    seenIds.add(id);
-
-    const now = new Date().toISOString();
-    const tags = trimValue(row.Tags || row.tags)
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-
-    const book: Book = {
-      id,
-      title: title || 'Untitled',
-      author,
-      shelfCode,
-      primaryShelf,
-      tags,
-      useStatus: trimValue(row.Use_Status || row.use_status),
-      notes: trimValue(row.Notes || row.notes),
-      isbn: trimValue(row.ISBN || row.ISBN_13 || row.isbn),
-      year: trimValue(row.Year || row.Publish_Year || row.year),
-      publisher: trimValue(row.Publisher || row.publisher),
-      pageCount: trimValue(row.Page_Count || row.page_count),
-      createdAt: now,
-      updatedAt: now,
-      raw: Object.fromEntries(
-        columns.map((column) => [column, trimValue(row[column])]),
-      ),
-    };
-
-    book.raw.Title = book.title;
-    book.raw.Author = book.author;
-    book.raw.Primary_Shelf = book.primaryShelf;
-    book.raw.Shelf_Code = book.shelfCode;
-    book.raw.Tags = book.tags.join(', ');
-    book.raw.Use_Status = book.useStatus;
-    book.raw.ISBN = book.isbn ?? '';
-    book.raw.Year = book.year ?? '';
-    book.raw.Publisher = book.publisher ?? '';
-    book.raw.Notes = book.notes;
-
-    books[id] = book;
-    shelves[shelfCode].push(id);
+    return trimmed;
   });
+  const rows: Record<string, string>[] = [];
 
-  return { books, shelves, columns };
+  for (let i = 1; i < dataLines.length; i += 1) {
+    const values = parseCsvLine(dataLines[i]);
+    const row: Record<string, string> = {};
+    columns.forEach((column, index) => {
+      row[column] = trimValue(values[index] ?? '');
+    });
+    rows.push(row);
+  }
+
+  return { rows, columns };
 };
 
-export const exportLibraryCsv = (state: LibraryState): string => {
-  const rows = Object.values(state.books).map((book) => {
-    const raw = { ...book.raw };
-    raw.Title = book.title;
-    raw.Author = book.author;
-    raw.Primary_Shelf = book.primaryShelf;
-    raw.Shelf_Code = book.shelfCode;
-    raw.Tags = book.tags.join(', ');
-    raw.Use_Status = book.useStatus;
-    raw.ISBN = book.isbn ?? '';
-    raw.Year = book.year ?? '';
-    raw.Publisher = book.publisher ?? '';
-    raw.Notes = book.notes;
-    return raw;
-  });
+const quoteValue = (value: string) => {
+  if (value.includes('"')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  if (value.includes(',') || value.includes('\n')) {
+    return `"${value}"`;
+  }
+  return value;
+};
 
-  return Papa.unparse(rows, {
-    columns: state.columns,
+export const exportBooksToCsv = (books: Book[], columns: string[]): string => {
+  const resolvedColumns =
+    columns.length > 0 ? columns : Array.from(new Set(books.flatMap((book) => Object.keys(book.raw))));
+  const header = resolvedColumns.join(',');
+  const lines = books.map((book) => {
+    const row = { ...book.raw };
+    row.Title = book.title ?? row.Title ?? '';
+    row.Author = book.author ?? row.Author ?? '';
+    row.Publisher = book.publisher ?? row.Publisher ?? '';
+    row.Language = book.language ?? row.Language ?? '';
+    row.Format = book.format ?? row.Format ?? '';
+    row.Confidence = book.confidence ?? row.Confidence ?? '';
+    row.Notes = book.notes ?? row.Notes ?? '';
+    row.Publish_Year = book.publishYear ?? row.Publish_Year ?? '';
+    row.Page_Count = book.pageCount ?? row.Page_Count ?? '';
+    row.Subjects = book.subjects ? book.subjects.join(', ') : row.Subjects ?? '';
+    row.Tags = book.tags ? book.tags.join(', ') : row.Tags ?? '';
+    row.Use_Status = book.useStatus ?? row.Use_Status ?? '';
+    row.Source = book.source ?? row.Source ?? '';
+    row.ISBN_13 = book.isbn13 ?? row.ISBN_13 ?? '';
+    row.OpenLibrary_OLID = book.olid ?? row.OpenLibrary_OLID ?? '';
+    row.Cover_S = book.coverS ?? row.Cover_S ?? '';
+    row.Cover_M = book.coverM ?? row.Cover_M ?? '';
+    row.Cover_L = book.coverL ?? row.Cover_L ?? '';
+    row.Primary_Shelf = book.primaryShelf ?? row.Primary_Shelf ?? '';
+    resolvedColumns.forEach((column) => {
+      if (!(column in row)) {
+        row[column] = '';
+      }
+    });
+    return resolvedColumns.map((column) => quoteValue(row[column] ?? '')).join(',');
   });
+  return [header, ...lines].join('\n');
 };

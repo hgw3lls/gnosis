@@ -1,235 +1,184 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
-import BookcaseView from './components/BookcaseView';
-import type { Book, Bookcase, LibraryState, Shelf } from './types/bookcase';
-import { parseLibraryCsv } from './utils/csv';
-
-const FALLBACK_BOOKS: Book[] = [
-  { id: 'fallback-1', title: 'Atlas of Concrete', author: 'R. Kline' },
-  { id: 'fallback-2', title: 'Raw Typography', author: 'L. Serra' },
-  { id: 'fallback-3', title: 'Steel & Paper', author: 'M. Osei' },
-  { id: 'fallback-4', title: 'Brutal Forms', author: 'A. Patel' },
-  { id: 'fallback-5', title: 'Monolith', author: 'J. Cho' },
-  { id: 'fallback-6', title: 'Index of Space', author: 'K. Watanabe' },
-  { id: 'fallback-7', title: 'Hard Lines', author: 'E. Novak' },
-  { id: 'fallback-8', title: 'Found Objects', author: 'S. Adeyemi' },
-  { id: 'fallback-9', title: 'Public Matter', author: 'D. Nguyen' },
-  { id: 'fallback-10', title: 'Black Baseline', author: 'T. Ruiz' },
-  { id: 'fallback-11', title: 'Static Noise', author: 'C. Long' },
-  { id: 'fallback-12', title: 'Edge Study', author: 'P. Ibrahim' },
-];
-
-const DEFAULT_SHELF_COUNT = 4;
-const MIN_SHELVES = 1;
-const MAX_SHELVES = 12;
-const STORAGE_KEY = 'gnosis-library-state';
-
-type DragPayload = {
-  bookId: string;
-  fromShelfId: string;
-  fromIndex: number;
-};
+import Bookcase from './components/Bookcase';
+import LibrarySwitcher from './components/LibrarySwitcher';
+import type {
+  AppState,
+  Book,
+  DragPayload,
+  LibraryDefinition,
+  LibraryLayout,
+  MultiCategoryMode,
+} from './types/library';
+import { parseCsvText, exportBooksToCsv } from './utils/csv';
+import { downloadBlob } from './utils/download';
+import { buildLayoutForLibrary, rebuildStateFromCsv, reflowBookcaseShelves } from './utils/libraryBuild';
+import { clearState, loadState, saveState } from './utils/storage';
 
 type DropIndicator = { shelfId: string; index: number } | null;
 
-const createId = (prefix: string) => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
+const buildBooksFromCsv = (csvText: string): { booksById: Record<string, Book>; columns: string[] } => {
+  const { rows, columns } = parseCsvText(csvText);
+  const booksById: Record<string, Book> = {};
+  const seenIds = new Set<string>();
+
+  rows.forEach((row, index) => {
+    const getValue = (key: string) => row[key] ?? '';
+    const idCandidate = getValue('HoldingID') || getValue('OriginalID');
+    let id = idCandidate || `${getValue('Title')}-${getValue('Author')}-${index}`;
+    if (id === '') {
+      id = `book-${index}`;
+    }
+    let suffix = 1;
+    while (seenIds.has(id)) {
+      id = `${id}-${suffix}`;
+      suffix += 1;
+    }
+    seenIds.add(id);
+
+    const tagsRaw = getValue('Tags');
+    const subjectsRaw = getValue('Subjects');
+    const tags = tagsRaw
+      .split(/[;,]/)
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    const subjects = subjectsRaw
+      .split(/[;,]/)
+      .map((subject) => subject.trim())
+      .filter(Boolean);
+
+    const book: Book = {
+      id,
+      title: getValue('Title') || 'Untitled',
+      author: getValue('Author') || undefined,
+      publisher: getValue('Publisher') || undefined,
+      language: getValue('Language') || undefined,
+      format: getValue('Format') || undefined,
+      confidence: getValue('Confidence') || undefined,
+      notes: getValue('Notes') || undefined,
+      publishYear: getValue('Publish_Year') || undefined,
+      pageCount: getValue('Page_Count') || undefined,
+      subjects,
+      tags,
+      useStatus: getValue('Use_Status') || undefined,
+      source: getValue('Source') || undefined,
+      isbn13: getValue('ISBN_13') || undefined,
+      olid: getValue('OpenLibrary_OLID') || undefined,
+      coverS: getValue('Cover_S') || undefined,
+      coverM: getValue('Cover_M') || undefined,
+      coverL: getValue('Cover_L') || undefined,
+      primaryShelf: getValue('Primary_Shelf') || undefined,
+      rowOrder: index,
+      raw: { ...row },
+    };
+    booksById[id] = book;
+  });
+
+  return { booksById, columns };
+};
+
+const validateAppState = (state: AppState | null): state is AppState => {
+  if (!state) {
+    return false;
   }
-  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+  return Boolean(
+    state.activeLibraryId &&
+      state.booksById &&
+      state.libraries &&
+      state.layoutsByLibraryId &&
+      state.csvColumns,
+  );
 };
-
-const createShelves = (count: number): { shelfIds: string[]; shelvesById: Record<string, Shelf> } => {
-  const shelfIds = Array.from({ length: count }, () => createId('shelf'));
-  const shelvesById: Record<string, Shelf> = {};
-  shelfIds.forEach((id) => {
-    shelvesById[id] = { id, bookIds: [] };
-  });
-  return { shelfIds, shelvesById };
-};
-
-const buildSeedState = (books: Book[], shelfCount = DEFAULT_SHELF_COUNT): LibraryState => {
-  const { shelfIds, shelvesById } = createShelves(shelfCount);
-  const booksById = Object.fromEntries(books.map((book) => [book.id, book]));
-  books.forEach((book, index) => {
-    const shelfId = shelfIds[index % shelfIds.length];
-    shelvesById[shelfId].bookIds.push(book.id);
-  });
-
-  const bookcase: Bookcase = {
-    id: createId('bookcase'),
-    name: 'MAIN',
-    shelfIds,
-  };
-
-  return { booksById, shelvesById, bookcases: [bookcase] };
-};
-
-const fallbackState = buildSeedState(FALLBACK_BOOKS);
 
 const App = () => {
-  const [libraryState, setLibraryState] = useState<LibraryState>(fallbackState);
-  const [seedBooks, setSeedBooks] = useState<Book[]>(FALLBACK_BOOKS);
-  const [selectedBookcaseId, setSelectedBookcaseId] = useState<string | null>(
-    fallbackState.bookcases[0]?.id ?? null,
-  );
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
-  const [dragging, setDragging] = useState<DragPayload | null>(null);
+  const [appState, setAppState] = useState<AppState | null>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator>(null);
+  const [draggingPlacementId, setDraggingPlacementId] = useState<string | null>(null);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [selectedBookcaseId, setSelectedBookcaseId] = useState<string | null>(null);
+  const [showCreateLibrary, setShowCreateLibrary] = useState(false);
+  const [newLibraryName, setNewLibraryName] = useState('');
+  const [newLibraryField, setNewLibraryField] = useState<LibraryDefinition['categorize']>('Primary_Shelf');
+  const [newLibraryMode, setNewLibraryMode] = useState<MultiCategoryMode>('duplicate');
+  const csvInputRef = useRef<HTMLInputElement | null>(null);
+  const jsonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    let usedStored = false;
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as LibraryState;
-        if (parsed.bookcases?.length) {
-          setLibraryState(parsed);
-          setSelectedBookcaseId(parsed.bookcases[0]?.id ?? null);
-          usedStored = true;
-        }
-      } catch {
-        // ignore
-      }
+    const stored = loadState();
+    if (validateAppState(stored)) {
+      setAppState(stored);
+      return;
     }
-
-    const loadBooks = async () => {
-      try {
-        const response = await fetch('/library.csv');
-        if (!response.ok) {
-          throw new Error('Missing CSV');
-        }
-        const text = await response.text();
-        const parsed = parseLibraryCsv(text);
-        const libraryBooks = Object.values(parsed.books).map((book) => ({
-          id: book.id,
-          title: book.title || 'Untitled',
-          author: book.author || undefined,
-        }));
-        if (libraryBooks.length) {
-          setSeedBooks(libraryBooks);
-          if (!usedStored) {
-            const seeded = buildSeedState(libraryBooks);
-            setLibraryState(seeded);
-            setSelectedBookcaseId(seeded.bookcases[0]?.id ?? null);
-          }
-          return;
-        }
-      } catch {
-        // fallback handled below
-      }
-      if (!usedStored) {
-        setLibraryState(fallbackState);
-      }
+    const loadCsv = async () => {
+      const response = await fetch('/library.csv');
+      const text = await response.text();
+      const { booksById, columns } = buildBooksFromCsv(text);
+      const nextState = rebuildStateFromCsv(booksById, columns);
+      setAppState(nextState);
     };
-
-    loadBooks();
+    loadCsv();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(libraryState));
-  }, [libraryState]);
-
-  const selectedBookcase = useMemo(
-    () => libraryState.bookcases.find((bookcase) => bookcase.id === selectedBookcaseId) ?? null,
-    [libraryState.bookcases, selectedBookcaseId],
-  );
-
-  const selectedBook = selectedBookId ? libraryState.booksById[selectedBookId] : null;
-
-  const detailBody = useMemo(() => {
-    if (!selectedBook) {
-      return '';
+    if (appState) {
+      saveState(appState);
     }
-    return `Record retained in the GNOSIS archive. This spine references catalog data captured for “${selectedBook.title}”.`;
-  }, [selectedBook]);
+  }, [appState]);
 
-  const handleAddBookcase = () => {
-    const newBookcaseId = createId('bookcase');
-    setLibraryState((prev) => {
-      const nextIndex = prev.bookcases.length + 1;
-      const { shelfIds, shelvesById } = createShelves(DEFAULT_SHELF_COUNT);
-      const newBookcase: Bookcase = {
-        id: newBookcaseId,
-        name: `BOOKCASE ${nextIndex}`,
-        shelfIds,
-      };
-      return {
-        ...prev,
-        shelvesById: { ...prev.shelvesById, ...shelvesById },
-        bookcases: [...prev.bookcases, newBookcase],
-      };
-    });
-    setSelectedBookcaseId(newBookcaseId);
-  };
-
-  const handleShelfCountChange = (value: number) => {
-    if (!selectedBookcaseId) {
-      return;
+  const activeLayout = useMemo(() => {
+    if (!appState) {
+      return null;
     }
-    const nextCount = Math.max(MIN_SHELVES, Math.min(MAX_SHELVES, value || DEFAULT_SHELF_COUNT));
+    return appState.layoutsByLibraryId[appState.activeLibraryId] ?? null;
+  }, [appState]);
 
-    setLibraryState((prev) => {
-      const bookcase = prev.bookcases.find((item) => item.id === selectedBookcaseId);
+  const handleShelfCountChange = (bookcaseId: string, nextCount: number) => {
+    setAppState((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const layout = prev.layoutsByLibraryId[prev.activeLibraryId];
+      if (!layout) {
+        return prev;
+      }
+      const bookcase = layout.bookcases.find((item) => item.id === bookcaseId);
       if (!bookcase) {
         return prev;
       }
-      const currentCount = bookcase.shelfIds.length;
-      if (currentCount === nextCount) {
-        return prev;
-      }
-
-      const shelvesById = { ...prev.shelvesById };
-      let nextShelfIds = [...bookcase.shelfIds];
-
-      if (nextCount > currentCount) {
-        const { shelfIds, shelvesById: newShelves } = createShelves(nextCount - currentCount);
-        nextShelfIds = [...nextShelfIds, ...shelfIds];
-        Object.assign(shelvesById, newShelves);
-      } else {
-        const keptShelfIds = nextShelfIds.slice(0, nextCount);
-        const removedShelfIds = nextShelfIds.slice(nextCount);
-        const mergedBookIds = removedShelfIds.flatMap((id) => shelvesById[id]?.bookIds ?? []);
-        const lastShelfId = keptShelfIds[keptShelfIds.length - 1];
-        const lastShelf = shelvesById[lastShelfId];
-        shelvesById[lastShelfId] = {
-          ...lastShelf,
-          bookIds: [...lastShelf.bookIds, ...mergedBookIds],
-        };
-        removedShelfIds.forEach((id) => {
-          delete shelvesById[id];
-        });
-        nextShelfIds = keptShelfIds;
-      }
-
-      const bookcases = prev.bookcases.map((item) =>
-        item.id === bookcase.id ? { ...item, shelfIds: nextShelfIds } : item,
+      const { bookcase: updatedBookcase, shelvesById } = reflowBookcaseShelves(
+        bookcase,
+        layout.shelvesById,
+        nextCount,
       );
-
-      return { ...prev, shelvesById, bookcases };
+      const nextLayout: LibraryLayout = {
+        ...layout,
+        bookcases: layout.bookcases.map((item) =>
+          item.id === bookcaseId ? updatedBookcase : item,
+        ),
+        shelvesById,
+      };
+      return {
+        ...prev,
+        layoutsByLibraryId: { ...prev.layoutsByLibraryId, [layout.libraryId]: nextLayout },
+      };
     });
   };
 
-  const handleReset = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    const seeded = buildSeedState(seedBooks);
-    setLibraryState(seeded);
-    setSelectedBookcaseId(seeded.bookcases[0]?.id ?? null);
-    setSelectedBookId(null);
-  };
-
-  const handleDragStart = (bookId: string, fromShelfId: string, fromIndex: number) => {
-    setDragging({ bookId, fromShelfId, fromIndex });
+  const handleDragStart = (payload: DragPayload) => {
+    setDraggingPlacementId(payload.placementId ?? payload.bookId);
   };
 
   const handleDragEnd = () => {
-    setDragging(null);
+    setDraggingPlacementId(null);
     setDropIndicator(null);
   };
 
   const handleDragOverShelf = (event: DragEvent<HTMLDivElement>, shelfId: string) => {
     event.preventDefault();
-    const shelf = libraryState.shelvesById[shelfId];
+    if (!activeLayout) {
+      return;
+    }
+    const shelf = activeLayout.shelvesById[shelfId];
     if (!shelf) {
       return;
     }
@@ -243,19 +192,22 @@ const App = () => {
   };
 
   const handleDragOverSpine = (
-    event: DragEvent<HTMLDivElement>,
+    event: DragEvent<HTMLButtonElement>,
     shelfId: string,
     index: number,
   ) => {
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
-    const midPoint = rect.left + rect.width / 2;
-    const nextIndex = event.clientX < midPoint ? index : index + 1;
+    const midpoint = rect.left + rect.width / 2;
+    const nextIndex = event.clientX < midpoint ? index : index + 1;
     setDropIndicator({ shelfId, index: nextIndex });
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>, targetShelfId: string) => {
     event.preventDefault();
+    if (!appState || !activeLayout) {
+      return;
+    }
     const payloadRaw = event.dataTransfer.getData('application/json');
     if (!payloadRaw) {
       return;
@@ -266,148 +218,333 @@ const App = () => {
     } catch {
       return;
     }
+    if (payload.fromLibraryId !== appState.activeLibraryId) {
+      return;
+    }
+    const placementId = payload.placementId ?? payload.bookId;
 
-    setLibraryState((prev) => {
-      const sourceShelf = prev.shelvesById[payload.fromShelfId];
-      const targetShelf = prev.shelvesById[targetShelfId];
+    setAppState((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const layout = prev.layoutsByLibraryId[prev.activeLibraryId];
+      if (!layout) {
+        return prev;
+      }
+      const sourceShelf = layout.shelvesById[payload.fromShelfId];
+      const targetShelf = layout.shelvesById[targetShelfId];
       if (!sourceShelf || !targetShelf) {
         return prev;
       }
-
-      const nextShelves = { ...prev.shelvesById };
-      const filteredSource = sourceShelf.bookIds.filter((id) => id !== payload.bookId);
-      const targetIds = payload.fromShelfId === targetShelfId
-        ? [...filteredSource]
-        : [...targetShelf.bookIds.filter((id) => id !== payload.bookId)];
+      const nextShelves = { ...layout.shelvesById };
+      const filteredSource = sourceShelf.bookIds.filter((id) => id !== placementId);
+      const baseTarget =
+        payload.fromShelfId === targetShelfId
+          ? [...filteredSource]
+          : [...targetShelf.bookIds.filter((id) => id !== placementId)];
       let insertIndex = Math.max(
         0,
         Math.min(
           dropIndicator && dropIndicator.shelfId === targetShelfId
             ? dropIndicator.index
-            : targetIds.length,
-          targetIds.length,
+            : baseTarget.length,
+          baseTarget.length,
         ),
       );
-
       if (payload.fromShelfId === targetShelfId && insertIndex > payload.fromIndex) {
         insertIndex -= 1;
       }
-
-      targetIds.splice(insertIndex, 0, payload.bookId);
+      baseTarget.splice(insertIndex, 0, placementId);
 
       nextShelves[payload.fromShelfId] = {
         ...sourceShelf,
-        bookIds: payload.fromShelfId === targetShelfId ? targetIds : filteredSource,
+        bookIds: payload.fromShelfId === targetShelfId ? baseTarget : filteredSource,
       };
       if (payload.fromShelfId !== targetShelfId) {
-        nextShelves[targetShelfId] = { ...targetShelf, bookIds: targetIds };
+        nextShelves[targetShelfId] = { ...targetShelf, bookIds: baseTarget };
       }
 
-      return { ...prev, shelvesById: nextShelves };
+      return {
+        ...prev,
+        layoutsByLibraryId: {
+          ...prev.layoutsByLibraryId,
+          [layout.libraryId]: { ...layout, shelvesById: nextShelves },
+        },
+      };
     });
 
     setDropIndicator(null);
-    setDragging(null);
+    setDraggingPlacementId(null);
   };
 
-  const itemCount = Object.keys(libraryState.booksById).length;
+  const handleReset = async () => {
+    clearState();
+    const response = await fetch('/library.csv');
+    const text = await response.text();
+    const { booksById, columns } = buildBooksFromCsv(text);
+    const nextState = rebuildStateFromCsv(booksById, columns);
+    setAppState(nextState);
+    setSelectedBookId(null);
+    setSelectedBookcaseId(null);
+  };
+
+  const handleExportJson = () => {
+    if (!appState) {
+      return;
+    }
+    downloadBlob('gnosis-library.json', JSON.stringify(appState, null, 2), 'application/json');
+  };
+
+  const handleImportJson = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as AppState;
+        if (!validateAppState(parsed)) {
+          throw new Error('Invalid file');
+        }
+        setAppState(parsed);
+      } catch {
+        window.alert('Invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExportCsv = () => {
+    if (!appState) {
+      return;
+    }
+    const books = Object.values(appState.booksById);
+    const csv = exportBooksToCsv(books, appState.csvColumns);
+    downloadBlob('gnosis-library.csv', csv, 'text/csv');
+  };
+
+  const handleImportCsv = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result);
+      const { booksById, columns } = buildBooksFromCsv(text);
+      const nextState = rebuildStateFromCsv(booksById, columns);
+      setAppState(nextState);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCreateLibrary = () => {
+    if (!appState || newLibraryName.trim() === '') {
+      return;
+    }
+    const id = `library-${Date.now()}`;
+    const newLibrary: LibraryDefinition = {
+      id,
+      name: newLibraryName.trim(),
+      categorize: newLibraryField,
+      ...(newLibraryField === 'Tags' ? { multiCategoryMode: newLibraryMode } : {}),
+    };
+    const nextLibraries = [...appState.libraries, newLibrary];
+    const nextLayouts = {
+      ...appState.layoutsByLibraryId,
+      [newLibrary.id]: buildLayoutForLibrary(appState.booksById, newLibrary),
+    };
+    setAppState({
+      ...appState,
+      libraries: nextLibraries,
+      layoutsByLibraryId: nextLayouts,
+      activeLibraryId: newLibrary.id,
+    });
+    setNewLibraryName('');
+    setNewLibraryField('Primary_Shelf');
+    setNewLibraryMode('duplicate');
+    setShowCreateLibrary(false);
+  };
+
+  if (!appState || !activeLayout) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-12 text-black">
+        <p className="text-xs uppercase tracking-[0.3em]">Loading library...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white px-6 pb-16 pt-12 text-black">
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-2">
-        <h1 className="text-4xl font-semibold uppercase tracking-[0.25em]">Gnosis</h1>
-        <p className="text-sm uppercase tracking-[0.3em]">Archive / Bookcases</p>
+        <h1 className="text-5xl uppercase tracking-[0.4em]">GNOSIS</h1>
+        <p className="text-xs uppercase tracking-[0.4em]">Library</p>
       </header>
 
-      <section className="mx-auto mt-8 w-full max-w-6xl">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-black px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em]">
-          <span>Library</span>
-          <span className="text-center">{itemCount} Items</span>
-          <span>Drag & Drop</span>
+      <section className="mx-auto mt-10 w-full max-w-6xl">
+        <div className="flex flex-col gap-4 border-2 border-black px-4 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <LibrarySwitcher
+              libraries={appState.libraries}
+              activeLibraryId={appState.activeLibraryId}
+              onChange={(libraryId) => {
+                setAppState((prev) => (prev ? { ...prev, activeLibraryId: libraryId } : prev));
+                setSelectedBookId(null);
+                setSelectedBookcaseId(null);
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.3em]">
+              <button
+                type="button"
+                onClick={() => csvInputRef.current?.click()}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Import CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => jsonInputRef.current?.click()}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Import JSON
+              </button>
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                onClick={handleExportJson}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Export JSON
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Reset to CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreateLibrary((prev) => !prev)}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Create Library
+              </button>
+            </div>
+          </div>
+
+          {showCreateLibrary ? (
+            <div className="flex flex-wrap items-end gap-4 border-t-2 border-black pt-4 text-xs uppercase tracking-[0.3em]">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="new-library-name">Name</label>
+                <input
+                  id="new-library-name"
+                  value={newLibraryName}
+                  onChange={(event) => setNewLibraryName(event.target.value)}
+                  className="min-w-[220px] border-2 border-black px-3 py-2 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="new-library-field">Categorize</label>
+                <select
+                  id="new-library-field"
+                  value={newLibraryField}
+                  onChange={(event) =>
+                    setNewLibraryField(event.target.value as LibraryDefinition['categorize'])
+                  }
+                  className="min-w-[200px] border-2 border-black bg-white px-3 py-2 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                >
+                  <option value="Primary_Shelf">Primary Shelf</option>
+                  <option value="Format">Format</option>
+                  <option value="Language">Language</option>
+                  <option value="Source">Source</option>
+                  <option value="Use_Status">Status</option>
+                  <option value="Tags">Tags</option>
+                </select>
+              </div>
+              {newLibraryField === 'Tags' ? (
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="new-library-mode">Tag Mode</label>
+                  <select
+                    id="new-library-mode"
+                    value={newLibraryMode}
+                    onChange={(event) =>
+                      setNewLibraryMode(event.target.value as MultiCategoryMode)
+                    }
+                    className="min-w-[160px] border-2 border-black bg-white px-3 py-2 text-xs uppercase tracking-[0.2em] hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                  >
+                    <option value="duplicate">Duplicate</option>
+                    <option value="first">First</option>
+                    <option value="split">Split</option>
+                  </select>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleCreateLibrary}
+                className="border-2 border-black px-3 py-2 hover:bg-black hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              >
+                Add Library
+              </button>
+            </div>
+          ) : null}
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-4 border-2 border-black px-4 py-3">
-          <button
-            type="button"
-            onClick={() => {
-              handleAddBookcase();
-            }}
-            className="border-2 border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] hover:bg-black hover:text-white"
-          >
-            Add Bookcase
-          </button>
-          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em]">
-            <label htmlFor="shelf-count">Shelves</label>
-            <input
-              id="shelf-count"
-              type="number"
-              min={MIN_SHELVES}
-              max={MAX_SHELVES}
-              value={selectedBookcase?.shelfIds.length ?? DEFAULT_SHELF_COUNT}
-              onChange={(event) => handleShelfCountChange(Number(event.target.value))}
-              className="w-20 border-2 border-black px-2 py-1"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="border-2 border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] hover:bg-black hover:text-white"
-          >
-            Reset Library
-          </button>
-        </div>
+        <input
+          ref={csvInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              handleImportCsv(file);
+            }
+            event.target.value = '';
+          }}
+        />
+        <input
+          ref={jsonInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              handleImportJson(file);
+            }
+            event.target.value = '';
+          }}
+        />
 
         <div className="mt-8 flex flex-col gap-10">
-          {libraryState.bookcases.map((bookcase) => (
-            <BookcaseView
+          {activeLayout.bookcases.map((bookcase) => (
+            <Bookcase
               key={bookcase.id}
               bookcase={bookcase}
-              shelvesById={libraryState.shelvesById}
-              booksById={libraryState.booksById}
-              activeBookId={selectedBookId}
-              draggingBookId={dragging?.bookId}
+              shelvesById={activeLayout.shelvesById}
+              booksById={appState.booksById}
+              libraryId={appState.activeLibraryId}
+              draggingPlacementId={draggingPlacementId}
               dropIndicator={dropIndicator}
-              isSelected={bookcase.id === selectedBookcaseId}
-              onSelectBookcase={setSelectedBookcaseId}
-              onSelectBook={(bookId) => setSelectedBookId(bookId)}
-              onDrop={handleDrop}
-              onDragOverShelf={handleDragOverShelf}
-              onDragOverSpine={handleDragOverSpine}
-              onDragLeaveShelf={handleDragLeaveShelf}
-              onDragStart={(bookId, shelfId, index) => {
-                handleDragStart(bookId, shelfId, index);
+              selectedBookId={selectedBookcaseId === bookcase.id ? selectedBookId : null}
+              onSelectBook={(bookId, bookcaseId) => {
+                setSelectedBookId(bookId);
+                setSelectedBookcaseId(bookcaseId);
               }}
+              onCloseDetail={() => {
+                setSelectedBookId(null);
+                setSelectedBookcaseId(null);
+              }}
+              onShelfCountChange={handleShelfCountChange}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
+              onDragOverShelf={handleDragOverShelf}
+              onDragLeaveShelf={handleDragLeaveShelf}
+              onDrop={handleDrop}
+              onDragOverSpine={handleDragOverSpine}
             />
           ))}
         </div>
-
-        {selectedBook ? (
-          <div className="mt-10 border-2 border-black bg-white p-6 text-black">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em]">Selected Entry</p>
-                <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.2em]">
-                  {selectedBook.title}
-                </h2>
-                <p className="mt-1 text-xs uppercase tracking-[0.2em]">
-                  {selectedBook.author ? `Author: ${selectedBook.author}` : 'Author: Unknown'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBookId(null)}
-                className="border-2 border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] hover:bg-black hover:text-white"
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-6 space-y-2 text-sm">
-              <p className="font-mono uppercase tracking-[0.2em]">Metadata</p>
-              <p>{detailBody}</p>
-            </div>
-          </div>
-        ) : null}
       </section>
     </main>
   );

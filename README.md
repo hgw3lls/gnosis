@@ -21,4 +21,4 @@ npm run dev
 
 - `public/library.csv` is served at runtime
 - `library.csv` in the repo root remains the canonical source of truth
-
+- CSV workflow: update `library.csv` in the repo root, then copy/derive into `public/library.csv` for runtime use
