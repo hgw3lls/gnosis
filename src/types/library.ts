@@ -29,6 +29,10 @@ export type Book = {
   coverM?: string;
   coverL?: string;
   primaryShelf?: string;
+  locationBookcase: string;
+  locationShelf: number;
+  locationPosition: number;
+  locationNote?: string;
   raw: Record<string, string>;
 };
 

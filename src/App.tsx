@@ -18,6 +18,13 @@ import { clearState, loadState, saveState } from './utils/storage';
 
 type DropIndicator = { shelfId: string; index: number } | null;
 
+const locationColumns = [
+  'Location_Bookcase',
+  'Location_Shelf',
+  'Location_Position',
+  'Location_Note',
+];
+
 const buildBooksFromCsv = (
   csvText: string,
 ): { booksById: Record<string, Book>; columns: string[]; rowOrder: string[] } => {
@@ -25,9 +32,20 @@ const buildBooksFromCsv = (
   const booksById: Record<string, Book> = {};
   const seenIds = new Set<string>();
   const rowOrder: string[] = [];
+  const parsedColumns = [...columns];
+
+  locationColumns.forEach((column) => {
+    if (!parsedColumns.includes(column)) {
+      parsedColumns.push(column);
+    }
+  });
 
   rows.forEach((row, index) => {
     const getValue = (key: string) => row[key] ?? '';
+    const parseNumber = (value: string) => {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
     const idCandidate = getValue('HoldingID') || getValue('OriginalID');
     let id = idCandidate || `${getValue('Title')}-${getValue('Author')}-${index}`;
     if (id === '') {
@@ -51,6 +69,23 @@ const buildBooksFromCsv = (
       .split(/[;,]/)
       .map((subject) => subject.trim())
       .filter(Boolean);
+    const locationBookcase = getValue('Location_Bookcase') || 'Primary';
+    const locationShelfRaw = parseNumber(getValue('Location_Shelf'));
+    const locationShelf =
+      locationShelfRaw && locationShelfRaw >= 1 && locationShelfRaw <= 12
+        ? locationShelfRaw
+        : 1;
+    const locationPositionRaw = parseNumber(getValue('Location_Position'));
+    const locationPosition =
+      locationPositionRaw && locationPositionRaw >= 1 ? locationPositionRaw : index + 1;
+    const locationNote = getValue('Location_Note') || '';
+    const raw = {
+      ...row,
+      Location_Bookcase: locationBookcase,
+      Location_Shelf: String(locationShelf),
+      Location_Position: String(locationPosition),
+      Location_Note: locationNote,
+    };
 
     const book: Book = {
       id,
@@ -73,13 +108,16 @@ const buildBooksFromCsv = (
       coverM: getValue('Cover_M') || undefined,
       coverL: getValue('Cover_L') || undefined,
       primaryShelf: getValue('Primary_Shelf') || undefined,
-      raw: { ...row },
+      locationBookcase,
+      locationShelf,
+      locationPosition,
+      locationNote,
+      raw,
     };
     booksById[id] = book;
-    rowOrder.push(id);
   });
 
-  return { booksById, columns, rowOrder };
+  return { booksById, columns: parsedColumns, rowOrder };
 };
 
 const validateAppState = (state: AppState | null): state is AppState => {
@@ -113,6 +151,47 @@ const normalizeStoredState = (state: AppState | null): AppState | null => {
     return null;
   }
   const rowOrder = deriveRowOrder(state.booksById, state.rowOrder);
+  const nextBooksById: Record<string, Book> = { ...state.booksById };
+  rowOrder.forEach((id, index) => {
+    const book = nextBooksById[id];
+    if (!book) {
+      return;
+    }
+    const fallbackPosition = index + 1;
+    const locationBookcase =
+      book.locationBookcase || book.raw?.Location_Bookcase || 'Primary';
+    const locationShelfRaw = Number.parseInt(book.raw?.Location_Shelf ?? '', 10);
+    const locationShelf =
+      Number.isFinite(locationShelfRaw) && locationShelfRaw >= 1 && locationShelfRaw <= 12
+        ? locationShelfRaw
+        : book.locationShelf || 1;
+    const locationPositionRaw = Number.parseInt(book.raw?.Location_Position ?? '', 10);
+    const locationPosition =
+      Number.isFinite(locationPositionRaw) && locationPositionRaw >= 1
+        ? locationPositionRaw
+        : book.locationPosition || fallbackPosition;
+    const locationNote = book.locationNote ?? book.raw?.Location_Note ?? '';
+    nextBooksById[id] = {
+      ...book,
+      locationBookcase,
+      locationShelf,
+      locationPosition,
+      locationNote,
+      raw: {
+        ...book.raw,
+        Location_Bookcase: locationBookcase,
+        Location_Shelf: String(locationShelf),
+        Location_Position: String(locationPosition),
+        Location_Note: locationNote,
+      },
+    };
+  });
+  const csvColumns = [...(state.csvColumns ?? [])];
+  locationColumns.forEach((column) => {
+    if (!csvColumns.includes(column)) {
+      csvColumns.push(column);
+    }
+  });
   const layoutsByLibraryId = Object.fromEntries(
     Object.entries(state.layoutsByLibraryId ?? {}).map(([libraryId, layout]) => [
       libraryId,
@@ -124,8 +203,10 @@ const normalizeStoredState = (state: AppState | null): AppState | null => {
   );
   return {
     ...state,
+    booksById: nextBooksById,
     rowOrder,
     layoutsByLibraryId,
+    csvColumns,
   };
 };
 
@@ -147,7 +228,7 @@ const App = () => {
       const response = await fetch('/library.csv');
       const text = await response.text();
       const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-      const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
+      const nextState = rebuildStateFromCsv({ booksById, rowOrder, columns });
       setAppState(nextState);
     };
 
@@ -251,8 +332,34 @@ const App = () => {
       if (nextLayout === layout) {
         return prev;
       }
+      const nextBooksById = { ...prev.booksById };
+      const bookcaseForShelf = nextLayout.bookcases.find((caseItem) =>
+        caseItem.shelfIds.includes(targetShelfId),
+      );
+      const shelfIndex =
+        bookcaseForShelf?.shelfIds.findIndex((id) => id === targetShelfId) ?? -1;
+      const shelfNumber = shelfIndex >= 0 ? shelfIndex + 1 : 1;
+      const updatedShelf = nextLayout.shelvesById[targetShelfId];
+      updatedShelf?.bookIds.forEach((placementId, index) => {
+        const bookId = getBookIdFromPlacement(placementId);
+        const book = nextBooksById[bookId];
+        if (!book) {
+          return;
+        }
+        nextBooksById[bookId] = {
+          ...book,
+          locationShelf: shelfNumber,
+          locationPosition: index + 1,
+          raw: {
+            ...book.raw,
+            Location_Shelf: String(shelfNumber),
+            Location_Position: String(index + 1),
+          },
+        };
+      });
       return {
         ...prev,
+        booksById: nextBooksById,
         layoutsByLibraryId: {
           ...prev.layoutsByLibraryId,
           [layout.libraryId]: nextLayout,
@@ -264,12 +371,47 @@ const App = () => {
     setDraggingPlacementId(null);
   };
 
+  const handleBookUpdate = (bookId: string, updates: Partial<Book>) => {
+    setAppState((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const book = prev.booksById[bookId];
+      if (!book) {
+        return prev;
+      }
+      const nextBook = { ...book, ...updates, raw: { ...book.raw } };
+      if (updates.locationBookcase !== undefined) {
+        nextBook.locationBookcase = updates.locationBookcase || 'Primary';
+        nextBook.raw.Location_Bookcase = nextBook.locationBookcase;
+      }
+      if (updates.locationShelf !== undefined) {
+        const normalizedShelf = Math.min(12, Math.max(1, updates.locationShelf));
+        nextBook.locationShelf = normalizedShelf;
+        nextBook.raw.Location_Shelf = String(normalizedShelf);
+      }
+      if (updates.locationPosition !== undefined) {
+        const normalizedPosition = Math.max(1, updates.locationPosition);
+        nextBook.locationPosition = normalizedPosition;
+        nextBook.raw.Location_Position = String(normalizedPosition);
+      }
+      if (updates.locationNote !== undefined) {
+        nextBook.locationNote = updates.locationNote;
+        nextBook.raw.Location_Note = updates.locationNote ?? '';
+      }
+      return {
+        ...prev,
+        booksById: { ...prev.booksById, [bookId]: nextBook },
+      };
+    });
+  };
+
   const handleReset = async () => {
     clearState();
     const response = await fetch('/library.csv');
     const text = await response.text();
     const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-    const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
+    const nextState = rebuildStateFromCsv({ booksById, rowOrder, columns, previousState: appState });
     setAppState(nextState);
     setSelectedBookId(null);
     setSelectedBookcaseId(null);
@@ -315,7 +457,7 @@ const App = () => {
     reader.onload = () => {
       const text = String(reader.result);
       const { booksById, columns, rowOrder } = buildBooksFromCsv(text);
-      const nextState = rebuildStateFromCsv(booksById, rowOrder, columns);
+      const nextState = rebuildStateFromCsv({ booksById, rowOrder, columns, previousState: appState });
       setAppState(nextState);
     };
     reader.readAsText(file);
@@ -333,10 +475,12 @@ const App = () => {
       ...(newLibraryField === 'Tags' ? { multiCategoryMode: newLibraryMode } : {}),
     };
     const nextLibraries = [...appState.libraries, newLibrary];
-    const nextLayouts = {
-      ...appState.layoutsByLibraryId,
-      [newLibrary.id]: buildLayouts(appState.booksById, appState.rowOrder, newLibrary),
-    };
+    const nextLayouts = buildLayouts({
+      booksById: appState.booksById,
+      rowOrder: appState.rowOrder,
+      libraries: [...appState.libraries, newLibrary],
+      previousLayouts: appState.layoutsByLibraryId,
+    });
     setAppState({
       ...appState,
       libraries: nextLibraries,
@@ -524,6 +668,7 @@ const App = () => {
                 setSelectedBookId(null);
                 setSelectedBookcaseId(null);
               }}
+              onUpdateBook={handleBookUpdate}
               onShelfCountChange={handleShelfCountChange}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}

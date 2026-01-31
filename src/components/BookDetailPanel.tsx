@@ -3,6 +3,7 @@ import type { Book } from '../types/library';
 type BookDetailPanelProps = {
   book: Book;
   onClose: () => void;
+  onUpdate: (updates: Partial<Book>) => void;
 };
 
 const renderField = (label: string, value?: string | string[]) => {
@@ -18,7 +19,7 @@ const renderField = (label: string, value?: string | string[]) => {
   );
 };
 
-const BookDetailPanel = ({ book, onClose }: BookDetailPanelProps) => {
+const BookDetailPanel = ({ book, onClose, onUpdate }: BookDetailPanelProps) => {
   const cover = book.coverL || book.coverM || book.coverS;
 
   return (
@@ -43,6 +44,54 @@ const BookDetailPanel = ({ book, onClose }: BookDetailPanelProps) => {
           {renderField('Year', book.publishYear)}
           {renderField('ISBN', book.isbn13)}
           {renderField('Primary Shelf', book.primaryShelf)}
+          <div className="space-y-3 border-b-2 border-black pb-3 text-sm">
+            <p className="text-xs uppercase tracking-[0.3em]">Location</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.3em]">Bookcase</span>
+                <input
+                  value={book.locationBookcase}
+                  onChange={(event) => onUpdate({ locationBookcase: event.target.value })}
+                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.3em]">Shelf (1-12)</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={book.locationShelf}
+                  onChange={(event) =>
+                    onUpdate({
+                      locationShelf: Math.min(12, Math.max(1, Number(event.target.value) || 1)),
+                    })
+                  }
+                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.3em]">Position</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={book.locationPosition}
+                  onChange={(event) =>
+                    onUpdate({ locationPosition: Math.max(1, Number(event.target.value) || 1) })
+                  }
+                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                />
+              </label>
+              <label className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-[10px] uppercase tracking-[0.3em]">Note</span>
+                <input
+                  value={book.locationNote ?? ''}
+                  onChange={(event) => onUpdate({ locationNote: event.target.value })}
+                  className="border-2 border-black px-2 py-1 text-xs uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                />
+              </label>
+            </div>
+          </div>
           {renderField('Tags', book.tags)}
           {renderField('Subjects', book.subjects)}
           {renderField('Format', book.format)}

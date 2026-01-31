@@ -7,6 +7,7 @@ type DropIndicator = { shelfId: string; index: number } | null;
 
 type ShelfRowProps = {
   shelf: Shelf;
+  shelfNumber: number;
   booksById: Record<string, Book>;
   draggingPlacementId?: string | null;
   dropIndicator: DropIndicator;
@@ -22,6 +23,7 @@ const getBookId = (placementId: string) => placementId.split('::')[0];
 
 const ShelfRow = ({
   shelf,
+  shelfNumber,
   booksById,
   draggingPlacementId,
   dropIndicator,
@@ -36,12 +38,30 @@ const ShelfRow = ({
   const showIndicator = indicatorIndex !== null && indicatorIndex !== undefined;
   const list = shelf.bookIds;
   const shelfRef = useRef<HTMLDivElement | null>(null);
+  const listIndexMap = new Map(list.map((placementId, index) => [placementId, index]));
+  const orderedList = [...list].sort((first, second) => {
+    const bookA = booksById[getBookId(first)];
+    const bookB = booksById[getBookId(second)];
+    const matchesA = bookA?.locationShelf === shelfNumber;
+    const matchesB = bookB?.locationShelf === shelfNumber;
+    if (matchesA && matchesB) {
+      const positionA = bookA?.locationPosition ?? Number.MAX_SAFE_INTEGER;
+      const positionB = bookB?.locationPosition ?? Number.MAX_SAFE_INTEGER;
+      if (positionA !== positionB) {
+        return positionA - positionB;
+      }
+    } else if (matchesA !== matchesB) {
+      return matchesA ? -1 : 1;
+    }
+    return (listIndexMap.get(first) ?? 0) - (listIndexMap.get(second) ?? 0);
+  });
+  const orderedLength = orderedList.length;
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const container = shelfRef.current;
     if (!container) {
-      onDragOverShelf(shelf.id, list.length);
+      onDragOverShelf(shelf.id, orderedLength);
       return;
     }
     const spines = Array.from(
@@ -69,7 +89,7 @@ const ShelfRow = ({
       onDrop={(event) => onDrop(event, shelf.id)}
     >
       <div ref={shelfRef} className="flex min-h-[190px] items-end gap-4 overflow-x-auto pb-2">
-        {list.map((placementId, index) => {
+        {orderedList.map((placementId, index) => {
           const book = booksById[getBookId(placementId)];
           if (!book) {
             return null;
@@ -97,7 +117,7 @@ const ShelfRow = ({
             </div>
           );
         })}
-        {showIndicator && indicatorIndex === list.length ? (
+        {showIndicator && indicatorIndex === orderedLength ? (
           <div className="h-40 w-[2px] bg-black" aria-hidden="true" />
         ) : null}
       </div>

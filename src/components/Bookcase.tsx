@@ -14,6 +14,7 @@ type BookcaseProps = {
   selectedBookId?: string | null;
   onSelectBook: (bookId: string, bookcaseId: string) => void;
   onCloseDetail: () => void;
+  onUpdateBook: (bookId: string, updates: Partial<Book>) => void;
   onShelfCountChange: (bookcaseId: string, nextCount: number) => void;
   onDragStart: (payload: DragPayload) => void;
   onDragEnd: () => void;
@@ -31,6 +32,7 @@ const Bookcase = ({
   selectedBookId,
   onSelectBook,
   onCloseDetail,
+  onUpdateBook,
   onShelfCountChange,
   onDragStart,
   onDragEnd,
@@ -67,7 +69,7 @@ const Bookcase = ({
         </div>
       </div>
       <div className="mt-6 space-y-6">
-        {bookcase.shelfIds.map((shelfId) => {
+        {bookcase.shelfIds.map((shelfId, shelfIndex) => {
           const shelf = shelvesById[shelfId];
           if (!shelf) {
             return null;
@@ -76,6 +78,7 @@ const Bookcase = ({
             <ShelfRow
               key={shelfId}
               shelf={shelf}
+              shelfNumber={shelfIndex + 1}
               booksById={booksById}
               draggingPlacementId={draggingPlacementId}
               dropIndicator={dropIndicator}
@@ -89,7 +92,13 @@ const Bookcase = ({
           );
         })}
       </div>
-      {selectedBook ? <BookDetailPanel book={selectedBook} onClose={onCloseDetail} /> : null}
+      {selectedBook ? (
+        <BookDetailPanel
+          book={selectedBook}
+          onClose={onCloseDetail}
+          onUpdate={(updates) => onUpdateBook(selectedBook.id, updates)}
+        />
+      ) : null}
     </section>
   );
 };

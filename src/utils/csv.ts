@@ -91,6 +91,10 @@ export const exportBooksToCsv = (books: Book[], columns: string[]): string => {
     row.Cover_M = book.coverM ?? row.Cover_M ?? '';
     row.Cover_L = book.coverL ?? row.Cover_L ?? '';
     row.Primary_Shelf = book.primaryShelf ?? row.Primary_Shelf ?? '';
+    row.Location_Bookcase = book.locationBookcase ?? row.Location_Bookcase ?? '';
+    row.Location_Shelf = String(book.locationShelf ?? row.Location_Shelf ?? '');
+    row.Location_Position = String(book.locationPosition ?? row.Location_Position ?? '');
+    row.Location_Note = book.locationNote ?? row.Location_Note ?? '';
     resolvedColumns.forEach((column) => {
       if (!(column in row)) {
         row[column] = '';
