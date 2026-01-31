@@ -1,7 +1,4 @@
-<<<<<<< ours
 import type { ShelfCode } from '../types/library';
-=======
->>>>>>> theirs
 import { SHELVES } from '../types/library';
 
 interface ToolbarProps {
@@ -26,11 +23,6 @@ interface ToolbarProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-<<<<<<< ours
-=======
-  booksPerRow: number;
-  onBooksPerRowChange: (value: number) => void;
->>>>>>> theirs
 }
 
 const Toolbar = ({
@@ -55,37 +47,21 @@ const Toolbar = ({
   onRedo,
   canUndo,
   canRedo,
-<<<<<<< ours
 }: ToolbarProps) => {
   return (
     <div className="sticky top-0 z-30 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 backdrop-blur">
-=======
-  booksPerRow,
-  onBooksPerRowChange,
-}: ToolbarProps) => {
-  return (
-    <div className="sticky top-0 z-30 bg-white p-4">
->>>>>>> theirs
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-1 items-center gap-2">
           <input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search title, author, tags"
-<<<<<<< ours
             className="w-full min-w-[220px] flex-1 rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm"
-=======
-            className="w-full min-w-[220px] flex-1 border-2 border-black bg-white px-3 py-2 text-sm uppercase tracking-wide text-black focus:outline-none"
->>>>>>> theirs
           />
           <select
             value={filterShelf}
             onChange={(event) => onFilterShelfChange(event.target.value)}
-<<<<<<< ours
             className="rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm"
-=======
-            className="border-2 border-black bg-white px-3 py-2 text-sm uppercase tracking-wide text-black"
->>>>>>> theirs
           >
             <option value="">All shelves</option>
             {SHELVES.map((shelf) => (
@@ -97,11 +73,7 @@ const Toolbar = ({
           <select
             value={filterStatus}
             onChange={(event) => onFilterStatusChange(event.target.value)}
-<<<<<<< ours
             className="rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm"
-=======
-            className="border-2 border-black bg-white px-3 py-2 text-sm uppercase tracking-wide text-black"
->>>>>>> theirs
           >
             <option value="">All statuses</option>
             {useStatuses.map((status) => (
@@ -112,39 +84,17 @@ const Toolbar = ({
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-<<<<<<< ours
           <button
             type="button"
             onClick={() => onViewChange(view === 'bookcase' ? 'table' : 'bookcase')}
             className="rounded-md border border-slate-700 px-3 py-2 text-sm"
-=======
-          <label className="flex items-center gap-2 border-2 border-black px-3 py-2 text-xs uppercase tracking-wider text-black">
-            Books/Row
-            <input
-              type="number"
-              min={4}
-              max={30}
-              value={booksPerRow}
-              onChange={(event) => onBooksPerRowChange(Number(event.target.value) || 4)}
-              className="w-16 border-2 border-black bg-white px-2 py-1 text-right text-sm text-black"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => onViewChange(view === 'bookcase' ? 'table' : 'bookcase')}
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
->>>>>>> theirs
           >
             {view === 'bookcase' ? 'Table view' : 'Bookcase view'}
           </button>
           <button
             type="button"
             onClick={onToggleAuthor}
-<<<<<<< ours
             className="rounded-md border border-slate-700 px-3 py-2 text-sm"
-=======
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
->>>>>>> theirs
           >
             {showAuthor ? 'Hide author' : 'Show author'}
           </button>
@@ -152,11 +102,7 @@ const Toolbar = ({
             type="button"
             onClick={onUndo}
             disabled={!canUndo}
-<<<<<<< ours
             className="rounded-md border border-slate-700 px-3 py-2 text-sm disabled:opacity-50"
-=======
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white disabled:opacity-50"
->>>>>>> theirs
           >
             Undo
           </button>
@@ -164,52 +110,32 @@ const Toolbar = ({
             type="button"
             onClick={onRedo}
             disabled={!canRedo}
-<<<<<<< ours
             className="rounded-md border border-slate-700 px-3 py-2 text-sm disabled:opacity-50"
-=======
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white disabled:opacity-50"
->>>>>>> theirs
           >
             Redo
           </button>
           <button
             type="button"
             onClick={onAddBook}
-<<<<<<< ours
             className="rounded-md bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950"
-=======
-            className="border-2 border-black bg-[#ffd400] px-3 py-2 text-sm font-semibold uppercase tracking-wide text-black hover:bg-black hover:text-white"
->>>>>>> theirs
           >
             Add book
           </button>
           <button
             type="button"
             onClick={onExportCsv}
-<<<<<<< ours
             className="rounded-md border border-slate-700 px-3 py-2 text-sm"
-=======
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
->>>>>>> theirs
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={onExportJson}
-<<<<<<< ours
             className="rounded-md border border-slate-700 px-3 py-2 text-sm"
           >
             Export JSON
           </button>
           <label className="rounded-md border border-slate-700 px-3 py-2 text-sm cursor-pointer">
-=======
-            className="border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
-          >
-            Export JSON
-          </button>
-          <label className="cursor-pointer border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white">
->>>>>>> theirs
             Import CSV
             <input
               type="file"
@@ -224,11 +150,7 @@ const Toolbar = ({
               }}
             />
           </label>
-<<<<<<< ours
           <label className="rounded-md border border-slate-700 px-3 py-2 text-sm cursor-pointer">
-=======
-          <label className="cursor-pointer border-2 border-black px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white">
->>>>>>> theirs
             Import JSON
             <input
               type="file"
@@ -246,11 +168,7 @@ const Toolbar = ({
           <button
             type="button"
             onClick={onReset}
-<<<<<<< ours
             className="rounded-md border border-rose-500 px-3 py-2 text-sm text-rose-200"
-=======
-            className="border-2 border-black bg-[#ff2d2d] px-3 py-2 text-sm uppercase tracking-wide text-black hover:bg-black hover:text-white"
->>>>>>> theirs
           >
             Reset from CSV
           </button>

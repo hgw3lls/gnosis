@@ -2,11 +2,7 @@ import type {
   AppState,
   Book,
   Bookcase,
-<<<<<<< ours
   BookcaseSettings,
-=======
-  CategorizeField,
->>>>>>> theirs
   LibraryDefinition,
   LibraryLayout,
   Shelf,
@@ -25,91 +21,12 @@ const createStableId = (prefix: string, seed: string) => {
   return `${prefix}-${Math.abs(hash).toString(36)}`;
 };
 
-<<<<<<< ours
 const getOrderedBookIds = (booksById: Record<string, Book>, rowOrder: string[]) => {
   const ordered = rowOrder.filter((id) => id in booksById);
   const missing = Object.keys(booksById).filter((id) => !rowOrder.includes(id));
   return [...ordered, ...missing];
 };
 
-=======
-const createShelfId = (bookcaseId: string, index: number) => `${bookcaseId}-shelf-${index + 1}`;
-
-const getBookFieldValue = (book: Book, field: CategorizeField): string => {
-  switch (field) {
-    case 'Primary_Shelf':
-      return book.primaryShelf ?? '';
-    case 'Format':
-      return book.format ?? '';
-    case 'Language':
-      return book.language ?? '';
-    case 'Source':
-      return book.source ?? '';
-    case 'Use_Status':
-      return book.useStatus ?? '';
-    case 'Tags':
-      return (book.tags ?? []).join(', ');
-    default:
-      return '';
-  }
-};
-
-const splitMultiValues = (value: string): string[] =>
-  value
-    .split(/[;,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-const getCategoriesForBook = (
-  book: Book,
-  field: CategorizeField,
-  mode: MultiCategoryMode | undefined,
-): string[] => {
-  const value = getBookFieldValue(book, field);
-  if (field !== 'Tags') {
-    return [value];
-  }
-  const tags = splitMultiValues(value);
-  if (tags.length === 0) {
-    return [''];
-  }
-  if (mode === 'first') {
-    return [tags[0]];
-  }
-  if (mode === 'split') {
-    return [tags.join(' + ')];
-  }
-  return tags;
-};
-
-const normalizeCategoryName = (value: string) => (value.trim() === '' ? '(Uncategorized)' : value.trim());
-
-const sortBooks = (books: Book[], rowOrder: string[]) => {
-  const orderIndex = new Map<string, number>();
-  rowOrder.forEach((id, index) => {
-    orderIndex.set(id, index);
-  });
-  return [...books].sort((a, b) => {
-    const orderA = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-    const orderB = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-    if (orderA !== orderB) {
-      return orderA - orderB;
-    }
-    const authorA = (a.author ?? '').toLowerCase();
-    const authorB = (b.author ?? '').toLowerCase();
-    if (authorA && authorB && authorA !== authorB) {
-      return authorA.localeCompare(authorB);
-    }
-    const titleA = a.title.toLowerCase();
-    const titleB = b.title.toLowerCase();
-    if (titleA !== titleB) {
-      return titleA.localeCompare(titleB);
-    }
-    return a.id.localeCompare(b.id);
-  });
-};
-
->>>>>>> theirs
 const getDefaultShelfCount = (count: number) => {
   const base = Math.ceil(count / 18);
   return clamp(base, 1, 12);
@@ -145,7 +62,6 @@ const getPlacementId = (book: Book, category: string, libDef: LibraryDefinition)
 const normalizeOverrides = (
   overrides: Record<string, string> | undefined,
   booksById: Record<string, Book>,
-<<<<<<< ours
   rowOrder: string[],
   library: LibraryDefinition,
 ): LibraryLayout => {
@@ -181,152 +97,6 @@ export const rebuildStateFromCsv = (
 ): AppState => {
   const libraries = createDefaultLibraries();
   const layoutsByLibraryId = buildLayouts(booksById, rowOrder, libraries);
-=======
-) => {
-  if (!overrides) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(overrides).filter(([bookId, bookcaseId]) => booksById[bookId] && bookcaseId),
-  );
-};
-
-export const buildLibraryLayout = ({
-  libraryId,
-  booksById,
-  rowOrder,
-  libDef,
-  previousLayout,
-}: BuildLibraryLayoutArgs): LibraryLayout => {
-  const books = sortBooks(Object.values(booksById), rowOrder);
-  const previousBookcases = new Map(
-    previousLayout?.bookcases.map((bookcase) => [bookcase.name, bookcase]) ?? [],
-  );
-  const previousBookcasesById = new Map(
-    previousLayout?.bookcases.map((bookcase) => [bookcase.id, bookcase]) ?? [],
-  );
-  const placementOverrides = normalizeOverrides(previousLayout?.placementOverrides, booksById);
-  const categoryMap = new Map<string, string[]>();
-  const overrideTargets = new Map<string, string[]>();
-
-  books.forEach((book) => {
-    const overrideId = placementOverrides[book.id];
-    if (overrideId) {
-      const list = overrideTargets.get(overrideId) ?? [];
-      list.push(book.id);
-      overrideTargets.set(overrideId, list);
-      return;
-    }
-    const categories = getCategoriesForBook(book, libDef.categorize, libDef.multiCategoryMode);
-    categories.forEach((category) => {
-      const normalized = normalizeCategoryName(category);
-      const placementId = getPlacementId(book, category, libDef);
-      const list = categoryMap.get(normalized) ?? [];
-      list.push(placementId);
-      categoryMap.set(normalized, list);
-    });
-  });
-
-  const bookcases: Bookcase[] = [];
-  const shelvesById: Record<string, Shelf> = {};
-  const bookcaseItemsById = new Map<string, string[]>();
-
-  Array.from(categoryMap.entries())
-    .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
-    .forEach(([category, bookIds]) => {
-      const previous = previousBookcases.get(category);
-      const bookcaseId =
-        previous?.id ?? createStableId('bookcase', `${libraryId}:${category}`);
-      bookcaseItemsById.set(bookcaseId, [...bookIds]);
-      bookcases.push({
-        id: bookcaseId,
-        name: category,
-        shelfIds: [],
-        settings: { shelfCount: previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length) },
-      });
-    });
-
-  overrideTargets.forEach((bookIds, bookcaseId) => {
-    const existing = bookcaseItemsById.get(bookcaseId);
-    if (existing) {
-      existing.push(...bookIds);
-      return;
-    }
-    const previous = previousBookcasesById.get(bookcaseId);
-    const name = previous?.name ?? '(Uncategorized)';
-    const settings = {
-      shelfCount: previous?.settings.shelfCount ?? getDefaultShelfCount(bookIds.length),
-    };
-    bookcaseItemsById.set(bookcaseId, [...bookIds]);
-    bookcases.push({ id: bookcaseId, name, shelfIds: [], settings });
-  });
-
-  bookcases.forEach((bookcase) => {
-    const items = bookcaseItemsById.get(bookcase.id) ?? [];
-    const shelfCount = clamp(bookcase.settings.shelfCount, 1, 12);
-    const shelfIds = Array.from({ length: shelfCount }, (_value, index) =>
-      createShelfId(bookcase.id, index),
-    );
-    const caseShelves = distributeItems(items, shelfIds);
-    Object.assign(shelvesById, caseShelves);
-    bookcase.shelfIds = shelfIds;
-    bookcase.settings = { shelfCount };
-  });
-
-  return { libraryId, bookcases, shelvesById, placementOverrides };
-};
-
-export const buildLayouts = ({
-  booksById,
-  rowOrder,
-  libraries,
-  previousLayouts,
-}: {
-  booksById: Record<string, Book>;
-  rowOrder: string[];
-  libraries: LibraryDefinition[];
-  previousLayouts?: Record<string, LibraryLayout>;
-}): Record<string, LibraryLayout> => {
-  return Object.fromEntries(
-    libraries.map((library) => [
-      library.id,
-      buildLibraryLayout({
-        libraryId: library.id,
-        booksById,
-        rowOrder,
-        libDef: library,
-        previousLayout: previousLayouts?.[library.id],
-      }),
-    ]),
-  );
-};
-
-export const rebuildStateFromCsv = ({
-  booksById,
-  rowOrder,
-  columns,
-  previousState,
-}: {
-  booksById: Record<string, Book>;
-  rowOrder: string[];
-  columns: string[];
-  previousState?: AppState | null;
-}): AppState => {
-  const libraries =
-    previousState?.libraries && previousState.libraries.length > 0
-      ? previousState.libraries
-      : defaultLibraries;
-  const layoutsByLibraryId = buildLayouts({
-    booksById,
-    rowOrder,
-    libraries,
-    previousLayouts: previousState?.layoutsByLibraryId,
-  });
-  const activeLibraryId =
-    previousState?.activeLibraryId && libraries.some((library) => library.id === previousState.activeLibraryId)
-      ? previousState.activeLibraryId
-      : libraries[0]?.id ?? '';
->>>>>>> theirs
   return {
     booksById,
     rowOrder,
@@ -337,13 +107,10 @@ export const rebuildStateFromCsv = ({
   };
 };
 
-<<<<<<< ours
 export const createDefaultLibraries = (): LibraryDefinition[] => [
   { id: 'library-primary', name: 'Primary', categorize: 'Primary_Shelf' },
 ];
 
-=======
->>>>>>> theirs
 export const reflowBookcaseShelves = (
   bookcase: Bookcase,
   shelvesById: Record<string, Shelf>,
