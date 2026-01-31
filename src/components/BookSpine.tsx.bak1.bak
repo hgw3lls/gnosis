@@ -30,18 +30,30 @@ const BookSpine = ({
     isDragging,
   } = useSortable({ id: book.id });
 
+<<<<<<< ours
   const color = useMemo(() => getShelfColor(book.shelfCode, book.id), [book]);
   const textColor = useMemo(() => getContrastingText(color), [color]);
+=======
+  const accent = useMemo(() => getShelfColor(book.shelfCode), [book.shelfCode]);
+  const accentText = useMemo(() => getContrastingText(accent), [accent]);
+>>>>>>> theirs
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+<<<<<<< ours
     backgroundColor: color,
     color: textColor,
     opacity: isDragging ? 0.6 : 1,
     boxShadow: selected
       ? `0 0 0 3px ${textColor === '#0f172a' ? '#0f172a' : '#f8fafc'}`
       : 'none',
+=======
+    backgroundColor: selected ? '#0a0a0a' : '#f7f7f2',
+    color: selected ? '#f7f7f2' : '#0a0a0a',
+    opacity: isDragging ? 0.6 : 1,
+    borderColor: selected ? '#0a0a0a' : '#0a0a0a',
+>>>>>>> theirs
   } as React.CSSProperties;
 
   return (
@@ -54,18 +66,45 @@ const BookSpine = ({
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onKeyDown={onKeyDown}
+<<<<<<< ours
       className="group relative h-32 w-10 min-w-[2.5rem] rounded-md border border-slate-950/30 px-1 py-2 text-[0.65rem] font-semibold leading-tight shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
     >
+=======
+      className={`group relative h-32 w-full min-w-[2.5rem] border-4 px-1 py-2 text-[0.65rem] font-semibold uppercase leading-tight tracking-wide ${
+        selected ? 'outline outline-4 outline-black' : ''
+      }`}
+    >
+      <span
+        className="absolute left-0 top-0 h-full w-2"
+        style={{ backgroundColor: accent }}
+        aria-hidden="true"
+      />
+>>>>>>> theirs
       <span className="absolute inset-0 flex items-center justify-center" style={{ writingMode: 'vertical-rl' }}>
         {book.title}
         {showAuthor && book.author ? ` · ${book.author}` : ''}
       </span>
+<<<<<<< ours
       <span className="pointer-events-none absolute -top-24 left-1/2 hidden w-64 -translate-x-1/2 rounded-lg border border-slate-700 bg-slate-900 p-3 text-left text-xs text-slate-100 shadow-xl group-hover:block">
         <strong className="block text-sm">{book.title}</strong>
         <span className="block text-slate-300">{book.author || 'Unknown author'}</span>
         <span className="mt-1 block text-slate-400">Shelf: {book.primaryShelf}</span>
         <span className="mt-1 block text-slate-400">Tags: {book.tags.join(', ') || 'None'}</span>
         <span className="mt-1 block text-slate-400">Status: {book.useStatus || '—'}</span>
+=======
+      <span className="pointer-events-none absolute -top-24 left-1/2 hidden w-64 -translate-x-1/2 border-2 border-black bg-white p-3 text-left text-xs uppercase tracking-wide text-black group-hover:block">
+        <strong className="block text-sm">Title: {book.title}</strong>
+        <span className="block">Author: {book.author || 'Unknown author'}</span>
+        <span className="mt-1 block">Shelf: {book.primaryShelf}</span>
+        <span className="mt-1 block">Tags: {book.tags.join(', ') || 'None'}</span>
+        <span className="mt-1 block">Status: {book.useStatus || '—'}</span>
+        <span
+          className="mt-2 inline-flex items-center border-2 px-2 py-1 text-[0.6rem]"
+          style={{ borderColor: accent, color: accentText }}
+        >
+          Accent
+        </span>
+>>>>>>> theirs
       </span>
     </button>
   );
