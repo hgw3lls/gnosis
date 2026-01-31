@@ -7,29 +7,7 @@
 }
 
 body {
-<<<<<<< ours
   font-family: 'Inter', system-ui, sans-serif;
-=======
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  letter-spacing: 0.02em;
-  background: #f7f7f2;
-  color: #0a0a0a;
-}
-
-button,
-input,
-select,
-textarea {
-  border-radius: 0;
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #0a0a0a;
-  outline-offset: 2px;
->>>>>>> theirs
 }
 
 ::-webkit-scrollbar {
