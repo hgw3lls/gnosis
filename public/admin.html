@@ -212,6 +212,7 @@
           <button type="button" id="add-row" class="ghost">Add row</button>
           <button type="button" id="add-column" class="ghost">Add column</button>
           <button type="button" id="import-csv" class="ghost">Import CSV file</button>
+          <button type="button" id="autofill-missing" class="ghost">Autofill missing data</button>
           <input type="file" id="csv-file" accept=".csv,text/csv" hidden />
         </div>
         <div class="table-toolbar">
@@ -354,6 +355,92 @@
         return [header, ...rows].join('\n');
       };
 
+      const normalizeColumnName = (name) => name.trim().toLowerCase();
+
+      const findColumnIndex = (...candidates) => {
+        const normalized = csvState.columns.map(normalizeColumnName);
+        for (const candidate of candidates) {
+          const index = normalized.indexOf(normalizeColumnName(candidate));
+          if (index !== -1) {
+            return index;
+          }
+        }
+        return -1;
+      };
+
+      const getRowValue = (row, ...candidates) => {
+        const index = findColumnIndex(...candidates);
+        if (index === -1) {
+          return '';
+        }
+        return row[index] ?? '';
+      };
+
+      const setRowValue = (row, value, ...candidates) => {
+        const index = findColumnIndex(...candidates);
+        if (index === -1) {
+          return false;
+        }
+        row[index] = value ?? '';
+        return true;
+      };
+
+      const buildSearchParams = (row) => {
+        const isbn = getRowValue(row, 'isbn', 'isbn13', 'isbn-13', 'isbn_13').trim();
+        const title = getRowValue(row, 'title', 'book title', 'name').trim();
+        const author = getRowValue(row, 'author', 'authors').trim();
+        return { isbn, title, author };
+      };
+
+      const fetchOpenLibraryMatch = async (row) => {
+        const { isbn, title, author } = buildSearchParams(row);
+        if (!isbn && !title && !author) {
+          return null;
+        }
+
+        const params = new URLSearchParams();
+        if (isbn) {
+          params.set('isbn', isbn);
+        } else {
+          params.set('title', title);
+          if (author) {
+            params.set('author', author);
+          }
+        }
+        params.set('limit', '1');
+
+        const response = await fetch(`https://openlibrary.org/search.json?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error(`Open Library error: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.docs?.[0] ?? null;
+      };
+
+      const applyAutofill = (row, doc, overwrite = false) => {
+        const updates = [];
+        const maybeSet = (value, ...columns) => {
+          const current = getRowValue(row, ...columns);
+          if (!overwrite && current) {
+            return;
+          }
+          if (value) {
+            if (setRowValue(row, value, ...columns)) {
+              updates.push(columns[0]);
+            }
+          }
+        };
+
+        maybeSet(doc.title, 'title', 'book title', 'name');
+        maybeSet((doc.author_name ?? []).join(', '), 'author', 'authors');
+        maybeSet(doc.first_publish_year?.toString(), 'published', 'publish_year', 'year');
+        maybeSet((doc.publisher ?? [])[0], 'publisher', 'imprint');
+        maybeSet((doc.isbn ?? [])[0], 'isbn', 'isbn13', 'isbn-13', 'isbn_13');
+        maybeSet(doc.number_of_pages_median?.toString(), 'pages', 'page_count');
+
+        return updates;
+      };
+
       const updateSummary = () => {
         csvSummary.textContent = `Rows: ${csvState.rows.length} · Columns: ${csvState.columns.length}`;
       };
@@ -402,6 +489,31 @@
           const actionCell = document.createElement('td');
           const actionWrapper = document.createElement('div');
           actionWrapper.className = 'row-actions';
+          const autofillButton = document.createElement('button');
+          autofillButton.type = 'button';
+          autofillButton.className = 'ghost';
+          autofillButton.textContent = 'Autofill';
+          autofillButton.addEventListener('click', async () => {
+            try {
+              setCsvMessage('Looking up book data from Open Library...');
+              const doc = await fetchOpenLibraryMatch(csvState.rows[rowIndex]);
+              if (!doc) {
+                setCsvMessage('No match found for this row.');
+                return;
+              }
+              const updated = applyAutofill(csvState.rows[rowIndex], doc);
+              renderTable();
+              if (updated.length === 0) {
+                setCsvMessage('No empty fields to fill for this row.');
+              } else {
+                setCsvMessage(`Filled: ${updated.join(', ')}.`);
+              }
+            } catch (error) {
+              setCsvMessage(`Autofill failed: ${error}`);
+            }
+          });
+          actionWrapper.appendChild(autofillButton);
+
           const deleteButton = document.createElement('button');
           deleteButton.type = 'button';
           deleteButton.className = 'secondary';
@@ -519,6 +631,33 @@
 
       csvSearch.addEventListener('input', () => {
         renderTable();
+      });
+
+      document.getElementById('autofill-missing').addEventListener('click', async () => {
+        if (csvState.columns.length === 0) {
+          setCsvMessage('Load a CSV before autofilling.');
+          return;
+        }
+        setCsvMessage('Autofilling missing data from Open Library...');
+        let updatedRows = 0;
+        for (let rowIndex = 0; rowIndex < csvState.rows.length; rowIndex += 1) {
+          try {
+            const doc = await fetchOpenLibraryMatch(csvState.rows[rowIndex]);
+            if (!doc) {
+              continue;
+            }
+            const updates = applyAutofill(csvState.rows[rowIndex], doc);
+            if (updates.length > 0) {
+              updatedRows += 1;
+            }
+          } catch (error) {
+            setCsvMessage(`Autofill stopped: ${error}`);
+            renderTable();
+            return;
+          }
+        }
+        renderTable();
+        setCsvMessage(`Autofill complete. Updated ${updatedRows} rows.`);
       });
 
       fetchApi('/api/health').then(setOutput).catch(() => {});
