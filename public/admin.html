@@ -10,6 +10,10 @@
         font-family: 'Inter', system-ui, sans-serif;
       }
 
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         padding: 40px;
@@ -18,13 +22,20 @@
       }
 
       main {
-        max-width: 720px;
+        max-width: 960px;
         margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
       }
 
       h1 {
         margin: 0 0 8px;
         letter-spacing: 0.12em;
+      }
+
+      h2 {
+        margin: 0 0 8px;
       }
 
       p {
@@ -47,6 +58,10 @@
         margin-bottom: 16px;
       }
 
+      .actions.secondary-actions {
+        margin-top: 12px;
+      }
+
       button {
         border: 1px solid #1e1b16;
         background: #1e1b16;
@@ -59,6 +74,12 @@
 
       button.secondary {
         background: transparent;
+        color: #1e1b16;
+      }
+
+      button.ghost {
+        background: rgba(30, 27, 22, 0.06);
+        border-color: transparent;
         color: #1e1b16;
       }
 
@@ -75,13 +96,101 @@
         text-transform: uppercase;
         letter-spacing: 0.15em;
       }
+
+      .table-toolbar {
+        display: grid;
+        grid-template-columns: minmax(200px, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .search-input {
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(30, 27, 22, 0.2);
+        font-size: 14px;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(30, 27, 22, 0.12);
+      }
+
+      table {
+        border-collapse: collapse;
+        min-width: 100%;
+        font-size: 14px;
+      }
+
+      thead {
+        background: #f3ede4;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid rgba(30, 27, 22, 0.12);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+
+      td input {
+        width: 100%;
+        border: 1px solid transparent;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: rgba(30, 27, 22, 0.04);
+        font-size: 13px;
+      }
+
+      td input:focus {
+        outline: none;
+        border-color: rgba(30, 27, 22, 0.3);
+        background: #ffffff;
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .row-actions button {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+
+      .helper-text {
+        margin-top: 12px;
+        font-size: 13px;
+        color: rgba(30, 27, 22, 0.7);
+      }
+
+      .status-banner {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(30, 27, 22, 0.06);
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
     <main>
-      <h1>GNOSIS ADMIN</h1>
-      <p class="meta">Backway into the backend (no login required)</p>
-      <div class="panel">
+      <section>
+        <h1>GNOSIS ADMIN</h1>
+        <p class="meta">Backway into the backend (no login required)</p>
+      </section>
+
+      <section class="panel">
         <div class="actions">
           <button type="button" id="health">Ping /api/health</button>
           <button type="button" id="me" class="secondary">Fetch /api/me</button>
@@ -91,7 +200,40 @@
         <p id="status" class="meta" style="margin-top: 16px">
           Backend status: checking...
         </p>
-      </div>
+      </section>
+
+      <section class="panel" id="csv-panel">
+        <h2>Library CSV editor</h2>
+        <p>Load the latest <code>library.csv</code>, edit fields inline, and export the updated CSV to replace the database file.</p>
+        <div class="actions">
+          <button type="button" id="load-csv">Load library.csv</button>
+          <button type="button" id="download-csv" class="secondary">Download updated CSV</button>
+          <button type="button" id="copy-csv" class="secondary">Copy CSV</button>
+          <button type="button" id="add-row" class="ghost">Add row</button>
+          <button type="button" id="add-column" class="ghost">Add column</button>
+          <button type="button" id="import-csv" class="ghost">Import CSV file</button>
+          <input type="file" id="csv-file" accept=".csv,text/csv" hidden />
+        </div>
+        <div class="table-toolbar">
+          <input
+            type="text"
+            id="csv-search"
+            class="search-input"
+            placeholder="Search rows by keyword..."
+          />
+          <span id="csv-summary" class="meta">Rows: 0 · Columns: 0</span>
+        </div>
+        <div class="table-wrapper" style="margin-top: 16px">
+          <table id="csv-table">
+            <thead id="csv-head"></thead>
+            <tbody id="csv-body"></tbody>
+          </table>
+        </div>
+        <div id="csv-message" class="status-banner">Load the CSV to start editing.</div>
+        <p class="helper-text">
+          After downloading, replace the <code>library.csv</code> file on the server or in version control to persist the changes.
+        </p>
+      </section>
     </main>
     <script>
       const output = document.getElementById('output');
@@ -138,6 +280,245 @@
 
       document.getElementById('open-app').addEventListener('click', () => {
         window.location.href = '/';
+      });
+
+      const csvState = {
+        columns: [],
+        rows: [],
+      };
+
+      const csvMessage = document.getElementById('csv-message');
+      const csvSummary = document.getElementById('csv-summary');
+      const csvHead = document.getElementById('csv-head');
+      const csvBody = document.getElementById('csv-body');
+      const csvSearch = document.getElementById('csv-search');
+      const csvFileInput = document.getElementById('csv-file');
+
+      const setCsvMessage = (text) => {
+        csvMessage.textContent = text;
+      };
+
+      const parseCsvLine = (line) => {
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i += 1) {
+          const char = line[i];
+          const next = line[i + 1];
+
+          if (char === '"') {
+            if (inQuotes && next === '"') {
+              current += '"';
+              i += 1;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            values.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+
+        values.push(current);
+        return values;
+      };
+
+      const parseCsvText = (csvText) => {
+        const lines = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+        const dataLines = lines.filter((line) => line.trim().length > 0);
+        if (dataLines.length === 0) {
+          return { columns: [], rows: [] };
+        }
+        const columns = parseCsvLine(dataLines[0]).map((column) => column.trim());
+        const rows = dataLines.slice(1).map((line) => {
+          const values = parseCsvLine(line);
+          return columns.map((_, index) => values[index] ?? '');
+        });
+        return { columns, rows };
+      };
+
+      const escapeCsvValue = (value) => {
+        const needsQuotes = /[",\n]/.test(value);
+        const escaped = value.replace(/"/g, '""');
+        return needsQuotes ? `"${escaped}"` : escaped;
+      };
+
+      const serializeCsv = () => {
+        const header = csvState.columns.map(escapeCsvValue).join(',');
+        const rows = csvState.rows.map((row) =>
+          row.map((value) => escapeCsvValue(value ?? '')).join(','),
+        );
+        return [header, ...rows].join('\n');
+      };
+
+      const updateSummary = () => {
+        csvSummary.textContent = `Rows: ${csvState.rows.length} · Columns: ${csvState.columns.length}`;
+      };
+
+      const renderTable = () => {
+        csvHead.innerHTML = '';
+        csvBody.innerHTML = '';
+
+        if (csvState.columns.length === 0) {
+          updateSummary();
+          return;
+        }
+
+        const headerRow = document.createElement('tr');
+        csvState.columns.forEach((column) => {
+          const th = document.createElement('th');
+          th.textContent = column;
+          headerRow.appendChild(th);
+        });
+        const actionHeader = document.createElement('th');
+        actionHeader.textContent = 'Actions';
+        headerRow.appendChild(actionHeader);
+        csvHead.appendChild(headerRow);
+
+        const keyword = csvSearch.value.trim().toLowerCase();
+
+        csvState.rows.forEach((row, rowIndex) => {
+          const haystack = row.join(' ').toLowerCase();
+          if (keyword && !haystack.includes(keyword)) {
+            return;
+          }
+
+          const tr = document.createElement('tr');
+          csvState.columns.forEach((_, columnIndex) => {
+            const td = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = row[columnIndex] ?? '';
+            input.addEventListener('input', (event) => {
+              csvState.rows[rowIndex][columnIndex] = event.target.value;
+            });
+            td.appendChild(input);
+            tr.appendChild(td);
+          });
+
+          const actionCell = document.createElement('td');
+          const actionWrapper = document.createElement('div');
+          actionWrapper.className = 'row-actions';
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'secondary';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', () => {
+            csvState.rows.splice(rowIndex, 1);
+            renderTable();
+            updateSummary();
+          });
+          actionWrapper.appendChild(deleteButton);
+          actionCell.appendChild(actionWrapper);
+          tr.appendChild(actionCell);
+
+          csvBody.appendChild(tr);
+        });
+
+        updateSummary();
+      };
+
+      const loadCsvFromText = (csvText, label) => {
+        const { columns, rows } = parseCsvText(csvText);
+        csvState.columns = columns;
+        csvState.rows = rows;
+        renderTable();
+        setCsvMessage(`${label} loaded. ${rows.length} rows ready for editing.`);
+      };
+
+      const loadCsvFromServer = async () => {
+        try {
+          const response = await fetch('/library.csv');
+          if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+          }
+          const text = await response.text();
+          loadCsvFromText(text, 'library.csv');
+        } catch (error) {
+          setCsvMessage(`Unable to load library.csv: ${error}`);
+        }
+      };
+
+      document.getElementById('load-csv').addEventListener('click', () => {
+        loadCsvFromServer();
+      });
+
+      document.getElementById('download-csv').addEventListener('click', () => {
+        if (csvState.columns.length === 0) {
+          setCsvMessage('Load a CSV before downloading.');
+          return;
+        }
+        const csvContent = serializeCsv();
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'library.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setCsvMessage('Downloaded the updated CSV.');
+      });
+
+      document.getElementById('copy-csv').addEventListener('click', async () => {
+        if (csvState.columns.length === 0) {
+          setCsvMessage('Load a CSV before copying.');
+          return;
+        }
+        const csvContent = serializeCsv();
+        try {
+          await navigator.clipboard.writeText(csvContent);
+          setCsvMessage('CSV copied to clipboard.');
+        } catch (error) {
+          setCsvMessage('Unable to copy. Download the CSV instead.');
+        }
+      });
+
+      document.getElementById('add-row').addEventListener('click', () => {
+        if (csvState.columns.length === 0) {
+          setCsvMessage('Load a CSV before adding rows.');
+          return;
+        }
+        csvState.rows.push(csvState.columns.map(() => ''));
+        renderTable();
+        setCsvMessage('Added a new row.');
+      });
+
+      document.getElementById('add-column').addEventListener('click', () => {
+        if (csvState.columns.length === 0) {
+          setCsvMessage('Load a CSV before adding columns.');
+          return;
+        }
+        const name = window.prompt('New column name');
+        if (!name) {
+          return;
+        }
+        csvState.columns.push(name);
+        csvState.rows = csvState.rows.map((row) => [...row, '']);
+        renderTable();
+        setCsvMessage(`Added column: ${name}.`);
+      });
+
+      document.getElementById('import-csv').addEventListener('click', () => {
+        csvFileInput.click();
+      });
+
+      csvFileInput.addEventListener('change', async (event) => {
+        const [file] = event.target.files;
+        if (!file) {
+          return;
+        }
+        const text = await file.text();
+        loadCsvFromText(text, file.name);
+        csvFileInput.value = '';
+      });
+
+      csvSearch.addEventListener('input', () => {
+        renderTable();
       });
 
       fetchApi('/api/health').then(setOutput).catch(() => {});
