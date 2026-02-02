@@ -1,13 +1,14 @@
 import { Command } from "cmdk";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ViewMode } from "./AppLayout";
 import { useLibraryStore } from "../app/store";
 
 type CommandPaletteProps = {
   open: boolean;
   onClose: () => void;
   onAddBook: () => void;
-  onViewChange: (view: "grid" | "list" | "stack") => void;
+  onViewChange: (view: ViewMode) => void;
 };
 
 export const CommandPalette = ({ open, onClose, onAddBook, onViewChange }: CommandPaletteProps) => {
@@ -77,7 +78,7 @@ export const CommandPalette = ({ open, onClose, onAddBook, onViewChange }: Comma
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Views">
-            {(["grid", "list", "stack"] as const).map((view) => (
+            {(["grid", "list", "stack", "spines"] as const).map((view) => (
               <Command.Item
                 key={view}
                 className="command-item"
