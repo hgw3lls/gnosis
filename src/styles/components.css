@@ -282,6 +282,127 @@ textarea:focus {
   text-align: left;
 }
 
+.detail {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+}
+
+.detail-title {
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 40px;
+  margin: 12px 0 8px;
+}
+
+.title-input {
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 36px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 0;
+  width: 100%;
+}
+
+.detail-authors {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.detail-status {
+  margin-top: 6px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--red-wash);
+  border: 1px solid var(--red);
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+}
+
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.detail-block {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-block h3 {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.textarea-large {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.placeholder {
+  border: 1px dashed var(--border);
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.detail-rail {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.rail-block {
+  border: 1px solid var(--border);
+  padding: 16px;
+  background: #fff;
+  display: grid;
+  gap: 12px;
+  box-shadow: var(--shadow);
+}
+
+.rail-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .form-grid {
   display: grid;
   gap: 12px;
@@ -360,6 +481,14 @@ textarea:focus {
   .topbar-right {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .detail-body {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-rail {
+    position: static;
   }
 }
 

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 
@@ -38,15 +38,18 @@ export const BookDetailPage = () => {
   }, [books, id]);
 
   const [formState, setFormState] = useState<Book>(emptyBook);
+  const [isEditing, setIsEditing] = useState(!id || id === "new");
 
   useEffect(() => {
     if (existing) {
       setFormState(existing);
+      setIsEditing(false);
       return;
     }
     const nextId = books.reduce((max, book) => Math.max(max, book.id), 0) + 1;
     const now = new Date().toISOString();
     setFormState({ ...emptyBook, id: nextId, added_at: now, updated_at: now });
+    setIsEditing(true);
   }, [existing, books]);
 
   const handleChange = (key: keyof Book, value: string) => {
@@ -58,11 +61,12 @@ export const BookDetailPage = () => {
     const now = new Date().toISOString();
     const normalized = normalizeBook({
       ...formState,
-      id: Number(formState.id),
+      id: existing?.id ?? Number(formState.id),
       updated_at: now,
       added_at: existing?.added_at ?? now,
     });
     await upsertBook(normalized);
+    setIsEditing(false);
     navigate(`/book/${normalized.id}`);
   };
 
@@ -78,148 +82,204 @@ export const BookDetailPage = () => {
     navigate("/");
   };
 
+  const canEditId = !existing;
+  const formId = "book-detail-form";
+
   return (
-    <section className="panel">
-      <h2>{existing ? "Edit Book" : "New Book"}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <label>
-            ID
+    <section className="detail">
+      <header className="detail-header">
+        <div>
+          <NavLink to="/" className="text-link">
+            Back to library
+          </NavLink>
+          {isEditing ? (
             <input
-              className="input"
-              type="number"
-              value={formState.id}
-              onChange={(event) => handleChange("id", event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Title
-            <input
-              className="input"
+              className="title-input"
               value={formState.title}
               onChange={(event) => handleChange("title", event.target.value)}
+              placeholder="Untitled"
             />
-          </label>
-          <label>
-            Authors
+          ) : (
+            <h1 className="detail-title">{formState.title || "Untitled"}</h1>
+          )}
+          {isEditing ? (
             <input
-              className="input"
+              className="detail-authors input"
               value={formState.authors}
               onChange={(event) => handleChange("authors", event.target.value)}
+              placeholder="Authors"
             />
-          </label>
-          <label>
-            Publisher
-            <input
-              className="input"
-              value={formState.publisher}
-              onChange={(event) => handleChange("publisher", event.target.value)}
+          ) : (
+            <p className="detail-authors">{formState.authors || "Unknown author"}</p>
+          )}
+          <div className="detail-status">
+            {isEditing ? (
+              <select
+                value={formState.status}
+                onChange={(event) => handleChange("status", event.target.value)}
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="status-pill">{formState.status.replace("_", " ")}</span>
+            )}
+          </div>
+        </div>
+        <div className="detail-actions">
+          <button
+            className="button ghost"
+            type="button"
+            onClick={() => setIsEditing((prev) => !prev)}
+          >
+            {isEditing ? "Cancel" : "Edit"}
+          </button>
+          <button className="button primary" type="submit" form={formId} disabled={!isEditing}>
+            Save
+          </button>
+        </div>
+      </header>
+      <form id={formId} onSubmit={handleSubmit} className="detail-body">
+        <div className="detail-main">
+          <section className="detail-block">
+            <h3>Notes</h3>
+            <textarea
+              className="textarea-large"
+              value={formState.notes}
+              onChange={(event) => handleChange("notes", event.target.value)}
+              readOnly={!isEditing}
+              rows={8}
             />
-          </label>
-          <label>
-            Publish year
-            <input
-              className="input"
-              inputMode="numeric"
-              value={formState.publish_year}
-              onChange={(event) => handleChange("publish_year", event.target.value)}
-            />
-          </label>
-          <label>
-            Language
-            <input
-              className="input"
-              value={formState.language}
-              onChange={(event) => handleChange("language", event.target.value)}
-            />
-          </label>
-          <label>
-            Format
-            <input
-              className="input"
-              value={formState.format}
-              onChange={(event) => handleChange("format", event.target.value)}
-            />
-          </label>
-          <label>
-            ISBN-13
-            <input
-              className="input"
-              value={formState.isbn13}
-              onChange={(event) => handleChange("isbn13", event.target.value)}
-            />
-          </label>
-          <label>
-            Tags
+          </section>
+          <section className="detail-block">
+            <h3>Tags</h3>
             <input
               className="input"
               value={formState.tags}
               onChange={(event) => handleChange("tags", event.target.value)}
+              readOnly={!isEditing}
             />
-          </label>
-          <label>
-            Collections
+          </section>
+          <section className="detail-block">
+            <h3>Collections</h3>
             <input
               className="input"
               value={formState.collections}
               onChange={(event) => handleChange("collections", event.target.value)}
+              readOnly={!isEditing}
             />
-          </label>
-          <label>
-            Projects
+          </section>
+          <section className="detail-block">
+            <h3>Projects</h3>
             <input
               className="input"
               value={formState.projects}
               onChange={(event) => handleChange("projects", event.target.value)}
+              readOnly={!isEditing}
             />
-          </label>
-          <label>
-            Location
-            <input
-              className="input"
-              value={formState.location}
-              onChange={(event) => handleChange("location", event.target.value)}
-            />
-          </label>
-          <label>
-            Status
-            <select
-              value={formState.status}
-              onChange={(event) => handleChange("status", event.target.value)}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Cover image
-            <input
-              className="input"
-              value={formState.cover_image}
-              onChange={(event) => handleChange("cover_image", event.target.value)}
-            />
-          </label>
-          <label className="full">
-            Notes
-            <textarea
-              value={formState.notes}
-              onChange={(event) => handleChange("notes", event.target.value)}
-              rows={4}
-            />
-          </label>
+          </section>
+          <section className="detail-block">
+            <h3>Quotes</h3>
+            <div className="placeholder">Add quotes here in a future update.</div>
+          </section>
+          <div className="form-actions">
+            <button className="button ghost" type="button" onClick={handleDelete}>
+              {existing ? "Remove" : "Cancel"}
+            </button>
+            <button className="button primary" type="submit" disabled={!isEditing}>
+              Save
+            </button>
+          </div>
         </div>
-        <div className="form-actions">
-          <button className="button ghost" type="button" onClick={handleDelete}>
-            {existing ? "Remove" : "Cancel"}
-          </button>
-          <button className="button" type="submit">
-            Save
-          </button>
-        </div>
+        <aside className="detail-rail">
+          <div className="rail-block">
+            <label>
+              ID
+              <input
+                className="input"
+                type="number"
+                value={formState.id}
+                onChange={(event) => handleChange("id", event.target.value)}
+                readOnly={!canEditId || !isEditing}
+              />
+            </label>
+            <label>
+              Publisher
+              <input
+                className="input"
+                value={formState.publisher}
+                onChange={(event) => handleChange("publisher", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Publish year
+              <input
+                className="input"
+                inputMode="numeric"
+                value={formState.publish_year}
+                onChange={(event) => handleChange("publish_year", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Language
+              <input
+                className="input"
+                value={formState.language}
+                onChange={(event) => handleChange("language", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Format
+              <input
+                className="input"
+                value={formState.format}
+                onChange={(event) => handleChange("format", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              ISBN-13
+              <input
+                className="input"
+                value={formState.isbn13}
+                onChange={(event) => handleChange("isbn13", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Location
+              <input
+                className="input"
+                value={formState.location}
+                onChange={(event) => handleChange("location", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Cover image
+              <input
+                className="input"
+                value={formState.cover_image}
+                onChange={(event) => handleChange("cover_image", event.target.value)}
+                readOnly={!isEditing}
+              />
+            </label>
+            <label>
+              Added
+              <input className="input" value={formState.added_at} readOnly />
+            </label>
+            <label>
+              Updated
+              <input className="input" value={formState.updated_at} readOnly />
+            </label>
+          </div>
+        </aside>
       </form>
     </section>
   );
