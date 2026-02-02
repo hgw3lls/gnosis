@@ -20,6 +20,9 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.5",
+    "@capacitor/core": "^8.0.2",
+    "@capacitor/ios": "^8.0.2",
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
