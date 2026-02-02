@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { BookGrid } from "../components/BookGrid";
-import { SpineShelf } from "../components/SpineShelf";
+import { SpinesWithRail } from "../components/SpinesWithRail";
 import { useLibraryStore } from "../app/store";
 import { ViewMode } from "../components/AppLayout";
-import { splitMultiValue } from "../utils/libraryFilters";
+import { normalizeMultiValue } from "../utils/libraryFilters";
 
 type LibraryPageProps = {
   onSelectBook: (id: number) => void;
@@ -23,7 +23,7 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   const collections = useMemo(() => {
     const values = new Set<string>();
     books.forEach((book) => {
-      splitMultiValue(book.collections).forEach((value) => values.add(value));
+      normalizeMultiValue(book.collections).forEach((value) => values.add(value));
     });
     return Array.from(values).sort((a, b) => a.localeCompare(b));
   }, [books]);
@@ -58,7 +58,7 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       const matchesStatus = !status || book.status === status;
       const matchesFormat = !format || book.format === format;
       const matchesCollection =
-        !collection || splitMultiValue(book.collections).includes(collection);
+        !collection || normalizeMultiValue(book.collections).includes(collection);
       return matchesQuery && matchesStatus && matchesFormat && matchesCollection;
     });
 
@@ -178,12 +178,13 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       </div>
       <div className="summary">{filtered.length} of {books.length} books</div>
       {view === "spines" ? (
-        <SpineShelf
+        <SpinesWithRail
           books={filtered}
           activeId={activeId}
           onSelect={setActiveId}
           query={query}
           filters={{ status, collection, format }}
+          onOpenBook={onSelectBook}
         />
       ) : (
         <BookGrid books={filtered} view={view} onSelect={onSelectBook} />

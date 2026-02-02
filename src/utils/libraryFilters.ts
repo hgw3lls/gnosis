@@ -1,4 +1,4 @@
-export const splitMultiValue = (value?: string) =>
+export const normalizeMultiValue = (value?: string) =>
   value
     ? value
         .split("|")

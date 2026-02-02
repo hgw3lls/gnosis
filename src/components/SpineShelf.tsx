@@ -1,19 +1,14 @@
 import { CSSProperties, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { Book } from "../db/schema";
-
-type SpineShelfFilters = {
-  status: string;
-  collection: string;
-  format: string;
-};
 
 type SpineShelfProps = {
   books: Book[];
   activeId: number | null;
   onSelect: (id: number) => void;
-  query: string;
-  filters: SpineShelfFilters;
+  onOpen: (id: number) => void;
+  onPreview: (id: number | null) => void;
+  ariaLabel?: string;
+  onEscape?: () => void;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -30,10 +25,11 @@ export const SpineShelf = ({
   books,
   activeId,
   onSelect,
-  query,
-  filters,
+  onOpen,
+  onPreview,
+  ariaLabel,
+  onEscape,
 }: SpineShelfProps) => {
-  const navigate = useNavigate();
   const spineRefs = useRef(new Map<number, HTMLDivElement | null>());
   const prefersReducedMotion = useMemo(
     () =>
@@ -42,23 +38,6 @@ export const SpineShelf = ({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     []
   );
-
-  const shelfLabel = useMemo(() => {
-    const parts: string[] = [];
-    if (query.trim()) {
-      parts.push(`matching "${query.trim()}"`);
-    }
-    if (filters.status) {
-      parts.push(`status ${filters.status.replace("_", " ")}`);
-    }
-    if (filters.collection) {
-      parts.push(`collection ${filters.collection}`);
-    }
-    if (filters.format) {
-      parts.push(`format ${filters.format}`);
-    }
-    return parts.length ? `Shelf spines ${parts.join(", ")}` : "Shelf spines";
-  }, [filters.collection, filters.format, filters.status, query]);
 
   const focusSpine = (id: number) => {
     const node = spineRefs.current.get(id);
@@ -71,11 +50,6 @@ export const SpineShelf = ({
       inline: "center",
       block: "nearest",
     });
-  };
-
-  const handleNavigate = (id: number) => {
-    onSelect(id);
-    navigate(`/book/${id}`);
   };
 
   const handleMove = (delta: number) => {
@@ -104,7 +78,7 @@ export const SpineShelf = ({
   }
 
   return (
-    <section className="spineShelf" aria-label={shelfLabel}>
+    <section className="spineShelf" aria-label={ariaLabel}>
       <div className="spineRail" role="listbox" aria-label="Book spines">
         {books.map((book, index) => {
           const width = getSpineWidth(book);
@@ -113,7 +87,7 @@ export const SpineShelf = ({
             <div
               key={book.id}
               ref={(node) => spineRefs.current.set(book.id, node)}
-              className={`spine ${isActive ? "active" : ""}`}
+              className={`spine ${isActive ? "spineActive" : ""}`}
               role="option"
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
@@ -124,20 +98,32 @@ export const SpineShelf = ({
                   "--spine-active-width": `${width + 16}px`,
                 } as CSSProperties
               }
-              onClick={() => handleNavigate(book.id)}
+              onClick={() => {
+                onSelect(book.id);
+                onOpen(book.id);
+              }}
+              onMouseEnter={() => onPreview(book.id)}
+              onMouseLeave={() => onPreview(null)}
+              onFocus={() => onPreview(book.id)}
+              onBlur={() => onPreview(null)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  handleNavigate(book.id);
+                  onSelect(book.id);
+                  onOpen(book.id);
                   return;
                 }
-                if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                if (event.key === "ArrowRight") {
                   event.preventDefault();
                   handleMove(1);
                 }
-                if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                if (event.key === "ArrowLeft") {
                   event.preventDefault();
                   handleMove(-1);
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  onEscape?.();
                 }
               }}
             >
@@ -145,12 +131,6 @@ export const SpineShelf = ({
               <span className="spine-author">
                 {book.authors || "Unknown author"}
               </span>
-              <span className="spine-dot" aria-hidden="true" />
-              <div className="spine-meta" aria-hidden={!isActive}>
-                {[book.publish_year, book.format, book.status.replace("_", " ")]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
             </div>
           );
         })}

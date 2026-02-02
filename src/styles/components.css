@@ -184,17 +184,25 @@ textarea:focus {
   font-size: 14px;
 }
 
-.spineShelf {
+.spinesLayout {
   margin-top: 24px;
-  border: 1px solid var(--border);
-  background: #fff;
-  padding: 8px 6px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 18px;
+  align-items: start;
   --bg: #fcfcfb;
   --ink: var(--ink);
   --ink2: var(--muted);
   --rule: var(--border);
   --red: var(--red);
   --redWash: var(--red-wash);
+  --shadow: var(--shadow);
+}
+
+.spineShelf {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 8px 6px 12px;
 }
 
 .spineShelf-empty {
@@ -233,7 +241,7 @@ textarea:focus {
   background: var(--bg);
   color: var(--ink);
   padding: 10px 6px;
-  scroll-snap-align: start;
+  scroll-snap-align: center;
   transition: width 0.16s ease, background 0.16s ease, border-color 0.16s ease;
   cursor: pointer;
 }
@@ -249,10 +257,11 @@ textarea:focus {
   border-color: var(--red);
 }
 
-.spine.active {
+.spineActive {
   width: var(--spine-active-width, 46px);
   flex-basis: var(--spine-active-width, 46px);
   border-color: var(--red);
+  color: var(--ink);
 }
 
 .spine:focus-visible {
@@ -266,13 +275,13 @@ textarea:focus {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: 3px;
   background: var(--red);
   opacity: 0;
   transition: opacity 0.16s ease;
 }
 
-.spine.active::before {
+.spineActive::before {
   opacity: 1;
 }
 
@@ -297,43 +306,163 @@ textarea:focus {
   letter-spacing: 0.03em;
 }
 
-.spine-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--red);
-  margin-top: 10px;
-  opacity: 0;
-}
-
-.spine.active .spine-dot {
-  opacity: 1;
-}
-
-.spine-meta {
-  position: absolute;
-  bottom: 8px;
-  left: 6px;
-  right: 6px;
+.previewRail {
+  position: sticky;
+  top: 88px;
+  border-left: 1px solid var(--rule);
+  padding: 12px 16px 24px;
   background: #fff;
-  border: 1px solid var(--rule);
-  font-size: 10px;
-  color: var(--ink2);
-  padding: 6px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  min-height: 360px;
 }
 
-.spine.active .spine-meta {
-  opacity: 1;
-  transform: translateY(0);
+.previewEmpty {
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.previewKicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink2);
+}
+
+.previewActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.previewOpen {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.previewTitle {
+  margin: 0 0 6px;
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 30px;
+}
+
+.previewAuthors {
+  margin: 0 0 16px;
+  color: var(--ink2);
+  font-size: 14px;
+}
+
+.previewMeta {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0 16px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.pillStatus {
+  border: 1px solid var(--red);
+  color: var(--ink);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--redWash);
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 11px;
+}
+
+.previewNotes {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.previewNotes p {
+  margin: 6px 0 0;
+}
+
+.previewChips {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.chip.mono {
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.chip.mono:hover {
+  border-color: var(--red);
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-underline-offset: 3px;
+}
+
+.previewForm {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.formRow {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.formRow input,
+.formRow textarea,
+.formRow select {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+}
+
+.previewFormActions {
+  display: flex;
+  gap: 8px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spine,
-  .spine::before,
-  .spine-meta {
+  .spine {
+    transition: none;
+  }
+
+  .spine:hover,
+  .spineActive {
+    width: var(--spine-width, 34px);
+    flex-basis: var(--spine-width, 34px);
+  }
+
+  .spine::before {
     transition: none;
   }
 }
