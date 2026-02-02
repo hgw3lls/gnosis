@@ -9,10 +9,18 @@ type AppLayoutProps = {
   onQueryChange: (value: string) => void;
   view: ViewMode;
   onViewChange: (value: ViewMode) => void;
+  onAddBook: () => void;
   children: ReactNode;
 };
 
-export const AppLayout = ({ query, onQueryChange, view, onViewChange, children }: AppLayoutProps) => {
+export const AppLayout = ({
+  query,
+  onQueryChange,
+  view,
+  onViewChange,
+  onAddBook,
+  children,
+}: AppLayoutProps) => {
   return (
     <div className="app">
       <header className="topbar">
@@ -42,9 +50,9 @@ export const AppLayout = ({ query, onQueryChange, view, onViewChange, children }
           <NavLink to="/import" className="text-link">
             Import/Export
           </NavLink>
-          <NavLink to="/book/new" className="button primary">
+          <button className="button primary" type="button" onClick={onAddBook}>
             Add
-          </NavLink>
+          </button>
         </div>
       </header>
       {children}

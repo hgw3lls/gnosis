@@ -1,20 +1,34 @@
 import { Command } from "cmdk";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const COMMANDS = [
-  { label: "Library", action: "/" },
-  { label: "Add Book", action: "/book/new" },
-  { label: "Import / Export", action: "/import" },
-];
+import { useLibraryStore } from "../app/store";
 
 type CommandPaletteProps = {
   open: boolean;
   onClose: () => void;
+  onAddBook: () => void;
+  onViewChange: (view: "grid" | "list" | "stack") => void;
 };
 
-export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
+export const CommandPalette = ({ open, onClose, onAddBook, onViewChange }: CommandPaletteProps) => {
   const navigate = useNavigate();
+  const books = useLibraryStore((state) => state.books);
+  const [query, setQuery] = useState("");
+
+  const filteredBooks = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) {
+      return books.slice(0, 8);
+    }
+    return books
+      .filter((book) =>
+        [book.title, book.authors, book.tags]
+          .join(" ")
+          .toLowerCase()
+          .includes(term)
+      )
+      .slice(0, 8);
+  }, [books, query]);
 
   useEffect(() => {
     if (!open) {
@@ -36,20 +50,60 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
   return (
     <div className="command-overlay" onClick={onClose}>
       <Command className="command" onClick={(event) => event.stopPropagation()}>
-        <Command.Input placeholder="Type a command" />
+        <Command.Input
+          placeholder="Type a command or search books"
+          value={query}
+          onValueChange={setQuery}
+        />
         <Command.List>
-          {COMMANDS.map((command) => (
+          <Command.Group heading="Quick actions">
             <Command.Item
-              key={command.label}
               className="command-item"
               onSelect={() => {
-                navigate(command.action);
+                onAddBook();
                 onClose();
               }}
             >
-              {command.label}
+              Add book
             </Command.Item>
-          ))}
+            <Command.Item
+              className="command-item"
+              onSelect={() => {
+                navigate("/import");
+                onClose();
+              }}
+            >
+              Go to Import/Export
+            </Command.Item>
+          </Command.Group>
+          <Command.Group heading="Views">
+            {(["grid", "list", "stack"] as const).map((view) => (
+              <Command.Item
+                key={view}
+                className="command-item"
+                onSelect={() => {
+                  onViewChange(view);
+                  onClose();
+                }}
+              >
+                Switch to {view}
+              </Command.Item>
+            ))}
+          </Command.Group>
+          <Command.Group heading="Books">
+            {filteredBooks.map((book) => (
+              <Command.Item
+                key={book.id}
+                className="command-item"
+                onSelect={() => {
+                  navigate(`/book/${book.id}`);
+                  onClose();
+                }}
+              >
+                {book.title || "Untitled"} · {book.authors || "Unknown author"}
+              </Command.Item>
+            ))}
+          </Command.Group>
         </Command.List>
       </Command>
     </div>

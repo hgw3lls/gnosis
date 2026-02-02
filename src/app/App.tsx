@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
+import { AddBookModal } from "../components/AddBookModal";
 import { CommandPalette } from "../components/CommandPalette";
 import { AppLayout, ViewMode } from "../components/AppLayout";
 import { BookDetailPage } from "../pages/BookDetailPage";
@@ -9,6 +10,7 @@ import { useLibraryStore } from "./store";
 
 export const App = () => {
   const [commandOpen, setCommandOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("grid");
   const loadFromDb = useLibraryStore((state) => state.loadFromDb);
@@ -42,7 +44,10 @@ export const App = () => {
     () => ({
       openCommand: () => setCommandOpen(true),
       closeCommand: () => setCommandOpen(false),
+      openAdd: () => setAddOpen(true),
+      closeAdd: () => setAddOpen(false),
       goToBook: (id: number) => navigate(`/book/${id}`),
+      setView,
     }),
     [navigate]
   );
@@ -54,6 +59,7 @@ export const App = () => {
         onQueryChange={setQuery}
         view={view}
         onViewChange={setView}
+        onAddBook={actions.openAdd}
       >
         <div className="panel">Loading library...</div>
       </AppLayout>
@@ -66,6 +72,7 @@ export const App = () => {
       onQueryChange={setQuery}
       view={view}
       onViewChange={setView}
+      onAddBook={actions.openAdd}
     >
       <Routes>
         <Route
@@ -81,7 +88,13 @@ export const App = () => {
         <Route path="/book/:id" element={<BookDetailPage />} />
         <Route path="/import" element={<ImportPage />} />
       </Routes>
-      <CommandPalette open={commandOpen} onClose={actions.closeCommand} />
+      <CommandPalette
+        open={commandOpen}
+        onClose={actions.closeCommand}
+        onAddBook={actions.openAdd}
+        onViewChange={actions.setView}
+      />
+      <AddBookModal open={addOpen} onClose={actions.closeAdd} />
     </AppLayout>
   );
 };
