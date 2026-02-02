@@ -1,16 +1,27 @@
 import clsx from "clsx";
 import { Book } from "../db/schema";
+import { ViewMode } from "./AppLayout";
 
 type BookCardProps = {
   book: Book;
-  view: "grid" | "list";
+  view: ViewMode;
   onSelect: (id: number) => void;
 };
 
 export const BookCard = ({ book, view, onSelect }: BookCardProps) => {
   return (
-    <article className={clsx("card", view === "list" && "list")} onClick={() => onSelect(book.id)}>
-      <div className="cover" style={view === "list" ? { maxWidth: "80px", minWidth: "80px", aspectRatio: "2 / 3" } : undefined}>
+    <article
+      className={clsx("card", view === "list" && "list", view === "stack" && "stack")}
+      onClick={() => onSelect(book.id)}
+    >
+      <div
+        className="cover"
+        style={
+          view === "list"
+            ? { maxWidth: "80px", minWidth: "80px", aspectRatio: "2 / 3" }
+            : undefined
+        }
+      >
         {book.cover_image ? (
           <img src={book.cover_image} alt={`Cover of ${book.title || "Untitled"}`} loading="lazy" />
         ) : (

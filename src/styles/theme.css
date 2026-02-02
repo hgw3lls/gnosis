@@ -1,11 +1,12 @@
 :root {
   color-scheme: light;
-  --paper: #f9f8f6;
+  --paper: #fafaf8;
   --ink: #111111;
   --muted: #2f2f2f;
-  --border: #dad6d1;
-  --red: #c1121f;
-  --shadow: 0 12px 32px rgba(17, 17, 17, 0.08);
+  --border: #d6d6d1;
+  --red: #d11f2a;
+  --red-wash: rgba(209, 31, 42, 0.06);
+  --shadow: 0 8px 20px rgba(17, 17, 17, 0.08);
 }
 
 * {

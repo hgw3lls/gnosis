@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { CommandPalette } from "../components/CommandPalette";
-import { Header } from "../components/Header";
+import { AppLayout, ViewMode } from "../components/AppLayout";
 import { BookDetailPage } from "../pages/BookDetailPage";
 import { ImportPage } from "../pages/ImportPage";
 import { LibraryPage } from "../pages/LibraryPage";
@@ -9,6 +9,8 @@ import { useLibraryStore } from "./store";
 
 export const App = () => {
   const [commandOpen, setCommandOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<ViewMode>("grid");
   const loadFromDb = useLibraryStore((state) => state.loadFromDb);
   const seedFromCsv = useLibraryStore((state) => state.seedFromCsv);
   const loading = useLibraryStore((state) => state.loading);
@@ -47,22 +49,39 @@ export const App = () => {
 
   if (loading) {
     return (
-      <div className="app">
-        <Header onCommand={actions.openCommand} />
+      <AppLayout
+        query={query}
+        onQueryChange={setQuery}
+        view={view}
+        onViewChange={setView}
+      >
         <div className="panel">Loading library...</div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="app">
-      <Header onCommand={actions.openCommand} />
+    <AppLayout
+      query={query}
+      onQueryChange={setQuery}
+      view={view}
+      onViewChange={setView}
+    >
       <Routes>
-        <Route path="/" element={<LibraryPage onSelectBook={actions.goToBook} />} />
+        <Route
+          path="/"
+          element={
+            <LibraryPage
+              onSelectBook={actions.goToBook}
+              query={query}
+              view={view}
+            />
+          }
+        />
         <Route path="/book/:id" element={<BookDetailPage />} />
         <Route path="/import" element={<ImportPage />} />
       </Routes>
       <CommandPalette open={commandOpen} onClose={actions.closeCommand} />
-    </div>
+    </AppLayout>
   );
 };
