@@ -118,7 +118,7 @@ export const BookDetailPage = () => {
         publisher: meta.publisher || prev.publisher,
         publish_year: meta.publishYear || prev.publish_year,
         isbn13: meta.isbn13,
-        cover_image: meta.coverImage || prev.cover_image,
+        cover_image: prev.cover_image || meta.coverImage,
       }));
       setIsEditing(true);
       setLookupState("success");
