@@ -69,6 +69,39 @@
   gap: 16px;
 }
 
+.chip-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.chip.active {
+  border-color: var(--red);
+  background: var(--red-wash);
+  color: var(--ink);
+}
+
 .input,
 select,
 textarea {
@@ -161,7 +194,8 @@ textarea:focus {
 }
 
 .card:hover {
-  border-color: var(--ink);
+  border-color: var(--red);
+  background: var(--red-wash);
   box-shadow: var(--shadow);
   transform: translateY(-2px);
 }
@@ -170,6 +204,7 @@ textarea:focus {
   flex-direction: row;
   min-height: auto;
   align-items: center;
+  padding: 12px 16px;
 }
 
 .card.stack {
@@ -178,6 +213,18 @@ textarea:focus {
   min-height: auto;
   padding: 18px;
   border-left: 3px solid var(--border);
+}
+
+.stack .card:nth-child(3n + 1) {
+  margin-left: 0;
+}
+
+.stack .card:nth-child(3n + 2) {
+  margin-left: 12px;
+}
+
+.stack .card:nth-child(3n + 3) {
+  margin-left: 24px;
 }
 
 .cover {
@@ -227,6 +274,12 @@ textarea:focus {
   padding: 18px;
   background: #fff;
   box-shadow: var(--shadow);
+}
+
+.empty-state {
+  display: grid;
+  gap: 12px;
+  text-align: left;
 }
 
 .form-grid {
