@@ -60,6 +60,12 @@
   color: #fff;
 }
 
+.button.danger {
+  background: transparent;
+  border-color: var(--red);
+  color: var(--red);
+}
+
 .toolbar {
   margin-top: 22px;
   display: flex;
@@ -166,6 +172,10 @@ textarea:focus {
   margin-top: 18px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.error-text {
+  color: var(--red);
 }
 
 .grid {
@@ -280,6 +290,13 @@ textarea:focus {
   display: grid;
   gap: 12px;
   text-align: left;
+}
+
+.import-layout {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
 }
 
 .detail {
