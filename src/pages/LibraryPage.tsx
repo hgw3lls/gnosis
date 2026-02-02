@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { BookGrid } from "../components/BookGrid";
+import { SpineShelf } from "../components/SpineShelf";
 import { useLibraryStore } from "../app/store";
 import { ViewMode } from "../components/AppLayout";
+import { splitMultiValue } from "../utils/libraryFilters";
 
 type LibraryPageProps = {
   onSelectBook: (id: number) => void;
@@ -16,16 +18,12 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   const [collection, setCollection] = useState("");
   const [format, setFormat] = useState("");
   const [sort, setSort] = useState("updated");
+  const [activeId, setActiveId] = useState<number | null>(null);
 
   const collections = useMemo(() => {
     const values = new Set<string>();
     books.forEach((book) => {
-      const raw = book.collections?.trim();
-      if (!raw) {
-        return;
-      }
-      const parts = raw.includes("|") ? raw.split("|") : [raw];
-      parts.map((value) => value.trim()).filter(Boolean).forEach((value) => values.add(value));
+      splitMultiValue(book.collections).forEach((value) => values.add(value));
     });
     return Array.from(values).sort((a, b) => a.localeCompare(b));
   }, [books]);
@@ -60,13 +58,7 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       const matchesStatus = !status || book.status === status;
       const matchesFormat = !format || book.format === format;
       const matchesCollection =
-        !collection ||
-        (book.collections?.includes("|")
-          ? book.collections
-              .split("|")
-              .map((value) => value.trim())
-              .includes(collection)
-          : book.collections === collection);
+        !collection || splitMultiValue(book.collections).includes(collection);
       return matchesQuery && matchesStatus && matchesFormat && matchesCollection;
     });
 
@@ -87,6 +79,22 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       }
     });
   }, [books, collection, format, query, sort, status]);
+
+  useEffect(() => {
+    if (view !== "spines") {
+      return;
+    }
+    if (filtered.length === 0) {
+      setActiveId(null);
+      return;
+    }
+    const hasActive = activeId
+      ? filtered.some((book) => book.id === activeId)
+      : false;
+    if (!hasActive) {
+      setActiveId(filtered[0].id);
+    }
+  }, [activeId, filtered, view]);
 
   return (
     <section>
@@ -169,7 +177,17 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
         </div>
       </div>
       <div className="summary">{filtered.length} of {books.length} books</div>
-      <BookGrid books={filtered} view={view} onSelect={onSelectBook} />
+      {view === "spines" ? (
+        <SpineShelf
+          books={filtered}
+          activeId={activeId}
+          onSelect={setActiveId}
+          query={query}
+          filters={{ status, collection, format }}
+        />
+      ) : (
+        <BookGrid books={filtered} view={view} onSelect={onSelectBook} />
+      )}
     </section>
   );
 };
