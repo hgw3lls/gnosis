@@ -184,6 +184,280 @@ textarea:focus {
   font-size: 14px;
 }
 
+.spinesLayout {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 18px;
+  align-items: start;
+  --bg: #fcfcfb;
+  --ink: var(--ink);
+  --ink2: var(--muted);
+  --rule: var(--border);
+  --red: var(--red);
+  --redWash: var(--red-wash);
+  --shadow: var(--shadow);
+}
+
+.spineShelf-empty {
+  margin-top: 24px;
+}
+
+.literalSpineList {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 4px 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 240px);
+  scroll-snap-type: y proximity;
+}
+
+.literalSpineRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--spine-title-width, 32px) 1fr;
+  align-items: center;
+  height: 44px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 6px 12px;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: height 0.16s ease, background 0.16s ease;
+  background: #fff;
+}
+
+.literalSpineRow:last-child {
+  border-bottom: none;
+}
+
+.literalSpineRow:hover {
+  background: var(--redWash);
+}
+
+.literalSpineRow.active {
+  height: 84px;
+}
+
+.literalSpineRow:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -2px;
+  background: var(--redWash);
+}
+
+.literalSpineTitleBlock {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-height: 100%;
+}
+
+.literalSpineActiveMarker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--red);
+  opacity: 0;
+}
+
+.literalSpineRow:hover .literalSpineActiveMarker {
+  opacity: 0.6;
+}
+
+.literalSpineRow.active .literalSpineActiveMarker {
+  opacity: 1;
+  width: 3px;
+}
+
+.literalSpineMeta {
+  display: grid;
+  gap: 4px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.16s ease, max-height 0.16s ease;
+  color: var(--ink2);
+  font-size: 11px;
+}
+
+.literalSpineRow.active .literalSpineMeta {
+  opacity: 1;
+  max-height: 48px;
+}
+
+.literalSpineMetaTitle {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.literalSpineMetaLine {
+  font-size: 11px;
+}
+
+.previewRail {
+  position: sticky;
+  top: 88px;
+  border-left: 1px solid var(--rule);
+  padding: 12px 16px 24px;
+  background: #fff;
+  min-height: 360px;
+}
+
+.previewEmpty {
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.previewKicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink2);
+}
+
+.previewActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.previewOpen {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.previewTitle {
+  margin: 0 0 6px;
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 30px;
+}
+
+.previewAuthors {
+  margin: 0 0 16px;
+  color: var(--ink2);
+  font-size: 14px;
+}
+
+.previewMeta {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0 16px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.pillStatus {
+  border: 1px solid var(--red);
+  color: var(--ink);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--redWash);
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 11px;
+}
+
+.previewNotes {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.previewNotes p {
+  margin: 6px 0 0;
+}
+
+.previewChips {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.chip.mono {
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.chip.mono:hover {
+  border-color: var(--red);
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-underline-offset: 3px;
+}
+
+.previewForm {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.formRow {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.formRow input,
+.formRow textarea,
+.formRow select {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+}
+
+.previewFormActions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .literalSpineRow,
+  .literalSpineMeta {
+    transition: none;
+  }
+
+  .literalSpineRow.active {
+    height: 84px;
+  }
+}
+
 .error-text {
   color: var(--red);
 }
