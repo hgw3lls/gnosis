@@ -46,6 +46,7 @@ export const App = () => {
       closeCommand: () => setCommandOpen(false),
       openAdd: () => setAddOpen(true),
       closeAdd: () => setAddOpen(false),
+      openScan: () => navigate("/book/new?scan=1"),
       goToBook: (id: number) => navigate(`/book/${id}`),
       setView,
     }),
@@ -60,6 +61,7 @@ export const App = () => {
         view={view}
         onViewChange={setView}
         onAddBook={actions.openAdd}
+        onScanBarcode={actions.openScan}
       >
         <div className="panel">Loading library...</div>
       </AppLayout>
@@ -73,6 +75,7 @@ export const App = () => {
       view={view}
       onViewChange={setView}
       onAddBook={actions.openAdd}
+      onScanBarcode={actions.openScan}
     >
       <Routes>
         <Route
@@ -92,6 +95,7 @@ export const App = () => {
         open={commandOpen}
         onClose={actions.closeCommand}
         onAddBook={actions.openAdd}
+        onScanBarcode={actions.openScan}
         onViewChange={actions.setView}
       />
       <AddBookModal open={addOpen} onClose={actions.closeAdd} />

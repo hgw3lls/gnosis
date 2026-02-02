@@ -823,6 +823,51 @@ textarea:focus {
   letter-spacing: 0.08em;
 }
 
+.scanner-modal {
+  width: min(720px, 96vw);
+}
+
+.scanner-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.scanner-preview video,
+.scanner-preview canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-status {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.scanner-error {
+  color: var(--red);
+  font-size: 13px;
+}
+
+.scanner-manual {
+  display: grid;
+  gap: 12px;
+}
+
+.isbn-actions {
+  display: grid;
+  gap: 8px;
+}
+
 @media (max-width: 900px) {
   .topbar {
     grid-template-columns: 1fr;

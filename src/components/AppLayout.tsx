@@ -10,6 +10,7 @@ type AppLayoutProps = {
   view: ViewMode;
   onViewChange: (value: ViewMode) => void;
   onAddBook: () => void;
+  onScanBarcode: () => void;
   children: ReactNode;
 };
 
@@ -19,6 +20,7 @@ export const AppLayout = ({
   view,
   onViewChange,
   onAddBook,
+  onScanBarcode,
   children,
 }: AppLayoutProps) => {
   return (
@@ -57,6 +59,9 @@ export const AppLayout = ({
           <NavLink to="/import" className="text-link">
             Import/Export
           </NavLink>
+          <button className="button ghost" type="button" onClick={onScanBarcode}>
+            Scan Barcode
+          </button>
           <button className="button primary" type="button" onClick={onAddBook}>
             Add
           </button>
