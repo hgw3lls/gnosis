@@ -12,7 +12,16 @@ export const BookCard = ({ book, view, onSelect }: BookCardProps) => {
   return (
     <article
       className={clsx("card", view === "list" && "list", view === "stack" && "stack")}
+      tabIndex={0}
+      role="button"
+      aria-label={`Open ${book.title || "Untitled"}`}
       onClick={() => onSelect(book.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(book.id);
+        }
+      }}
     >
       <div
         className="cover"

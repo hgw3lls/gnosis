@@ -1,5 +1,12 @@
 import Papa from "papaparse";
-import { Book, CSV_SCHEMA, normalizeBook } from "../db/schema";
+import { Book, getSchemaColumns, normalizeBook } from "../db/schema";
+
+const assertSchemaColumns = (fields: string[]) => {
+  const columns = getSchemaColumns();
+  if (fields.length !== columns.length || fields.join(",") !== columns.join(",")) {
+    throw new Error("CSV schema mismatch.");
+  }
+};
 
 export const parseCsvText = (text: string): Book[] => {
   const result = Papa.parse<Record<string, string>>(text, {
@@ -12,13 +19,11 @@ export const parseCsvText = (text: string): Book[] => {
   }
 
   const fields = result.meta.fields ?? [];
-  if (fields.join(",") !== CSV_SCHEMA.join(",")) {
-    throw new Error("CSV schema mismatch.");
-  }
+  assertSchemaColumns(fields);
 
   return (result.data || []).map((row) => {
     const entry: Partial<Book> = {};
-    CSV_SCHEMA.forEach((key) => {
+    getSchemaColumns().forEach((key) => {
       entry[key] = row[key] ?? "";
     });
     return normalizeBook(entry);
@@ -26,15 +31,16 @@ export const parseCsvText = (text: string): Book[] => {
 };
 
 export const exportCsvText = (books: Book[]): string => {
+  const columns = getSchemaColumns();
   const rows = books.map((book) => {
     const row: Record<string, string> = {};
-    CSV_SCHEMA.forEach((key) => {
+    columns.forEach((key) => {
       row[key] = String(book[key] ?? "");
     });
     return row;
   });
 
   return Papa.unparse(rows, {
-    columns: [...CSV_SCHEMA],
+    columns,
   });
 };

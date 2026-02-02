@@ -18,6 +18,8 @@ export const CSV_SCHEMA = [
   "updated_at",
 ] as const;
 
+export const getSchemaColumns = () => [...CSV_SCHEMA];
+
 export type Book = {
   id: number;
   title: string;

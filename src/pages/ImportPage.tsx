@@ -1,8 +1,6 @@
 import { useState, type ChangeEvent } from "react";
-import Papa from "papaparse";
 import { db } from "../db/db";
-import { CSV_SCHEMA, normalizeBook } from "../db/schema";
-import { exportCsvText } from "../utils/csv";
+import { exportCsvText, parseCsvText } from "../utils/csv";
 
 export const ImportPage = () => {
   const [message, setMessage] = useState("");
@@ -28,24 +26,7 @@ export const ImportPage = () => {
     try {
       setError("");
       const text = await file.text();
-      const result = Papa.parse<Record<string, string>>(text, {
-        header: true,
-        skipEmptyLines: true,
-      });
-      if (result.errors.length) {
-        throw new Error(result.errors[0].message);
-      }
-      const fields = result.meta.fields ?? [];
-      if (fields.join(",") !== CSV_SCHEMA.join(",")) {
-        throw new Error("CSV schema mismatch.");
-      }
-      const books = (result.data || []).map((row) => {
-        const entry: Record<string, string> = {};
-        CSV_SCHEMA.forEach((key) => {
-          entry[key] = row[key] ?? "";
-        });
-        return normalizeBook({ ...entry, id: Number.parseInt(entry.id ?? "0", 10) });
-      });
+      const books = parseCsvText(text);
       await db.books.bulkPut(books);
       setMessage("Library updated from CSV.");
     } catch (error) {
