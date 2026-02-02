@@ -8,10 +8,17 @@ type CommandPaletteProps = {
   open: boolean;
   onClose: () => void;
   onAddBook: () => void;
+  onScanBarcode: () => void;
   onViewChange: (view: ViewMode) => void;
 };
 
-export const CommandPalette = ({ open, onClose, onAddBook, onViewChange }: CommandPaletteProps) => {
+export const CommandPalette = ({
+  open,
+  onClose,
+  onAddBook,
+  onScanBarcode,
+  onViewChange,
+}: CommandPaletteProps) => {
   const navigate = useNavigate();
   const books = useLibraryStore((state) => state.books);
   const [query, setQuery] = useState("");
@@ -66,6 +73,15 @@ export const CommandPalette = ({ open, onClose, onAddBook, onViewChange }: Comma
               }}
             >
               Add book
+            </Command.Item>
+            <Command.Item
+              className="command-item"
+              onSelect={() => {
+                onScanBarcode();
+                onClose();
+              }}
+            >
+              Scan barcode
             </Command.Item>
             <Command.Item
               className="command-item"

@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 import { BarcodeScannerModal } from "../components/BarcodeScannerModal";
@@ -28,6 +28,7 @@ const emptyBook: Book = {
 export const BookDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const books = useLibraryStore((state) => state.books);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const removeBook = useLibraryStore((state) => state.removeBook);
@@ -37,6 +38,7 @@ export const BookDetailPage = () => {
     "idle",
   );
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+  const scanTriggeredRef = useRef(false);
 
   const existing = useMemo(() => {
     if (!id || id === "new") {
@@ -98,6 +100,25 @@ export const BookDetailPage = () => {
     setFoundIsbn(null);
     setLookupState("idle");
     setLookupMessage(null);
+  };
+
+  useEffect(() => {
+    if (searchParams.get("scan") !== "1") {
+      scanTriggeredRef.current = false;
+      return;
+    }
+    if (scanTriggeredRef.current) {
+      return;
+    }
+    scanTriggeredRef.current = true;
+    handleOpenScanner();
+  }, [searchParams]);
+
+  const handleCloseScanner = () => {
+    setScannerOpen(false);
+    if (searchParams.get("scan") === "1") {
+      setSearchParams({}, { replace: true });
+    }
   };
 
   const handleIsbnLookup = async (isbn: string) => {
@@ -339,7 +360,7 @@ export const BookDetailPage = () => {
         foundIsbn={foundIsbn}
         lookupState={lookupState}
         lookupMessage={lookupMessage}
-        onClose={() => setScannerOpen(false)}
+        onClose={handleCloseScanner}
         onIsbn={handleIsbnLookup}
       />
     </>

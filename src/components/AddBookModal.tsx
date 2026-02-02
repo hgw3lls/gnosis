@@ -39,6 +39,11 @@ export const AddBookModal = ({ open, onClose }: AddBookModalProps) => {
     navigate(`/book/${record.id}`);
   };
 
+  const handleScan = () => {
+    onClose();
+    navigate("/book/new?scan=1");
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(event) => event.stopPropagation()}>
@@ -61,6 +66,9 @@ export const AddBookModal = ({ open, onClose }: AddBookModalProps) => {
           <div className="form-actions">
             <button className="button ghost" type="button" onClick={onClose}>
               Cancel
+            </button>
+            <button className="button ghost" type="button" onClick={handleScan}>
+              Scan Barcode
             </button>
             <button className="button primary" type="submit" disabled={!title.trim()}>
               Save
