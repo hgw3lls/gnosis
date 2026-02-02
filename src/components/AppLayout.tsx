@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import clsx from "clsx";
 
-export type ViewMode = "grid" | "list" | "stack";
+export type ViewMode = "grid" | "list" | "stack" | "spines";
 
 type AppLayoutProps = {
   query: string;
@@ -36,14 +36,21 @@ export const AppLayout = ({
         </div>
         <div className="topbar-right">
           <div className="view-toggle">
-            {(["list", "grid", "stack"] as ViewMode[]).map((option) => (
+            {(
+              [
+                ["grid", "Grid"],
+                ["list", "List"],
+                ["stack", "Stack"],
+                ["spines", "Spines"],
+              ] as const
+            ).map(([option, label]) => (
               <button
                 key={option}
                 className={clsx("toggle", view === option && "active")}
                 type="button"
                 onClick={() => onViewChange(option)}
               >
-                {option}
+                {label}
               </button>
             ))}
           </div>

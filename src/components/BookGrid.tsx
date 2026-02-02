@@ -10,7 +10,7 @@ type BookGridProps = {
 
 export const BookGrid = ({ books, view, onSelect }: BookGridProps) => {
   const layoutClass =
-    view === "grid" ? "grid" : view === "list" ? "list" : "stack";
+    view === "list" ? "list" : view === "stack" ? "stack" : "grid";
 
   return (
     <section className={layoutClass}>
