@@ -1,2 +1,5 @@
 *.bak*
 backup/
+node_modules/
+dist/
+.vite/
