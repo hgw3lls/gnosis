@@ -1,41 +1,5 @@
 import Papa from "papaparse";
-import { Book, CSV_SCHEMA, STATUS_OPTIONS } from "./schema";
-
-const emptyBook: Book = {
-  id: 0,
-  title: "",
-  authors: "",
-  publisher: "",
-  publish_year: "",
-  language: "",
-  format: "",
-  isbn13: "",
-  tags: "",
-  collections: "",
-  projects: "",
-  location: "",
-  status: "to_read",
-  notes: "",
-  cover_image: "",
-  added_at: "",
-  updated_at: "",
-};
-
-export const normalizeBook = (data: Partial<Book>): Book => {
-  const draft = { ...emptyBook, ...data };
-  const id = Number.parseInt(String(draft.id), 10);
-  const status = STATUS_OPTIONS.includes(draft.status)
-    ? draft.status
-    : "to_read";
-  return {
-    ...draft,
-    id: Number.isFinite(id) ? id : 0,
-    status,
-    isbn13: draft.isbn13 ?? "",
-    language: draft.language?.trim() || "en",
-    publish_year: draft.publish_year ? String(draft.publish_year) : "",
-  };
-};
+import { Book, CSV_SCHEMA, normalizeBook } from "../db/schema";
 
 export const parseCsvText = (text: string): Book[] => {
   const result = Papa.parse<Record<string, string>>(text, {

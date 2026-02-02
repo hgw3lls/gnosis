@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
-import { Book, STATUS_OPTIONS } from "../utils/schema";
-import { normalizeBook } from "../utils/csv";
+import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 
 const emptyBook: Book = {
   id: 0,

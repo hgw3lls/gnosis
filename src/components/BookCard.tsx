@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Book } from "../utils/schema";
+import { Book } from "../db/schema";
 
 type BookCardProps = {
   book: Book;

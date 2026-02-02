@@ -1,4 +1,4 @@
-import { Book } from "../utils/schema";
+import { Book } from "../db/schema";
 import { BookCard } from "./BookCard";
 
 type BookGridProps = {

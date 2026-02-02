@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { db } from "../db";
-import { exportCsvText, normalizeBook, parseCsvText } from "../utils/csv";
-import { Book } from "../utils/schema";
-import libraryCsv from "/library.csv?raw";
+import { db } from "../db/db";
+import { seedFromCsv } from "../db/seedFromCsv";
+import { normalizeBook, Book } from "../db/schema";
+import { exportCsvText, parseCsvText } from "../utils/csv";
 
 type LibraryState = {
   books: Book[];
@@ -27,10 +27,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ books: sortBooks(books.map(normalizeBook)), loading: false });
   },
   seedFromCsv: async () => {
-    const books = parseCsvText(libraryCsv);
-    await db.books.clear();
-    await db.books.bulkAdd(books);
-    set({ books: sortBooks(books), loading: false });
+    await seedFromCsv();
+    const books = await db.books.toArray();
+    set({ books: sortBooks(books.map(normalizeBook)), loading: false });
   },
   importCsv: async (text) => {
     const books = parseCsvText(text);
