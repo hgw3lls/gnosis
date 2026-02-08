@@ -25,7 +25,7 @@ The app treats `./library.csv` as the canonical schema. The header must match th
 ## CSV import/export
 
 - Import validates the header against the schema contract before writing to IndexedDB.
-- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `library.csv`.
+- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `library.csv`. The dev/build scripts copy it into `public/library.csv`.
 
 ## Data storage
 
@@ -82,4 +82,3 @@ Select your connected iPhone as the run target
 Press Run
 
 Note: iOS requires HTTPS or localhost for camera access. Capacitor runs your app in a native WebView, so HTTPS isn’t required when packaged.
-
