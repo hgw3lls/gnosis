@@ -1,14 +1,14 @@
 import { db } from "./db";
-import { parseCsvText } from "../utils/csv";
+import { loadBooksFromCsv } from "./loadBooksFromCsv";
 
 export const seedFromCsv = async () => {
   try {
-    const response = await fetch("/library.csv");
+    const response = await fetch(`${import.meta.env.BASE_URL}library.csv`);
     if (!response.ok) {
       return;
     }
     const text = await response.text();
-    const books = parseCsvText(text);
+    const books = await loadBooksFromCsv(text);
     await db.books.clear();
     await db.books.bulkAdd(books);
   } catch (error) {
