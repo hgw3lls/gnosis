@@ -25,7 +25,7 @@ The app treats `./public/library.csv` as the canonical schema. The header must m
 ## CSV import/export
 
 - Import validates the header against the schema contract before writing to IndexedDB.
-- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `public/library.csv`.
+- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `library.csv`. The dev/build scripts copy it into `public/library.csv`.
 
 ## Data storage
 
