@@ -1,6 +1,6 @@
 # Gnosis Library
 
-A personal library management webapp. The canonical schema lives in `./library.csv` and must not be altered without explicit instruction.
+A personal library management webapp. The canonical schema lives in `./public/library.csv` and must not be altered without explicit instruction.
 
 ## Getting started
 
@@ -18,7 +18,7 @@ npm run preview
 
 ## Schema contract
 
-The app treats `./library.csv` as the canonical schema. The header must match the exact order below:
+The app treats `./public/library.csv` as the canonical schema. The header must match the exact order below:
 
 `id,title,authors,publisher,publish_year,language,format,isbn13,tags,collections,projects,location,status,notes,cover_image,added_at,updated_at`
 
