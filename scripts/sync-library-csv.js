@@ -2,10 +2,9 @@ import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const destination = resolve("public", "library.csv");
-const sources = [resolve("library.csv"), resolve("library.csv.backup.csv")];
-const source = sources.find((path) => existsSync(path));
+const source = resolve("library.csv");
 
-if (!source) {
+if (!existsSync(source)) {
   if (existsSync(destination)) {
     console.log(
       "No library.csv found; using existing public/library.csv for build."
@@ -13,9 +12,7 @@ if (!source) {
     process.exit(0);
   }
 
-  throw new Error(
-    `Missing ${sources.join(" or ")} and no ${destination} present.`
-  );
+  throw new Error(`Missing ${source} and no ${destination} present.`);
 }
 
 const destinationDir = dirname(destination);
