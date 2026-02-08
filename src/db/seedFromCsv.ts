@@ -3,7 +3,7 @@ import { parseCsvText } from "../utils/csv";
 
 export const seedFromCsv = async () => {
   try {
-    const response = await fetch("/library.csv");
+    const response = await fetch(`${import.meta.env.BASE_URL}library.csv`);
     if (!response.ok) {
       return;
     }
