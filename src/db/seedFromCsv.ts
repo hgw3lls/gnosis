@@ -1,3 +1,4 @@
+import { db } from "./db";
 import { loadBooksFromCsv } from "./loadBooksFromCsv";
 
 export const seedFromCsv = async () => {
@@ -7,7 +8,7 @@ export const seedFromCsv = async () => {
       return;
     }
     const text = await response.text();
-    const books = parseCsvText(text);
+    const books = await loadBooksFromCsv(text);
     await db.books.clear();
     await db.books.bulkAdd(books);
   } catch (error) {
