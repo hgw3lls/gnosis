@@ -98,7 +98,7 @@ export const CommandPalette = ({
               [
                 ["grid", "Grid"],
                 ["list", "List"],
-                ["case-spines", "Case Spines"],
+                ["case-spines", "Spines"],
               ] as const
             ).map(([view, label]) => (
               <Command.Item

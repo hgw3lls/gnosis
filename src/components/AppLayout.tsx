@@ -42,7 +42,7 @@ export const AppLayout = ({
               [
                 ["grid", "Grid"],
                 ["list", "List"],
-                ["case-spines", "Case Spines"],
+                ["case-spines", "Spines"],
               ] as const
             ).map(([option, label]) => (
               <button
