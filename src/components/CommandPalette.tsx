@@ -94,7 +94,13 @@ export const CommandPalette = ({
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Views">
-            {(["grid", "list", "stack", "spines"] as const).map((view) => (
+            {(
+              [
+                ["grid", "Grid"],
+                ["list", "List"],
+                ["case-spines", "Case Spines"],
+              ] as const
+            ).map(([view, label]) => (
               <Command.Item
                 key={view}
                 className="command-item"
@@ -103,7 +109,7 @@ export const CommandPalette = ({
                   onClose();
                 }}
               >
-                Switch to {view}
+                Switch to {label}
               </Command.Item>
             ))}
           </Command.Group>

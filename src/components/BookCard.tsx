@@ -11,7 +11,7 @@ type BookCardProps = {
 export const BookCard = ({ book, view, onSelect }: BookCardProps) => {
   return (
     <article
-      className={clsx("card", view === "list" && "list", view === "stack" && "stack")}
+      className={clsx("card", view === "list" && "list")}
       tabIndex={0}
       role="button"
       aria-label={`Open ${book.title || "Untitled"}`}

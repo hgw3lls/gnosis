@@ -516,25 +516,6 @@ textarea:focus {
   padding: 12px 16px;
 }
 
-.card.stack {
-  flex-direction: row;
-  gap: 18px;
-  min-height: auto;
-  padding: 18px;
-  border-left: 3px solid var(--border);
-}
-
-.stack .card:nth-child(3n + 1) {
-  margin-left: 0;
-}
-
-.stack .card:nth-child(3n + 2) {
-  margin-left: 12px;
-}
-
-.stack .card:nth-child(3n + 3) {
-  margin-left: 24px;
-}
 
 .cover {
   width: 100%;
@@ -782,10 +763,236 @@ textarea:focus {
   color: var(--ink);
 }
 
-.stack {
+.caseLayout {
+  margin-top: 24px;
+  display: grid;
+  gap: 20px;
+  max-width: 100%;
+  overflow: hidden;
+  height: calc(100vh - 200px);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.caseHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.caseKicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.caseTitle {
+  margin: 0;
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 28px;
+}
+
+.caseEditLink {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--red);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.caseEditLink:hover {
+  text-decoration: underline;
+}
+
+.caseMeta {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.casePreview {
+  min-width: 240px;
+  max-width: 320px;
+  flex: 1 1 240px;
+}
+
+.casePreviewTitle {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.casePreviewActions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.casePreviewActions button {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.casePreviewActions button:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.caseControls {
+  min-width: 240px;
+  flex: 1 1 320px;
+}
+
+.caseControlGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.caseControlGrid label {
+  display: grid;
+  gap: 6px;
+}
+
+.caseControlGrid input,
+.caseControlGrid select {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.casePreviewMeta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.casePreviewEmpty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.caseShelves {
+  display: grid;
+  gap: 16px;
+  max-width: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+
+.caseShelf {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 12px 16px 16px;
+  box-shadow: var(--shadow);
+}
+
+.caseShelfHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.caseShelfRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  max-width: 100%;
+}
+
+.caseShelfRow::-webkit-scrollbar {
+  height: 8px;
+}
+
+.caseShelfRow::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.caseSpine {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  justify-content: flex-end;
+  align-items: center;
+  width: 56px;
+  min-width: 56px;
+  flex: 0 0 auto;
+  height: 220px;
+  padding: 10px 6px 12px;
+  border: 1px solid var(--border);
+  background: #fcfcfb;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.caseSpine[data-dragging="true"] {
+  opacity: 0.6;
+  border-color: var(--red);
+}
+
+.caseSpine:hover,
+.caseSpine:focus-visible,
+.caseSpine:focus {
+  outline: none;
+  border-color: var(--red);
+  background: var(--red-wash);
+  transform: translateY(-2px);
+}
+
+.caseSpineTitle,
+.caseSpineAuthor {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
+}
+
+.caseSpineTitle {
+  font-size: clamp(9px, 1vw, 12px);
+  font-weight: 600;
+}
+
+.caseSpineAuthor {
+  margin-top: 6px;
+  font-size: clamp(8px, 0.9vw, 10px);
+  color: var(--muted);
+}
+
+.case-empty {
+  margin-top: 24px;
 }
 
 .modal-overlay {

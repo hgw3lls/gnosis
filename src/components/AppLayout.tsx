@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import clsx from "clsx";
 
-export type ViewMode = "grid" | "list" | "stack" | "spines";
+export type ViewMode = "grid" | "list" | "case-spines";
 
 type AppLayoutProps = {
   query: string;
@@ -42,8 +42,7 @@ export const AppLayout = ({
               [
                 ["grid", "Grid"],
                 ["list", "List"],
-                ["stack", "Stack"],
-                ["spines", "Spines"],
+                ["case-spines", "Case Spines"],
               ] as const
             ).map(([option, label]) => (
               <button
