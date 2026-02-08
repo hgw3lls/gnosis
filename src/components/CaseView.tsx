@@ -77,17 +77,25 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [organizeMode, setOrganizeMode] = useState<
     "category" | "random" | "updated"
   >("category");
+  const [showDetails, setShowDetails] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
+
+  const effectiveShelvesCount = showDetails
+    ? Math.max(1, shelvesCount)
+    : 3;
+  const effectiveCapacityPerShelf = showDetails
+    ? Math.max(6, capacityPerShelf)
+    : Math.max(6, Math.ceil(books.length / 3));
 
   const { bookcase, locations } = useMemo(
     () =>
       buildBookcase(
         books,
-        Math.max(1, shelvesCount),
-        Math.max(6, capacityPerShelf),
+        effectiveShelvesCount,
+        effectiveCapacityPerShelf,
         organizeMode
       ),
-    [books, capacityPerShelf, organizeMode, shelvesCount]
+    [books, effectiveCapacityPerShelf, effectiveShelvesCount, organizeMode]
   );
   const previewLocation = useMemo(
     () => locations.find((location) => location.book.id === previewId) ?? null,
@@ -124,104 +132,107 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         <div>
           <p className="caseKicker">Case Spines</p>
           <h2 className="caseTitle">{bookcaseName}</h2>
-          <p className="caseMeta">
+        </div>
+        <button
+          type="button"
+          className="text-link caseEditLink"
+          onClick={() => setShowDetails((current) => !current)}
+        >
+          {showDetails ? "Done" : "Edit"}
+        </button>
+      </header>
+      {showDetails ? (
+        <section className="caseDetails">
+          <div className="caseMeta">
             {bookcase.shelves} shelves · {bookcase.capacityPerShelf} positions per
             shelf
-          </p>
-        </div>
-        <div className="caseControls">
-          <p className="caseKicker">Bookcase setup</p>
-          <div className="caseControlGrid">
-            <label>
-              Name
-              <input
-                type="text"
-                value={bookcaseName}
-                onChange={(event) => setBookcaseName(event.target.value)}
-              />
-            </label>
-            <label>
-              Shelves
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={shelvesCount}
-                onChange={(event) =>
-                  setShelvesCount(Number.parseInt(event.target.value, 10) || 1)
-                }
-              />
-            </label>
-            <label>
-              Capacity per shelf
-              <input
-                type="number"
-                min={6}
-                max={48}
-                value={capacityPerShelf}
-                onChange={(event) =>
-                  setCapacityPerShelf(
-                    Number.parseInt(event.target.value, 10) || 6
-                  )
-                }
-              />
-            </label>
-            <label>
-              Organize shelves
-              <select
-                value={organizeMode}
-                onChange={(event) =>
-                  setOrganizeMode(event.target.value as typeof organizeMode)
-                }
-              >
-                <option value="category">By category</option>
-                <option value="updated">Recently updated</option>
-                <option value="random">Random shuffle</option>
-              </select>
-            </label>
           </div>
-        </div>
-        <div className="casePreview" aria-live="polite">
-          <p className="caseKicker">Spine info</p>
-          {previewLocation ? (
-            <div>
-              <p className="casePreviewTitle">
-                {previewLocation.book.title || "Untitled"}
-              </p>
-              <p className="casePreviewMeta">
-                {previewLocation.book.authors || "Unknown author"} · A · S{previewLocation.shelf}
-                · P{previewLocation.position}
-              </p>
-              <div className="casePreviewActions">
-                <button type="button">Quick edit</button>
-                <button type="button">Move</button>
-                <button type="button">Categorize</button>
+          <div className="caseDetailsGrid">
+            <div className="caseControls">
+              <p className="caseKicker">Bookcase setup</p>
+              <div className="caseControlGrid">
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    value={bookcaseName}
+                    onChange={(event) => setBookcaseName(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Shelves
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={shelvesCount}
+                    onChange={(event) =>
+                      setShelvesCount(
+                        Number.parseInt(event.target.value, 10) || 1
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  Capacity per shelf
+                  <input
+                    type="number"
+                    min={6}
+                    max={48}
+                    value={capacityPerShelf}
+                    onChange={(event) =>
+                      setCapacityPerShelf(
+                        Number.parseInt(event.target.value, 10) || 6
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  Organize shelves
+                  <select
+                    value={organizeMode}
+                    onChange={(event) =>
+                      setOrganizeMode(event.target.value as typeof organizeMode)
+                    }
+                  >
+                    <option value="category">By category</option>
+                    <option value="updated">Recently updated</option>
+                    <option value="random">Random shuffle</option>
+                  </select>
+                </label>
               </div>
             </div>
-          ) : (
-            <p className="casePreviewEmpty">Hover or tap a spine to preview.</p>
-          )}
-        </div>
-        <div className="caseCategories">
-          <p className="caseKicker">Categorical ranges</p>
-          <ul>
-            {bookcase.categories.map((category) => (
-              <li key={category.label}>
-                <span>{category.label}</span>
-                <span>{category.range}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </header>
+            <div className="casePreview" aria-live="polite">
+              <p className="caseKicker">Spine info</p>
+              {previewLocation ? (
+                <div>
+                  <p className="casePreviewTitle">
+                    {previewLocation.book.title || "Untitled"}
+                  </p>
+                  <p className="casePreviewMeta">
+                    {previewLocation.book.authors || "Unknown author"} · A · S
+                    {previewLocation.shelf} · P{previewLocation.position}
+                  </p>
+                  <div className="casePreviewActions">
+                    <button type="button">Quick edit</button>
+                    <button type="button">Move</button>
+                    <button type="button">Categorize</button>
+                  </div>
+                </div>
+              ) : (
+                <p className="casePreviewEmpty">
+                  Hover or tap a spine to preview.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
       <div className="caseShelves">
         {shelves.map((shelf) => (
           <section key={shelf.shelfNumber} className="caseShelf">
             <header className="caseShelfHeader">
               <span>Shelf {shelf.shelfNumber}</span>
-              <span>
-                S{shelf.shelfNumber}-P1 → S{shelf.shelfNumber}-P{bookcase.capacityPerShelf}
-              </span>
             </header>
             <div className="caseShelfRow" role="list">
               {shelf.books.map((location) => (
