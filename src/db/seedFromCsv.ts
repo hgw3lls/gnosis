@@ -3,12 +3,15 @@ import { loadBooksFromCsv } from "./loadBooksFromCsv";
 
 export const seedFromCsv = async () => {
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}library.csv`);
-    if (!response.ok) {
+    const csvText = await fetch(`${import.meta.env.BASE_URL}library.csv`).then(
+      async (res) => (res.ok ? res.text() : null),
+    );
+
+    if (!csvText) {
       return;
     }
-    const text = await response.text();
-    const books = await loadBooksFromCsv(text);
+
+    const books = await loadBooksFromCsv(csvText);
     await db.books.clear();
     await db.books.bulkAdd(books);
   } catch (error) {
