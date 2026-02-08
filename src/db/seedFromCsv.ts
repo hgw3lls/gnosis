@@ -17,4 +17,8 @@ export const seedFromCsv = async () => {
   } catch (error) {
     console.warn("CSV seed failed", error);
   }
-};
+
+  const csvText = await response.text();
+  const books = await loadBooksFromCsv(csvText);
+  return books.length;
+}
