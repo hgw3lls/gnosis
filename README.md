@@ -1,6 +1,6 @@
 # Gnosis Library
 
-A personal library management webapp. The canonical schema lives in `./library.csv` and must not be altered without explicit instruction.
+A personal library management webapp. The canonical schema lives in `./public/library.csv` and must not be altered without explicit instruction.
 
 ## Getting started
 
@@ -18,14 +18,14 @@ npm run preview
 
 ## Schema contract
 
-The app treats `./library.csv` as the canonical schema. The header must match the exact order below:
+The app treats `./public/library.csv` as the canonical schema. The header must match the exact order below:
 
 `id,title,authors,publisher,publish_year,language,format,isbn13,tags,collections,projects,location,status,notes,cover_image,added_at,updated_at`
 
 ## CSV import/export
 
 - Import validates the header against the schema contract before writing to IndexedDB.
-- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `library.csv`.
+- Export writes the current IndexedDB library to a CSV using the same schema order so it can replace `public/library.csv`.
 
 ## Data storage
 
@@ -82,4 +82,3 @@ Select your connected iPhone as the run target
 Press Run
 
 Note: iOS requires HTTPS or localhost for camera access. Capacitor runs your app in a native WebView, so HTTPS isn’t required when packaged.
-
