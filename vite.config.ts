@@ -4,4 +4,4 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   base: process.env.BASE_PATH ?? "/gnosis/",
   plugins: [react()],
-}));
+});
