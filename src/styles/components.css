@@ -925,6 +925,19 @@ textarea:focus {
   color: var(--muted);
 }
 
+.caseHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.caseUnlockBadge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--red);
+}
+
 .caseShelfRow {
   display: flex;
   flex-wrap: nowrap;
@@ -970,6 +983,14 @@ textarea:focus {
   transform: translateY(-2px);
 }
 
+.caseSpine[draggable="true"] {
+  cursor: grab;
+}
+
+.caseSpine[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 .caseSpineTitle,
 .caseSpineAuthor {
   writing-mode: vertical-rl;
@@ -990,19 +1011,61 @@ textarea:focus {
   color: var(--muted);
 }
 
-.caseSpineLocation {
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.case-empty {
+  margin-top: 24px;
+}
+
+.caseHoverCard,
+.caseQuickEdit {
+  position: fixed;
+  z-index: 40;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  width: min(260px, 60vw);
+}
+
+.caseHoverCard {
+  pointer-events: none;
+}
+
+.caseQuickEdit {
+  display: grid;
+  gap: 12px;
+}
+
+.caseQuickEditHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.caseQuickEditForm {
+  display: grid;
+  gap: 10px;
+}
+
+.caseQuickEditForm label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
   color: var(--muted);
 }
 
-.case-empty {
-  margin-top: 24px;
+.caseQuickEditForm input,
+.caseQuickEditForm select,
+.caseQuickEditForm textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.caseQuickEditActions {
+  display: flex;
+  gap: 8px;
 }
 
 .modal-overlay {
