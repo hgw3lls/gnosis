@@ -40,6 +40,16 @@ export type Book = {
   updated_at: string;
 };
 
+export type Bookcase = {
+  id: number;
+  name: string;
+  shelves: number;
+  capacity_per_shelf: number;
+  notes: string;
+  added_at: string;
+  updated_at: string;
+};
+
 export const STATUS_OPTIONS: Book["status"][] = [
   "to_read",
   "reading",
@@ -81,5 +91,31 @@ export const normalizeBook = (data: Partial<Book>): Book => {
     isbn13: String(draft.isbn13 ?? ""),
     language: draft.language?.trim() || "en",
     publish_year: draft.publish_year ? String(draft.publish_year) : "",
+  };
+};
+
+const emptyBookcase: Bookcase = {
+  id: 0,
+  name: "",
+  shelves: 4,
+  capacity_per_shelf: 20,
+  notes: "",
+  added_at: "",
+  updated_at: "",
+};
+
+export const normalizeBookcase = (data: Partial<Bookcase>): Bookcase => {
+  const draft = { ...emptyBookcase, ...data };
+  const id = Number.parseInt(String(draft.id), 10);
+  const shelves = Number.parseInt(String(draft.shelves), 10);
+  const capacity = Number.parseInt(String(draft.capacity_per_shelf), 10);
+
+  return {
+    ...draft,
+    id: Number.isFinite(id) ? id : 0,
+    name: draft.name?.trim() || "Untitled bookcase",
+    shelves: Number.isFinite(shelves) && shelves > 0 ? shelves : emptyBookcase.shelves,
+    capacity_per_shelf:
+      Number.isFinite(capacity) && capacity > 0 ? capacity : emptyBookcase.capacity_per_shelf,
   };
 };
