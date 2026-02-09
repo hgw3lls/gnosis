@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book } from "../db/schema";
 import { normalizeMultiValue } from "../utils/libraryFilters";
@@ -7,13 +6,13 @@ import { normalizeMultiValue } from "../utils/libraryFilters";
 type SpinePreviewRailProps = {
   book: Book | null;
   previewing: boolean;
+  onOpen: (id: number) => void;
 };
 
 const normalizeExcerpt = (value: string) =>
   value.replace(/\s+/g, " ").trim();
 
-export const SpinePreviewRail = ({ book, previewing }: SpinePreviewRailProps) => {
-  const navigate = useNavigate();
+export const SpinePreviewRail = ({ book, previewing, onOpen }: SpinePreviewRailProps) => {
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const [editing, setEditing] = useState(false);
   const [formState, setFormState] = useState({
@@ -70,7 +69,7 @@ export const SpinePreviewRail = ({ book, previewing }: SpinePreviewRailProps) =>
           <button
             type="button"
             className="button ghost previewOpen"
-            onClick={() => navigate(`/book/${book.id}`)}
+            onClick={() => onOpen(book.id)}
           >
             Open
           </button>

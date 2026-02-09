@@ -1,15 +1,15 @@
 import { FormEvent, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { normalizeBook } from "../db/schema";
 
 type AddBookModalProps = {
   open: boolean;
   onClose: () => void;
+  onCreated: (id: number) => void;
+  onScan: () => void;
 };
 
-export const AddBookModal = ({ open, onClose }: AddBookModalProps) => {
-  const navigate = useNavigate();
+export const AddBookModal = ({ open, onClose, onCreated, onScan }: AddBookModalProps) => {
   const books = useLibraryStore((state) => state.books);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const [title, setTitle] = useState("");
@@ -36,12 +36,12 @@ export const AddBookModal = ({ open, onClose }: AddBookModalProps) => {
     await upsertBook(record);
     setTitle("");
     onClose();
-    navigate(`/book/${record.id}`);
+    onCreated(record.id);
   };
 
   const handleScan = () => {
     onClose();
-    navigate("/book/new?scan=1");
+    onScan();
   };
 
   return (

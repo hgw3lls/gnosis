@@ -28,8 +28,23 @@ const emptyBook: Book = {
   updated_at: "",
 };
 
-export const BookDetailPage = () => {
-  const { id } = useParams();
+type BookDetailPageProps = {
+  bookId?: number | "new";
+  onClose?: () => void;
+  onCreated?: (id: number) => void;
+  isModal?: boolean;
+  initialScan?: boolean;
+};
+
+export const BookDetailPage = ({
+  bookId,
+  onClose,
+  onCreated,
+  isModal = false,
+  initialScan = false,
+}: BookDetailPageProps) => {
+  const params = useParams();
+  const id = bookId != null ? String(bookId) : params.id;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -162,6 +177,13 @@ export const BookDetailPage = () => {
     });
     await upsertBook(normalized);
     setIsEditing(false);
+    if (!existing && id === "new" && onCreated) {
+      onCreated(normalized.id);
+      return;
+    }
+    if (onClose) {
+      return;
+    }
     const returnTo =
       (location.state as { from?: string } | null | undefined)?.from ?? null;
     if (existing && returnTo) {
@@ -177,6 +199,10 @@ export const BookDetailPage = () => {
 
   const handleDelete = async () => {
     if (!existing) {
+      if (onClose) {
+        onClose();
+        return;
+      }
       navigate("/");
       return;
     }
@@ -184,6 +210,10 @@ export const BookDetailPage = () => {
       return;
     }
     await removeBook(existing.id);
+    if (onClose) {
+      onClose();
+      return;
+    }
     navigate("/");
   };
 
@@ -202,8 +232,10 @@ export const BookDetailPage = () => {
     setLookupMessage(null);
   };
 
+  const shouldAutoScan = initialScan || searchParams.get("scan") === "1";
+
   useEffect(() => {
-    if (searchParams.get("scan") !== "1") {
+    if (!shouldAutoScan) {
       scanTriggeredRef.current = false;
       return;
     }
@@ -212,13 +244,21 @@ export const BookDetailPage = () => {
     }
     scanTriggeredRef.current = true;
     handleOpenScanner();
-  }, [searchParams]);
+  }, [shouldAutoScan]);
 
   const handleCloseScanner = () => {
     setScannerOpen(false);
     if (searchParams.get("scan") === "1") {
       setSearchParams({}, { replace: true });
     }
+  };
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    navigate("/");
   };
 
   const handleIsbnLookup = async (isbn: string) => {
@@ -305,14 +345,19 @@ export const BookDetailPage = () => {
     ? shelfStats.positions.get(activeShelf) ?? new Set<number>()
     : new Set<number>();
 
-  return (
-    <>
-      <section className="detail">
+  const detailContent = (
+    <section className="detail">
         <header className="detail-header">
           <div>
-            <NavLink to="/" className="text-link">
-              Back to library
-            </NavLink>
+            {isModal ? (
+              <button type="button" className="text-link" onClick={handleClose}>
+                Close
+              </button>
+            ) : (
+              <NavLink to="/" className="text-link">
+                Back to library
+              </NavLink>
+            )}
             {isEditing ? (
               <input
                 className="title-input"
@@ -594,6 +639,22 @@ export const BookDetailPage = () => {
           </aside>
         </form>
       </section>
+  );
+
+  return (
+    <>
+      {isModal ? (
+        <div className="modal-overlay book-detail-overlay" onClick={handleClose}>
+          <div
+            className="modal book-detail-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {detailContent}
+          </div>
+        </div>
+      ) : (
+        detailContent
+      )}
       <BarcodeScannerModal
         open={scannerOpen}
         foundIsbn={foundIsbn}

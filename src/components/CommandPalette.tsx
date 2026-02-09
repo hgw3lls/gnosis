@@ -9,6 +9,7 @@ type CommandPaletteProps = {
   onClose: () => void;
   onAddBook: () => void;
   onScanBarcode: () => void;
+  onOpenBook: (id: number) => void;
   onViewChange: (view: ViewMode) => void;
 };
 
@@ -17,6 +18,7 @@ export const CommandPalette = ({
   onClose,
   onAddBook,
   onScanBarcode,
+  onOpenBook,
   onViewChange,
 }: CommandPaletteProps) => {
   const navigate = useNavigate();
@@ -119,7 +121,7 @@ export const CommandPalette = ({
                 key={book.id}
                 className="command-item"
                 onSelect={() => {
-                  navigate(`/book/${book.id}`);
+                  onOpenBook(book.id);
                   onClose();
                 }}
               >
