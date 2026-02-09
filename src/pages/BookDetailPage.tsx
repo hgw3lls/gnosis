@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 import { BarcodeScannerModal } from "../components/BarcodeScannerModal";
@@ -28,6 +28,7 @@ const emptyBook: Book = {
 export const BookDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const books = useLibraryStore((state) => state.books);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
@@ -77,6 +78,16 @@ export const BookDetailPage = () => {
     });
     await upsertBook(normalized);
     setIsEditing(false);
+    const returnTo =
+      (location.state as { from?: string } | null | undefined)?.from ?? null;
+    if (existing && returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    if (existing) {
+      navigate("/");
+      return;
+    }
     navigate(`/book/${normalized.id}`);
   };
 

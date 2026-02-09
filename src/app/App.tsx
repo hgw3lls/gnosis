@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { AddBookcaseModal } from "../components/AddBookcaseModal";
 import { AddBookModal } from "../components/AddBookModal";
 import { CommandPalette } from "../components/CommandPalette";
 import { AppLayout, ViewMode } from "../components/AppLayout";
@@ -11,12 +12,14 @@ import { useLibraryStore } from "./store";
 export const App = () => {
   const [commandOpen, setCommandOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [addBookcaseOpen, setAddBookcaseOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("grid");
   const loadFromDb = useLibraryStore((state) => state.loadFromDb);
   const seedFromCsv = useLibraryStore((state) => state.seedFromCsv);
   const loading = useLibraryStore((state) => state.loading);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const init = async () => {
@@ -46,11 +49,16 @@ export const App = () => {
       closeCommand: () => setCommandOpen(false),
       openAdd: () => setAddOpen(true),
       closeAdd: () => setAddOpen(false),
+      openAddBookcase: () => setAddBookcaseOpen(true),
+      closeAddBookcase: () => setAddBookcaseOpen(false),
       openScan: () => navigate("/book/new?scan=1"),
-      goToBook: (id: number) => navigate(`/book/${id}`),
+      goToBook: (id: number) =>
+        navigate(`/book/${id}`, {
+          state: { from: `${location.pathname}${location.search}` },
+        }),
       setView,
     }),
-    [navigate]
+    [location.pathname, location.search, navigate]
   );
 
   if (loading) {
@@ -61,6 +69,7 @@ export const App = () => {
         view={view}
         onViewChange={setView}
         onAddBook={actions.openAdd}
+        onAddBookcase={actions.openAddBookcase}
         onScanBarcode={actions.openScan}
       >
         <div className="panel">Loading library...</div>
@@ -75,6 +84,7 @@ export const App = () => {
       view={view}
       onViewChange={setView}
       onAddBook={actions.openAdd}
+      onAddBookcase={actions.openAddBookcase}
       onScanBarcode={actions.openScan}
     >
       <Routes>
@@ -99,6 +109,10 @@ export const App = () => {
         onViewChange={actions.setView}
       />
       <AddBookModal open={addOpen} onClose={actions.closeAdd} />
+      <AddBookcaseModal
+        open={addBookcaseOpen}
+        onClose={actions.closeAddBookcase}
+      />
     </AppLayout>
   );
 };

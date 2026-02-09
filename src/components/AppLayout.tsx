@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import clsx from "clsx";
 
@@ -10,6 +10,7 @@ type AppLayoutProps = {
   view: ViewMode;
   onViewChange: (value: ViewMode) => void;
   onAddBook: () => void;
+  onAddBookcase: () => void;
   onScanBarcode: () => void;
   children: ReactNode;
 };
@@ -20,9 +21,26 @@ export const AppLayout = ({
   view,
   onViewChange,
   onAddBook,
+  onAddBookcase,
   onScanBarcode,
   children,
 }: AppLayoutProps) => {
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (!addMenuRef.current) {
+        return;
+      }
+      if (event.target instanceof Node && !addMenuRef.current.contains(event.target)) {
+        setAddMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -61,9 +79,46 @@ export const AppLayout = ({
           <button className="button ghost" type="button" onClick={onScanBarcode}>
             Scan Barcode
           </button>
-          <button className="button primary" type="button" onClick={onAddBook}>
-            Add
-          </button>
+          <div className="add-menu" ref={addMenuRef}>
+            <button
+              className="button primary add-trigger"
+              type="button"
+              onClick={() => setAddMenuOpen((prev) => !prev)}
+              aria-expanded={addMenuOpen}
+              aria-haspopup="true"
+            >
+              Add
+              <span className="add-trigger-caret" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+            {addMenuOpen ? (
+              <div className="add-menu-panel" role="menu">
+                <button
+                  className="add-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    onAddBook();
+                  }}
+                >
+                  Book
+                </button>
+                <button
+                  className="add-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    onAddBookcase();
+                  }}
+                >
+                  Bookcase
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
       {children}

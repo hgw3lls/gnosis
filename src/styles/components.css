@@ -32,6 +32,50 @@
   justify-content: flex-end;
 }
 
+.add-menu {
+  position: relative;
+}
+
+.add-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-trigger-caret {
+  font-size: 12px;
+}
+
+.add-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 160px;
+  z-index: 40;
+}
+
+.add-menu-item {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.add-menu-item:hover {
+  border-color: var(--red);
+  background: var(--red-wash);
+}
+
 .button {
   border: 1px solid var(--ink);
   background: var(--ink);
@@ -1095,6 +1139,17 @@ textarea:focus {
   justify-content: space-between;
 }
 
+.modal-form {
+  display: grid;
+  gap: 14px;
+}
+
+.modal-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .modal-label {
   display: grid;
   gap: 6px;
@@ -1181,6 +1236,10 @@ textarea:focus {
 
 @media (max-width: 720px) {
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-grid {
     grid-template-columns: 1fr;
   }
 }
