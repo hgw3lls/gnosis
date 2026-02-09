@@ -11,7 +11,7 @@ export const Header = ({ onCommand }: HeaderProps) => {
       <div>
         <p className="eyebrow">Personal Library</p>
         <NavLink to="/" className="logo-link">
-          <img src="/gnosis-logo.png" alt="Gnosis" className="logo" />
+          <img src="/exlibris.png" alt="Ex Libris" className="logo" />
         </NavLink>
         <nav className="nav">
           <NavLink to="/" className={({ isActive }) => clsx(isActive && "active")}>
