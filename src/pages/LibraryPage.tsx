@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { BookGrid } from "../components/BookGrid";
 import { CaseView } from "../components/CaseView";
@@ -18,6 +18,7 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   const [collection, setCollection] = useState("");
   const [format, setFormat] = useState("");
   const [sort, setSort] = useState("updated");
+  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
 
   const collections = useMemo(() => {
     const values = new Set<string>();
@@ -78,6 +79,29 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       }
     });
   }, [books, collection, format, query, sort, status]);
+
+  const selectedBook = useMemo(
+    () => filtered.find((book) => book.id === selectedBookId) ?? null,
+    [filtered, selectedBookId]
+  );
+
+  useEffect(() => {
+    if (view !== "list") {
+      setSelectedBookId(null);
+    }
+  }, [view]);
+
+  const handleSelectBook = (id: number) => {
+    if (view === "list") {
+      setSelectedBookId(id);
+      return;
+    }
+    onSelectBook(id);
+  };
+
+  const handleCloseDrawer = () => {
+    setSelectedBookId(null);
+  };
 
   return (
     <section>
@@ -163,8 +187,69 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
       {view === "case-spines" ? (
         <CaseView books={filtered} onOpenBook={onSelectBook} />
       ) : (
-        <BookGrid books={filtered} view={view} onSelect={onSelectBook} />
+        <BookGrid books={filtered} view={view} onSelect={handleSelectBook} />
       )}
+      {view === "list" && selectedBook ? (
+        <div className="drawer-overlay" onClick={handleCloseDrawer}>
+          <div
+            className="drawer-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="drawer-header">
+              <div>
+                <p className="drawer-kicker">Book details</p>
+                <h3 className="drawer-title">{selectedBook.title || "Untitled"}</h3>
+                <p className="drawer-meta">
+                  {selectedBook.authors || "Unknown author"}
+                </p>
+              </div>
+              <button className="icon-button" type="button" onClick={handleCloseDrawer}>
+                ×
+              </button>
+            </header>
+            <div className="drawer-body">
+              <div className="drawer-cover">
+                {selectedBook.cover_image ? (
+                  <img
+                    src={selectedBook.cover_image}
+                    alt={`Cover of ${selectedBook.title || "Untitled"}`}
+                  />
+                ) : (
+                  <span>No cover</span>
+                )}
+              </div>
+              <div className="drawer-info">
+                <p>
+                  {[selectedBook.publisher, selectedBook.publish_year]
+                    .filter(Boolean)
+                    .join(" · ") || "Publisher and year unknown"}
+                </p>
+                <p>Status: {selectedBook.status.replace("_", " ")}</p>
+                {selectedBook.tags ? <p>Tags: {selectedBook.tags}</p> : null}
+                {selectedBook.collections ? (
+                  <p>Collections: {selectedBook.collections}</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="drawer-actions">
+              <button
+                className="button ghost"
+                type="button"
+                onClick={handleCloseDrawer}
+              >
+                Close
+              </button>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => onSelectBook(selectedBook.id)}
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 };

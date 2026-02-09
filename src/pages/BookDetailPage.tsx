@@ -33,6 +33,7 @@ export const BookDetailPage = () => {
   const books = useLibraryStore((state) => state.books);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const removeBook = useLibraryStore((state) => state.removeBook);
+  const isUnlocked = useLibraryStore((state) => state.isUnlocked);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [foundIsbn, setFoundIsbn] = useState<string | null>(null);
   const [lookupState, setLookupState] = useState<"idle" | "lookup" | "not_found" | "error" | "success">(
@@ -53,7 +54,7 @@ export const BookDetailPage = () => {
   }, [books, id]);
 
   const [formState, setFormState] = useState<Book>(emptyBook);
-  const [isEditing, setIsEditing] = useState(!id || id === "new");
+  const [isEditing, setIsEditing] = useState((!id || id === "new") && isUnlocked);
 
   useEffect(() => {
     if (existing) {
@@ -64,8 +65,8 @@ export const BookDetailPage = () => {
     const nextId = books.reduce((max, book) => Math.max(max, book.id), 0) + 1;
     const now = new Date().toISOString();
     setFormState({ ...emptyBook, id: nextId, added_at: now, updated_at: now });
-    setIsEditing(true);
-  }, [existing, books]);
+    setIsEditing(isUnlocked);
+  }, [existing, books, isUnlocked]);
 
   const handleChange = (key: keyof Book, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
@@ -126,6 +127,11 @@ export const BookDetailPage = () => {
   const formId = "book-detail-form";
 
   const handleOpenScanner = () => {
+    if (!isUnlocked) {
+      setLookupState("error");
+      setLookupMessage("Unlock to scan or edit.");
+      return;
+    }
     setScannerOpen(true);
     setFoundIsbn(null);
     setLookupState("idle");
@@ -152,6 +158,11 @@ export const BookDetailPage = () => {
   };
 
   const handleIsbnLookup = async (isbn: string) => {
+    if (!isUnlocked) {
+      setLookupState("error");
+      setLookupMessage("Unlock to edit book details.");
+      return;
+    }
     setFoundIsbn(isbn);
     setLookupState("lookup");
     setLookupMessage("Looking up book metadata...");
@@ -269,6 +280,7 @@ export const BookDetailPage = () => {
               className="button ghost"
               type="button"
               onClick={() => setIsEditing((prev) => !prev)}
+              disabled={!isUnlocked}
             >
               {isEditing ? "Cancel" : "Edit"}
             </button>
@@ -446,7 +458,7 @@ export const BookDetailPage = () => {
         lookupState={lookupState}
         lookupMessage={lookupMessage}
         onClose={handleCloseScanner}
-        onIsbn={handleIsbnLookup}
+        onIsbn={handleScannerIsbn}
       />
     </>
   );

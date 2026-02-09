@@ -10,7 +10,7 @@ type BarcodeScannerModalProps = {
   lookupState: LookupState;
   lookupMessage: string | null;
   onClose: () => void;
-  onIsbn: (isbn: string) => void;
+  onIsbn: (isbn: string, mode: "lookup" | "auto_add") => void;
 };
 
 type CameraState = "idle" | "requesting" | "scanning" | "permission_denied" | "found";
@@ -25,9 +25,12 @@ export const BarcodeScannerModal = ({
 }: BarcodeScannerModalProps) => {
   const scannerRef = useRef<HTMLDivElement | null>(null);
   const detectionLockRef = useRef(false);
+  const autoAddModeRef = useRef(false);
   const [cameraState, setCameraState] = useState<CameraState>("idle");
   const [manualIsbn, setManualIsbn] = useState("");
   const [manualError, setManualError] = useState<string | null>(null);
+  const [autoAddMode, setAutoAddMode] = useState(false);
+  const [lastDetected, setLastDetected] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -82,8 +85,19 @@ export const BarcodeScannerModal = ({
         return;
       }
       detectionLockRef.current = true;
+      setLastDetected(digits);
+      if (autoAddModeRef.current) {
+        onIsbn(digits, "auto_add");
+        window.setTimeout(() => {
+          detectionLockRef.current = false;
+          if (mounted) {
+            setCameraState("scanning");
+          }
+        }, 1200);
+        return;
+      }
       setCameraState("found");
-      onIsbn(digits);
+      onIsbn(digits, "lookup");
       Quagga.stop();
     };
 
@@ -101,6 +115,9 @@ export const BarcodeScannerModal = ({
     if (open) {
       setManualIsbn("");
       setManualError(null);
+      setAutoAddMode(false);
+      autoAddModeRef.current = false;
+      setLastDetected(null);
     }
   }, [open]);
 
@@ -116,7 +133,7 @@ export const BarcodeScannerModal = ({
       return;
     }
     setManualError(null);
-    onIsbn(normalized);
+    onIsbn(normalized, autoAddMode ? "auto_add" : "lookup");
   };
 
   const cameraStatusLabel = {
@@ -140,6 +157,7 @@ export const BarcodeScannerModal = ({
         <div className="scanner-status">
           {cameraStatusLabel && <p>{cameraStatusLabel}</p>}
           {foundIsbn && <p>Found ISBN: {foundIsbn}</p>}
+          {lastDetected && autoAddMode && <p>Auto-added ISBN: {lastDetected}</p>}
           {lookupState === "lookup" && <p>Looking up book metadata…</p>}
           {lookupState === "not_found" && <p>No Open Library entry found.</p>}
           {lookupState === "error" && <p>Lookup failed. Check your connection.</p>}
@@ -147,6 +165,17 @@ export const BarcodeScannerModal = ({
           {lookupMessage && <p>{lookupMessage}</p>}
         </div>
         <form className="scanner-manual" onSubmit={handleManualSubmit}>
+          <label className="modal-label scanner-toggle">
+            <input
+              type="checkbox"
+              checked={autoAddMode}
+              onChange={(event) => {
+                setAutoAddMode(event.target.checked);
+                autoAddModeRef.current = event.target.checked;
+              }}
+            />
+            Auto-add mode (keep scanning)
+          </label>
           <label className="modal-label">
             Manual ISBN-13
             <input

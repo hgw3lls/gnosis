@@ -65,6 +65,7 @@ const buildBookcase = (
 
 export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const upsertBook = useLibraryStore((state) => state.upsertBook);
+  const bookcases = useLibraryStore((state) => state.bookcases);
   const [bookcaseName, setBookcaseName] = useState("Bookcase A");
   const [shelvesCount, setShelvesCount] = useState(3);
   const [capacityPerShelf, setCapacityPerShelf] = useState(12);
@@ -229,6 +230,20 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         <div>
           <p className="caseKicker">Spines</p>
           <h2 className="caseTitle">{bookcaseName}</h2>
+          <div className="caseBookcases">
+            <span className="caseBookcasesLabel">Bookcases</span>
+            {bookcases.length ? (
+              <div className="caseBookcasesList">
+                {bookcases.map((bookcase) => (
+                  <span key={bookcase.id} className="caseBookcasePill">
+                    {bookcase.name || `Bookcase ${bookcase.id}`}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="caseBookcasesEmpty">No bookcases yet.</span>
+            )}
+          </div>
         </div>
         <div className="caseHeaderActions">
           {dragUnlocked ? (
