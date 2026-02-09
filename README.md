@@ -31,6 +31,28 @@ The app treats `./public/library.csv` as the canonical schema. The header must m
 
 All data is stored locally in IndexedDB (Dexie database `libraryDB`).
 
+## Performance note
+
+The library is designed to handle ~10k records; list view is virtualized for smooth scrolling.
+
+## ISBN lookup usage
+
+```ts
+import { findIsbn13ByTitleAuthor } from "./src/services/isbnLookup";
+
+const result = await findIsbn13ByTitleAuthor({
+  title: "The Hobbit",
+  author: "J.R.R. Tolkien",
+});
+console.log(result.isbn13, result.confidence);
+```
+
+Run the lightweight lookup script:
+
+```bash
+npm run isbn-lookup-test
+```
+
 ## Reset local data
 
 Use the **Reset local database** button on the Import/Export page to clear IndexedDB.

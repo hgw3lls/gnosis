@@ -18,6 +18,7 @@ type LibraryState = {
   importCsv: (text: string) => Promise<void>;
   exportCsv: () => string;
   upsertBook: (book: Book) => Promise<void>;
+  bulkUpdateBooks: (books: Book[]) => Promise<void>;
   upsertBookcase: (bookcase: Bookcase) => Promise<void>;
   removeBook: (id: number) => Promise<void>;
 };
@@ -185,6 +186,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           .concat(sanitized)
       ),
     });
+  },
+  bulkUpdateBooks: async (books) => {
+    if (!books.length) {
+      return;
+    }
+    await db.books.bulkPut(books);
+    const updatedIds = new Set(books.map((book) => book.id));
+    const remaining = get().books.filter((book) => !updatedIds.has(book.id));
+    set({ books: sortBooks(remaining.concat(books)) });
   },
   upsertBookcase: async (bookcase) => {
     const normalized = normalizeBookcase(bookcase);

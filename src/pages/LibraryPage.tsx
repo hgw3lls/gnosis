@@ -5,6 +5,13 @@ import { CaseView } from "../components/CaseView";
 import { useLibraryStore } from "../app/store";
 import { ViewMode } from "../components/AppLayout";
 import { normalizeMultiValue } from "../utils/libraryFilters";
+import { buildSearchIndexState, runSearch, SearchIndexState } from "../services/searchIndex";
+import {
+  createSavedSearch,
+  loadSavedSearches,
+  persistSavedSearches,
+  SavedSearch,
+} from "../services/savedSearches";
 
 type LibraryPageProps = {
   onSelectBook: (id: number) => void;
@@ -19,6 +26,24 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   const [format, setFormat] = useState("");
   const [sort, setSort] = useState("updated");
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkLocation, setBulkLocation] = useState("");
+  const [bulkTag, setBulkTag] = useState("");
+  const [bulkTagMode, setBulkTagMode] = useState<"add" | "remove">("add");
+  const [bulkCollection, setBulkCollection] = useState("");
+  const [bulkProject, setBulkProject] = useState("");
+  const [bulkNotes, setBulkNotes] = useState("");
+  const bulkUpdateBooks = useLibraryStore((state) => state.bulkUpdateBooks);
+  const [searchIndex, setSearchIndex] = useState<SearchIndexState>({
+    index: null,
+    status: "idle",
+  });
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() =>
+    loadSavedSearches()
+  );
+  const [saveName, setSaveName] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
 
   const collections = useMemo(() => {
     const values = new Set<string>();
@@ -40,29 +65,16 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   }, [books]);
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    const results = books.filter((book) => {
-      const matchesQuery =
-        !term ||
-        [
-          book.title,
-          book.authors,
-          book.tags,
-          book.collections,
-          book.projects,
-          book.isbn13,
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(term);
+    const results = runSearch(books, searchIndex.index, debouncedQuery);
+    const filteredResults = results.filter((book) => {
       const matchesStatus = !status || book.status === status;
       const matchesFormat = !format || book.format === format;
       const matchesCollection =
         !collection || normalizeMultiValue(book.collections).includes(collection);
-      return matchesQuery && matchesStatus && matchesFormat && matchesCollection;
+      return matchesStatus && matchesFormat && matchesCollection;
     });
 
-    return results.sort((a, b) => {
+    return filteredResults.sort((a, b) => {
       switch (sort) {
         case "added":
           return b.added_at.localeCompare(a.added_at);
@@ -78,7 +90,7 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
           return b.updated_at.localeCompare(a.updated_at);
       }
     });
-  }, [books, collection, format, query, sort, status]);
+  }, [books, collection, debouncedQuery, format, searchIndex.index, sort, status]);
 
   const selectedBook = useMemo(
     () => filtered.find((book) => book.id === selectedBookId) ?? null,
@@ -91,12 +103,147 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
     }
   }, [view]);
 
+  useEffect(() => {
+    if (!filtered.length) {
+      setSelectedIds(new Set());
+      return;
+    }
+    setSelectedIds((prev) => {
+      const next = new Set<number>();
+      filtered.forEach((book) => {
+        if (prev.has(book.id)) {
+          next.add(book.id);
+        }
+      });
+      return next;
+    });
+  }, [filtered]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    let active = true;
+    const buildIndex = async () => {
+      setSearchIndex((prev) => ({ ...prev, status: "building" }));
+      const index = await buildSearchIndexState(books, (status) => {
+        if (!active) {
+          return;
+        }
+        setSearchIndex((prev) => ({ ...prev, status }));
+      });
+      if (active) {
+        setSearchIndex({ index, status: "ready" });
+      }
+    };
+    void buildIndex();
+    return () => {
+      active = false;
+    };
+  }, [books]);
+
+  useEffect(() => {
+    persistSavedSearches(savedSearches);
+  }, [savedSearches]);
+
+  const handleSaveSearch = () => {
+    if (!query.trim()) {
+      return;
+    }
+    const saved = createSavedSearch(saveName || query, query);
+    setSavedSearches((prev) => [saved, ...prev]);
+    setSaveName("");
+  };
+
   const handleSelectBook = (id: number) => {
     if (view === "list") {
       setSelectedBookId(id);
       return;
     }
     onSelectBook(id);
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedIds(new Set(filtered.map((book) => book.id)));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleApplyBulk = async () => {
+    if (!selectedIds.size) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = filtered
+      .filter((book) => selectedIds.has(book.id))
+      .map((book) => {
+        const next = { ...book };
+        if (bulkStatus) {
+          next.status = bulkStatus as typeof book.status;
+        }
+        if (bulkLocation.trim()) {
+          next.location = bulkLocation.trim();
+        }
+        if (bulkTag.trim()) {
+          const tags = normalizeMultiValue(book.tags);
+          if (bulkTagMode === "add") {
+            if (!tags.includes(bulkTag.trim())) {
+              tags.push(bulkTag.trim());
+            }
+          } else {
+            const index = tags.indexOf(bulkTag.trim());
+            if (index >= 0) {
+              tags.splice(index, 1);
+            }
+          }
+          next.tags = tags.join(" | ");
+        }
+        if (bulkCollection.trim()) {
+          const values = normalizeMultiValue(book.collections);
+          if (!values.includes(bulkCollection.trim())) {
+            values.push(bulkCollection.trim());
+          }
+          next.collections = values.join(" | ");
+        }
+        if (bulkProject.trim()) {
+          const values = normalizeMultiValue(book.projects);
+          if (!values.includes(bulkProject.trim())) {
+            values.push(bulkProject.trim());
+          }
+          next.projects = values.join(" | ");
+        }
+        if (bulkNotes.trim()) {
+          next.notes = `${book.notes || ""}${book.notes ? "\n" : ""}${bulkNotes.trim()}`;
+        }
+        next.updated_at = now;
+        return next;
+      });
+    await bulkUpdateBooks(updates);
+    handleClearSelection();
+    setBulkStatus("");
+    setBulkLocation("");
+    setBulkTag("");
+    setBulkCollection("");
+    setBulkProject("");
+    setBulkNotes("");
   };
 
   const handleCloseDrawer = () => {
@@ -184,10 +331,132 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
         </div>
       </div>
       <div className="summary">{filtered.length} of {books.length} books</div>
+      {selectedIds.size ? (
+        <div className="bulk-toolbar">
+          <div className="bulk-summary">
+            {selectedIds.size} selected
+            <button className="text-link" type="button" onClick={handleSelectAll}>
+              Select all
+            </button>
+            <button className="text-link" type="button" onClick={handleClearSelection}>
+              Clear
+            </button>
+          </div>
+          <div className="bulk-actions">
+            <select value={bulkStatus} onChange={(event) => setBulkStatus(event.target.value)}>
+              <option value="">Set status…</option>
+              <option value="to_read">To read</option>
+              <option value="reading">Reading</option>
+              <option value="referenced">Referenced</option>
+              <option value="finished">Finished</option>
+            </select>
+            <input
+              className="input"
+              value={bulkLocation}
+              onChange={(event) => setBulkLocation(event.target.value)}
+              placeholder="Set location"
+            />
+            <div className="bulk-chip">
+              <select
+                value={bulkTagMode}
+                onChange={(event) => setBulkTagMode(event.target.value as "add" | "remove")}
+              >
+                <option value="add">Add tag</option>
+                <option value="remove">Remove tag</option>
+              </select>
+              <input
+                className="input"
+                value={bulkTag}
+                onChange={(event) => setBulkTag(event.target.value)}
+                placeholder="Tag"
+              />
+            </div>
+            <input
+              className="input"
+              value={bulkCollection}
+              onChange={(event) => setBulkCollection(event.target.value)}
+              placeholder="Add collection"
+            />
+            <input
+              className="input"
+              value={bulkProject}
+              onChange={(event) => setBulkProject(event.target.value)}
+              placeholder="Add project"
+            />
+            <input
+              className="input"
+              value={bulkNotes}
+              onChange={(event) => setBulkNotes(event.target.value)}
+              placeholder="Append notes"
+            />
+            <button className="button primary" type="button" onClick={handleApplyBulk}>
+              Apply
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <div className="saved-searches">
+        <div>
+          <h3>Saved searches</h3>
+          {savedSearches.length ? (
+            <div className="saved-searches-list">
+              {savedSearches.map((search) => (
+                <div key={search.id} className="saved-search">
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent("gnosis:set-search", { detail: search.query })
+                      )
+                    }
+                  >
+                    {search.name}
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() =>
+                      setSavedSearches((prev) => prev.filter((item) => item.id !== search.id))
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="summary">No saved searches yet.</p>
+          )}
+        </div>
+        <div className="saved-search-create">
+          <input
+            className="input"
+            value={saveName}
+            onChange={(event) => setSaveName(event.target.value)}
+            placeholder="Save current search as"
+          />
+          <button className="button ghost" type="button" onClick={handleSaveSearch}>
+            Save
+          </button>
+        </div>
+        <p className="summary helper">
+          Operators: tag:, status:, location:"", year:&gt;=2020, author:
+        </p>
+        {searchIndex.status === "building" ? (
+          <p className="summary">Rebuilding search index…</p>
+        ) : null}
+      </div>
       {view === "case-spines" ? (
         <CaseView books={filtered} onOpenBook={onSelectBook} />
       ) : (
-        <BookGrid books={filtered} view={view} onSelect={handleSelectBook} />
+        <BookGrid
+          books={filtered}
+          view={view}
+          onSelect={handleSelectBook}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+        />
       )}
       {view === "list" && selectedBook ? (
         <div className="drawer-overlay" onClick={handleCloseDrawer}>
