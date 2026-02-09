@@ -1057,17 +1057,20 @@ textarea:focus {
 }
 
 .caseUnorganizedList {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(10, 220px);
+  grid-auto-columns: max-content;
+  align-items: start;
   gap: 8px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  max-height: calc(10 * 220px + 9 * 8px);
 }
 
 .caseSpineUnorganized {
-  height: 180px;
+  height: 220px;
 }
 
 .caseUnorganizedEmpty {
@@ -1081,6 +1084,15 @@ textarea:focus {
 }
 
 .caseShelfRow::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.caseUnorganizedList::-webkit-scrollbar {
+  height: 8px;
+}
+
+.caseUnorganizedList::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 999px;
 }
