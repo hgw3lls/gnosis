@@ -78,6 +78,7 @@ export const SpinesWithRail = ({
       <SpinePreviewRail
         book={previewBook}
         previewing={previewBook?.id !== selectedBook?.id}
+        onOpen={onOpenBook}
       />
     </div>
   );

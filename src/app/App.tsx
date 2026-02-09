@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { AddBookcaseModal } from "../components/AddBookcaseModal";
 import { AddBookModal } from "../components/AddBookModal";
 import { CommandPalette } from "../components/CommandPalette";
@@ -15,6 +15,8 @@ export const App = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [addBookcaseOpen, setAddBookcaseOpen] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [activeBookId, setActiveBookId] = useState<number | "new" | null>(null);
+  const [scanOnOpen, setScanOnOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("grid");
   const loadFromDb = useLibraryStore((state) => state.loadFromDb);
@@ -23,8 +25,6 @@ export const App = () => {
   const isUnlocked = useLibraryStore((state) => state.isUnlocked);
   const unlockWithCode = useLibraryStore((state) => state.unlockWithCode);
   const lock = useLibraryStore((state) => state.lock);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const init = async () => {
@@ -73,20 +73,24 @@ export const App = () => {
           setUnlockOpen(true);
           return;
         }
-        navigate("/book/new?scan=1");
+        setActiveBookId("new");
+        setScanOnOpen(true);
       },
       goToBook: (id: number) => {
         if (!isUnlocked) {
           setUnlockOpen(true);
           return;
         }
-        navigate(`/book/${id}`, {
-          state: { from: `${location.pathname}${location.search}` },
-        });
+        setActiveBookId(id);
+        setScanOnOpen(false);
+      },
+      closeBookDetail: () => {
+        setActiveBookId(null);
+        setScanOnOpen(false);
       },
       setView,
     }),
-    [isUnlocked, location.pathname, location.search, navigate]
+    [isUnlocked]
   );
 
   if (loading) {
@@ -140,9 +144,21 @@ export const App = () => {
         onClose={actions.closeCommand}
         onAddBook={actions.openAdd}
         onScanBarcode={actions.openScan}
+        onOpenBook={actions.goToBook}
         onViewChange={actions.setView}
       />
-      <AddBookModal open={addOpen} onClose={actions.closeAdd} />
+      <AddBookModal
+        open={addOpen}
+        onClose={actions.closeAdd}
+        onCreated={(id) => {
+          actions.closeAdd();
+          actions.goToBook(id);
+        }}
+        onScan={() => {
+          actions.closeAdd();
+          actions.openScan();
+        }}
+      />
       <AddBookcaseModal
         open={addBookcaseOpen}
         onClose={actions.closeAddBookcase}
@@ -152,6 +168,18 @@ export const App = () => {
         onClose={() => setUnlockOpen(false)}
         onUnlock={unlockWithCode}
       />
+      {activeBookId != null ? (
+        <BookDetailPage
+          bookId={activeBookId}
+          onClose={actions.closeBookDetail}
+          onCreated={(id) => {
+            setActiveBookId(id);
+            setScanOnOpen(false);
+          }}
+          isModal
+          initialScan={scanOnOpen}
+        />
+      ) : null}
     </AppLayout>
   );
 };
