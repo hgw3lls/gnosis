@@ -253,6 +253,13 @@ export const BookDetailPage = ({
     }
   };
 
+  const handleScannerIsbn = async (isbn: string, mode: "lookup" | "auto_add") => {
+    await handleIsbnLookup(isbn);
+    if (mode === "lookup") {
+      setScannerOpen(false);
+    }
+  };
+
   const handleClose = () => {
     if (onClose) {
       onClose();
