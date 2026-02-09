@@ -35,18 +35,28 @@ export const ImportPage = () => {
       }
 
       const directoryHandle = await picker();
-      const writeCsv = async (filename: string) => {
+      const writeCsv = async (filename: string, payload: string) => {
         const handle = await directoryHandle.getFileHandle(filename, {
           create: true,
         });
         const writable = await handle.createWritable();
-        await writable.write(text);
+        await writable.write(payload);
         await writable.close();
       };
 
-      await writeCsv("library.csv");
-      await writeCsv("library.csv.backup.csv");
-      setMessage("Library synced to library.csv and library.csv.backup.csv.");
+      let backupMessage = "";
+      try {
+        const existingHandle = await directoryHandle.getFileHandle("library.csv");
+        const existingFile = await existingHandle.getFile();
+        const existingText = await existingFile.text();
+        await writeCsv("library.csv.backup.csv", existingText);
+        backupMessage = "Previous library.csv moved to library.csv.backup.csv.";
+      } catch (error) {
+        backupMessage = "No existing library.csv to back up.";
+      }
+
+      await writeCsv("library.csv", text);
+      setMessage(`Library synced to library.csv. ${backupMessage}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Sync failed.");
     }
@@ -114,7 +124,8 @@ export const ImportPage = () => {
         <h2>Sync Library</h2>
         <p>
           Sync replaces <code>library.csv</code> with your current session library and
-          overwrites <code>library.csv.backup.csv</code> with the synced file.
+          moves the previous <code>library.csv</code> to{" "}
+          <code>library.csv.backup.csv</code> first.
         </p>
         <div className="actions">
           <button className="button" type="button" onClick={handleSync}>

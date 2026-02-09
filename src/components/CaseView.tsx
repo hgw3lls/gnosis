@@ -2,23 +2,22 @@ import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Book } from "../db/schema";
 import { useLibraryStore } from "../app/store";
 
-type BookcaseCategory = {
-  label: string;
-  scope: "bookcase" | "shelf" | "position_range";
-  range: string;
-};
-
-type Bookcase = {
-  name: string;
-  shelves: number;
-  capacityPerShelf: number;
-  categories: BookcaseCategory[];
-};
-
 type BookLocation = {
   book: Book;
-  shelf: number;
-  position: number;
+  shelf: number | null;
+  position: number | null;
+  zone: "shelf" | "unorganized";
+};
+
+type ShelfLayout = {
+  shelfNumber: number;
+  slots: Array<Book | null>;
+};
+
+type CaseLayout = {
+  shelves: ShelfLayout[];
+  unorganized: Book[];
+  locationMap: Map<number, BookLocation>;
 };
 
 type CaseViewProps = {
@@ -26,42 +25,142 @@ type CaseViewProps = {
   onOpenBook: (id: number) => void;
 };
 
-const buildBookcase = (
+const arrangeBooks = (
   books: Book[],
-  shelves: number,
-  capacityPerShelf: number,
-  name: string,
-): { bookcase: Bookcase; locations: BookLocation[] } => {
-  const bookcase: Bookcase = {
-    name,
-    shelves,
-    capacityPerShelf,
-    categories: [
-      {
-        label: "Bookcase range",
-        scope: "bookcase",
-        range: `S1-P1 → S${shelves}-P${capacityPerShelf}`,
-      },
-      {
-        label: "Shelf bands",
-        scope: "shelf",
-        range: `S1-P1 → S${shelves}-P${capacityPerShelf}`,
-      },
-      {
-        label: "Position ranges",
-        scope: "position_range",
-        range: "S1-P1 → S1-P6",
-      },
-    ],
-  };
+  organizeMode: "category" | "random" | "updated" | "manual",
+  manualOrderIds: number[] | null
+): Book[] => {
+  if (organizeMode === "manual") {
+    if (!manualOrderIds) {
+      return books;
+    }
+    const map = new Map(books.map((book) => [book.id, book]));
+    const ordered = manualOrderIds
+      .map((id) => map.get(id))
+      .filter(Boolean) as Book[] | undefined;
+    return ordered && ordered.length ? ordered : books;
+  }
+  if (organizeMode === "random") {
+    return [...books].sort(() => Math.random() - 0.5);
+  }
+  if (organizeMode === "updated") {
+    return [...books].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+  return books;
+};
 
-  const locations = books.map((book, index) => {
-    const shelf = Math.floor(index / capacityPerShelf) + 1;
-    const position = (index % capacityPerShelf) + 1;
-    return { book, shelf, position };
+const buildLayout = (
+  books: Book[],
+  bookcaseId: number | null,
+  shelvesCount: number,
+  capacityPerShelf: number,
+  organizeMode: "category" | "random" | "updated" | "manual",
+  manualOrderIds: number[] | null
+): CaseLayout => {
+  const shelves: ShelfLayout[] = Array.from(
+    { length: Math.max(0, shelvesCount) },
+    (_, index) => ({
+      shelfNumber: index + 1,
+      slots: Array.from({ length: Math.max(0, capacityPerShelf) }, () => null),
+    })
+  );
+  const locationMap = new Map<number, BookLocation>();
+  const unorganized: Book[] = [];
+
+  if (!bookcaseId || shelvesCount <= 0 || capacityPerShelf <= 0) {
+    const arranged = arrangeBooks(
+      books.filter((book) => !book.bookcase_id),
+      organizeMode,
+      manualOrderIds
+    );
+    arranged.forEach((book) => {
+      locationMap.set(book.id, {
+        book,
+        shelf: null,
+        position: null,
+        zone: "unorganized",
+      });
+    });
+    return { shelves: [], unorganized: arranged, locationMap };
+  }
+
+  const assigned: Book[] = [];
+  books.forEach((book) => {
+    if (book.bookcase_id === bookcaseId) {
+      const shelf = book.shelf ?? null;
+      const position = book.position ?? null;
+      if (
+        shelf &&
+        position &&
+        shelf >= 1 &&
+        shelf <= shelvesCount &&
+        position >= 1 &&
+        position <= capacityPerShelf
+      ) {
+        assigned.push(book);
+      } else {
+        unorganized.push(book);
+      }
+      return;
+    }
+    if (!book.bookcase_id) {
+      unorganized.push(book);
+    }
   });
 
-  return { bookcase, locations };
+  const orderedAssigned = [...assigned].sort((a, b) => {
+    const shelfDiff = (a.shelf ?? 0) - (b.shelf ?? 0);
+    if (shelfDiff !== 0) {
+      return shelfDiff;
+    }
+    return (a.position ?? 0) - (b.position ?? 0);
+  });
+
+  const overflow: Book[] = [];
+  orderedAssigned.forEach((book) => {
+    const shelfIndex = (book.shelf ?? 1) - 1;
+    const positionIndex = (book.position ?? 1) - 1;
+    const shelf = shelves[shelfIndex];
+    if (!shelf) {
+      overflow.push(book);
+      return;
+    }
+    if (shelf.slots[positionIndex]) {
+      overflow.push(book);
+      return;
+    }
+    shelf.slots[positionIndex] = book;
+  });
+
+  const arrangedUnorganized = arrangeBooks(
+    [...unorganized, ...overflow],
+    organizeMode,
+    manualOrderIds
+  );
+
+  shelves.forEach((shelf) => {
+    shelf.slots.forEach((book, index) => {
+      if (!book) {
+        return;
+      }
+      locationMap.set(book.id, {
+        book,
+        shelf: shelf.shelfNumber,
+        position: index + 1,
+        zone: "shelf",
+      });
+    });
+  });
+  arrangedUnorganized.forEach((book) => {
+    locationMap.set(book.id, {
+      book,
+      shelf: null,
+      position: null,
+      zone: "unorganized",
+    });
+  });
+
+  return { shelves, unorganized: arrangedUnorganized, locationMap };
 };
 
 export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
@@ -127,12 +226,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     }
   }, [shelvesCollapsed]);
 
-  const effectiveShelvesCount = showDetails
-    ? Math.max(1, shelvesCount)
-    : 3;
-  const effectiveCapacityPerShelf = showDetails
-    ? Math.max(6, capacityPerShelf)
-    : Math.max(6, Math.ceil(books.length / 3));
+  const effectiveShelvesCount = Math.max(1, shelvesCount);
+  const effectiveCapacityPerShelf = Math.max(6, capacityPerShelf);
 
   useEffect(() => {
     setManualOrderIds((prev) => {
@@ -146,40 +241,33 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     });
   }, [books]);
 
-  const arrangedBooks = useMemo(() => {
-    if (organizeMode === "manual") {
-      const map = new Map(books.map((book) => [book.id, book]));
-      const ordered = manualOrderIds
-        ?.map((id) => map.get(id))
-        .filter(Boolean) as Book[] | undefined;
-      return ordered && ordered.length ? ordered : books;
-    }
-    if (organizeMode === "random") {
-      return [...books].sort(() => Math.random() - 0.5);
-    }
-    if (organizeMode === "updated") {
-      return [...books].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-    }
-    return books;
-  }, [books, manualOrderIds, organizeMode]);
-
-  const { bookcase, locations } = useMemo(
+  const layout = useMemo(
     () =>
-      buildBookcase(
-        arrangedBooks,
+      buildLayout(
+        books,
+        selectedBookcaseId,
         effectiveShelvesCount,
         effectiveCapacityPerShelf,
-        bookcaseName || "Bookcase"
+        organizeMode,
+        manualOrderIds
       ),
-    [arrangedBooks, bookcaseName, effectiveCapacityPerShelf, effectiveShelvesCount]
+    [
+      books,
+      effectiveCapacityPerShelf,
+      effectiveShelvesCount,
+      manualOrderIds,
+      organizeMode,
+      selectedBookcaseId,
+    ]
   );
+
   const previewLocation = useMemo(
-    () => locations.find((location) => location.book.id === previewId) ?? null,
-    [locations, previewId]
+    () => (previewId != null ? layout.locationMap.get(previewId) ?? null : null),
+    [layout.locationMap, previewId]
   );
   const quickEditLocation = useMemo(
-    () => locations.find((location) => location.book.id === quickEditId) ?? null,
-    [locations, quickEditId]
+    () => (quickEditId != null ? layout.locationMap.get(quickEditId) ?? null : null),
+    [layout.locationMap, quickEditId]
   );
 
   useEffect(() => {
@@ -197,22 +285,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     });
   }, [quickEditLocation]);
 
-  const shelves = useMemo(() => {
-    const shelfMap = new Map<number, BookLocation[]>();
-    locations.forEach((location) => {
-      const list = shelfMap.get(location.shelf) ?? [];
-      list.push(location);
-      shelfMap.set(location.shelf, list);
-    });
-    return Array.from({ length: bookcase.shelves }, (_, index) => {
-      const shelfNumber = index + 1;
-      return {
-        shelfNumber,
-        books: shelfMap.get(shelfNumber) ?? [],
-      };
-    });
-  }, [bookcase.shelves, locations]);
-
   if (books.length === 0) {
     return (
       <div className="panel case-empty" role="status">
@@ -226,10 +298,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     setQuickEditPosition({ x, y });
   };
 
-  const handleClick = (
-    event: MouseEvent<HTMLButtonElement>,
-    id: number
-  ) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>, id: number) => {
     if (clickTimerRef.current) {
       window.clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
@@ -249,20 +318,168 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     onOpenBook(id);
   };
 
-  const handleDragReorder = (targetId: number) => {
-    if (draggingId == null || draggingId === targetId) {
+  const cloneShelves = () =>
+    layout.shelves.map((shelf) => ({
+      shelfNumber: shelf.shelfNumber,
+      slots: shelf.slots.slice(),
+    }));
+
+  const removeFromShelf = (slots: Array<Book | null>, id: number) => {
+    const index = slots.findIndex((book) => book?.id === id);
+    if (index < 0) {
+      return null;
+    }
+    const removed = slots[index];
+    for (let i = index; i < slots.length - 1; i += 1) {
+      slots[i] = slots[i + 1];
+    }
+    slots[slots.length - 1] = null;
+    return removed ?? null;
+  };
+
+  const insertIntoShelf = (
+    slots: Array<Book | null>,
+    startIndex: number,
+    book: Book
+  ) => {
+    let carry: Book | null = book;
+    for (let i = startIndex; i < slots.length; i += 1) {
+      if (!carry) {
+        break;
+      }
+      const next = slots[i];
+      slots[i] = carry;
+      carry = next ?? null;
+    }
+    return carry;
+  };
+
+  const persistUpdates = async (updates: Book[]) => {
+    if (!updates.length) {
       return;
     }
-    const currentIds = (manualOrderIds ?? arrangedBooks.map((book) => book.id)).slice();
-    const fromIndex = currentIds.indexOf(draggingId);
-    const toIndex = currentIds.indexOf(targetId);
-    if (fromIndex < 0 || toIndex < 0) {
+    await Promise.all(updates.map((book) => upsertBook(book)));
+  };
+
+  const handlePlaceBook = async (
+    bookId: number,
+    targetShelf: number | null,
+    targetPosition?: number
+  ) => {
+    if (!dragUnlocked) {
       return;
     }
-    currentIds.splice(fromIndex, 1);
-    currentIds.splice(toIndex, 0, draggingId);
-    setManualOrderIds(currentIds);
-    setOrganizeMode("manual");
+    if (targetShelf != null && selectedBookcaseId == null) {
+      return;
+    }
+    const movingBook = books.find((book) => book.id === bookId);
+    if (!movingBook) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const shelves = cloneShelves();
+    const targetShelfIndex = targetShelf ? targetShelf - 1 : null;
+
+    let removedBook: Book | null = null;
+    shelves.forEach((shelf) => {
+      const removed = removeFromShelf(shelf.slots, bookId);
+      if (removed) {
+        removedBook = removed;
+      }
+    });
+
+    const unorganizedIndex = layout.unorganized.findIndex((book) => book.id === bookId);
+    const unorganizedBook = unorganizedIndex >= 0 ? layout.unorganized[unorganizedIndex] : null;
+    const bookToMove = removedBook ?? unorganizedBook ?? movingBook;
+
+    let overflow: Book | null = null;
+    if (targetShelfIndex != null && shelves[targetShelfIndex]) {
+      const slots = shelves[targetShelfIndex].slots;
+      let insertIndex = 0;
+      if (typeof targetPosition === "number") {
+        insertIndex = Math.min(Math.max(0, targetPosition - 1), slots.length - 1);
+      } else {
+        const firstEmpty = slots.findIndex((slot) => slot == null);
+        insertIndex = firstEmpty >= 0 ? firstEmpty : slots.length - 1;
+      }
+      overflow = insertIntoShelf(slots, insertIndex, bookToMove);
+    }
+
+    const updates: Book[] = [];
+    const touched = new Set<number>();
+    shelves.forEach((shelf) => {
+      shelf.slots.forEach((book, index) => {
+        if (!book) {
+          return;
+        }
+        const desiredShelf = shelf.shelfNumber;
+        const desiredPosition = index + 1;
+        if (
+          book.bookcase_id !== selectedBookcaseId ||
+          book.shelf !== desiredShelf ||
+          book.position !== desiredPosition
+        ) {
+          updates.push({
+            ...book,
+            bookcase_id: selectedBookcaseId,
+            shelf: desiredShelf,
+            position: desiredPosition,
+            updated_at: now,
+          });
+        }
+        touched.add(book.id);
+      });
+    });
+
+    const unassignBook = (book: Book | null) => {
+      if (!book) {
+        return;
+      }
+      if (touched.has(book.id)) {
+        return;
+      }
+      if (book.bookcase_id == null && book.shelf == null && book.position == null) {
+        return;
+      }
+      updates.push({
+        ...book,
+        bookcase_id: null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      });
+    };
+
+    if (targetShelfIndex == null) {
+      unassignBook(bookToMove);
+    }
+    if (overflow) {
+      unassignBook(overflow);
+    }
+
+    await persistUpdates(updates);
+    setDraggingId(null);
+  };
+
+  const handleDropOnShelf = (shelfNumber: number) => {
+    if (draggingId == null) {
+      return;
+    }
+    void handlePlaceBook(draggingId, shelfNumber);
+  };
+
+  const handleDropOnPosition = (shelfNumber: number, position: number) => {
+    if (draggingId == null) {
+      return;
+    }
+    void handlePlaceBook(draggingId, shelfNumber, position);
+  };
+
+  const handleDropUnorganized = () => {
+    if (draggingId == null) {
+      return;
+    }
+    void handlePlaceBook(draggingId, null);
   };
 
   const handleToggleDetails = async () => {
@@ -343,7 +560,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       {showDetails ? (
         <section className="caseDetails">
           <div className="caseMeta">
-            {bookcase.shelves} shelves · {bookcase.capacityPerShelf} positions per
+            {effectiveShelvesCount} shelves · {effectiveCapacityPerShelf} positions per
             shelf
           </div>
           <div className="caseDetailsGrid">
@@ -387,7 +604,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                   />
                 </label>
                 <label>
-                  Organize shelves
+                  Organize unassigned
                   <select
                     value={organizeMode}
                     onChange={(event) => {
@@ -414,8 +631,10 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     {previewLocation.book.title || "Untitled"}
                   </p>
                   <p className="casePreviewMeta">
-                    {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·
-                    S{previewLocation.shelf} · P{previewLocation.position}
+                    {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·{" "}
+                    {previewLocation.shelf && previewLocation.position
+                      ? `S${previewLocation.shelf} · P${previewLocation.position}`
+                      : "Unorganized"}
                   </p>
                   <div className="casePreviewActions">
                     <button
@@ -435,9 +654,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                   </div>
                 </div>
               ) : (
-                <p className="casePreviewEmpty">
-                  Hover or tap a spine to preview.
-                </p>
+                <p className="casePreviewEmpty">Hover or tap a spine to preview.</p>
               )}
             </div>
           </div>
@@ -446,37 +663,127 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       {!shelvesCollapsed ? (
         <>
           <div className="caseShelves">
-            {shelves.map((shelf) => (
+            {layout.shelves.map((shelf) => (
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
                   <span>Shelf {shelf.shelfNumber}</span>
                 </header>
-                <div className="caseShelfRow" role="list">
-                  {shelf.books.map((location) => (
+                <div
+                  className="caseShelfRow"
+                  role="list"
+                  onDragOver={(event) => {
+                    if (dragUnlocked) {
+                      event.preventDefault();
+                    }
+                  }}
+                  onDrop={() => handleDropOnShelf(shelf.shelfNumber)}
+                >
+                  {shelf.slots
+                    .map((book, index) => {
+                      if (!book) {
+                        return null;
+                      }
+                      const position = index + 1;
+                      return (
+                        <button
+                          key={book.id}
+                          type="button"
+                          className="caseSpine"
+                          role="listitem"
+                          aria-label={`${book.title || "Untitled"} · ${bookcaseName} · Shelf ${
+                            shelf.shelfNumber
+                          } · Position ${position}`}
+                          draggable={dragUnlocked}
+                          onClick={(event) => handleClick(event, book.id)}
+                          onDoubleClick={() => handleDoubleClick(book.id)}
+                          onMouseEnter={(event) => {
+                            setPreviewId(book.id);
+                            setHoverPosition({ x: event.clientX, y: event.clientY });
+                          }}
+                          onMouseMove={(event) =>
+                            setHoverPosition({ x: event.clientX, y: event.clientY })
+                          }
+                          onMouseLeave={() => setPreviewId(null)}
+                          onFocus={() => setPreviewId(book.id)}
+                          onBlur={() => setPreviewId(null)}
+                          onTouchStart={() => setPreviewId(book.id)}
+                          onPointerDown={() => {
+                            if (longPressRef.current) {
+                              window.clearTimeout(longPressRef.current);
+                            }
+                            longPressRef.current = window.setTimeout(() => {
+                              setDragUnlocked(true);
+                            }, 550);
+                          }}
+                          onPointerUp={() => {
+                            if (longPressRef.current) {
+                              window.clearTimeout(longPressRef.current);
+                              longPressRef.current = null;
+                            }
+                          }}
+                          onPointerLeave={() => {
+                            if (longPressRef.current) {
+                              window.clearTimeout(longPressRef.current);
+                              longPressRef.current = null;
+                            }
+                          }}
+                          onDragStart={() => setDraggingId(book.id)}
+                          onDragEnd={() => setDraggingId(null)}
+                          onDragOver={(event) => {
+                            if (dragUnlocked) {
+                              event.preventDefault();
+                            }
+                          }}
+                          onDrop={() => handleDropOnPosition(shelf.shelfNumber, position)}
+                        >
+                          <span className="caseSpineTitle">{book.title || "Untitled"}</span>
+                          <span className="caseSpineAuthor">
+                            {book.authors || "Unknown author"}
+                          </span>
+                        </button>
+                      );
+                    })
+                    .filter(Boolean)}
+                </div>
+              </section>
+            ))}
+            <section className="caseShelf caseUnorganized">
+              <header className="caseShelfHeader">
+                <span>Unorganized</span>
+                <span>{layout.unorganized.length} books</span>
+              </header>
+              <div
+                className="caseUnorganizedList"
+                role="list"
+                onDragOver={(event) => {
+                  if (dragUnlocked) {
+                    event.preventDefault();
+                  }
+                }}
+                onDrop={handleDropUnorganized}
+              >
+                {layout.unorganized.length ? (
+                  layout.unorganized.map((book) => (
                     <button
-                      key={location.book.id}
+                      key={book.id}
                       type="button"
-                      className="caseSpine"
+                      className="caseSpine caseSpineUnorganized"
                       role="listitem"
-                      aria-label={`${
-                        location.book.title || "Untitled"
-                      } · ${bookcaseName} · Shelf ${location.shelf} · Position ${
-                        location.position
-                      }`}
+                      aria-label={`${book.title || "Untitled"} · Unorganized`}
                       draggable={dragUnlocked}
-                      onClick={(event) => handleClick(event, location.book.id)}
-                      onDoubleClick={() => handleDoubleClick(location.book.id)}
+                      onClick={(event) => handleClick(event, book.id)}
+                      onDoubleClick={() => handleDoubleClick(book.id)}
                       onMouseEnter={(event) => {
-                        setPreviewId(location.book.id);
+                        setPreviewId(book.id);
                         setHoverPosition({ x: event.clientX, y: event.clientY });
                       }}
                       onMouseMove={(event) =>
                         setHoverPosition({ x: event.clientX, y: event.clientY })
                       }
                       onMouseLeave={() => setPreviewId(null)}
-                      onFocus={() => setPreviewId(location.book.id)}
+                      onFocus={() => setPreviewId(book.id)}
                       onBlur={() => setPreviewId(null)}
-                      onTouchStart={() => setPreviewId(location.book.id)}
+                      onTouchStart={() => setPreviewId(book.id)}
                       onPointerDown={() => {
                         if (longPressRef.current) {
                           window.clearTimeout(longPressRef.current);
@@ -497,26 +804,20 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                           longPressRef.current = null;
                         }
                       }}
-                      onDragStart={() => setDraggingId(location.book.id)}
+                      onDragStart={() => setDraggingId(book.id)}
                       onDragEnd={() => setDraggingId(null)}
-                      onDragOver={(event) => {
-                        if (dragUnlocked) {
-                          event.preventDefault();
-                        }
-                      }}
-                      onDrop={() => handleDragReorder(location.book.id)}
                     >
-                      <span className="caseSpineTitle">
-                        {location.book.title || "Untitled"}
-                      </span>
+                      <span className="caseSpineTitle">{book.title || "Untitled"}</span>
                       <span className="caseSpineAuthor">
-                        {location.book.authors || "Unknown author"}
+                        {book.authors || "Unknown author"}
                       </span>
                     </button>
-                  ))}
-                </div>
-              </section>
-            ))}
+                  ))
+                ) : (
+                  <div className="caseUnorganizedEmpty">All books are shelved.</div>
+                )}
+              </div>
+            </section>
           </div>
           {previewLocation && !quickEditLocation ? (
             <div
@@ -530,8 +831,10 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 {previewLocation.book.title || "Untitled"}
               </p>
               <p className="casePreviewMeta">
-                {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·
-                S{previewLocation.shelf} · P{previewLocation.position}
+                {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·{" "}
+                {previewLocation.shelf && previewLocation.position
+                  ? `S${previewLocation.shelf} · P${previewLocation.position}`
+                  : "Unorganized"}
               </p>
             </div>
           ) : null}
@@ -550,8 +853,10 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                   </p>
                   <p className="casePreviewMeta">
                     {quickEditLocation.book.authors || "Unknown author"} ·{" "}
-                    {bookcaseName} · S{quickEditLocation.shelf} · P
-                    {quickEditLocation.position}
+                    {bookcaseName} ·{" "}
+                    {quickEditLocation.shelf && quickEditLocation.position
+                      ? `S${quickEditLocation.shelf} · P${quickEditLocation.position}`
+                      : "Unorganized"}
                   </p>
                 </div>
                 <button

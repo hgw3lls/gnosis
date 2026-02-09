@@ -18,6 +18,9 @@ const emptyBook: Book = {
   collections: "",
   projects: "",
   location: "",
+  bookcase_id: null,
+  shelf: null,
+  position: null,
   status: "to_read",
   notes: "",
   cover_image: "",
@@ -31,6 +34,7 @@ export const BookDetailPage = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const books = useLibraryStore((state) => state.books);
+  const bookcases = useLibraryStore((state) => state.bookcases);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const removeBook = useLibraryStore((state) => state.removeBook);
   const isUnlocked = useLibraryStore((state) => state.isUnlocked);
@@ -55,6 +59,36 @@ export const BookDetailPage = () => {
 
   const [formState, setFormState] = useState<Book>(emptyBook);
   const [isEditing, setIsEditing] = useState((!id || id === "new") && isUnlocked);
+  const selectedBookcase = useMemo(
+    () =>
+      formState.bookcase_id != null
+        ? bookcases.find((bookcase) => bookcase.id === formState.bookcase_id) ?? null
+        : null,
+    [bookcases, formState.bookcase_id]
+  );
+  const shelfStats = useMemo(() => {
+    if (!selectedBookcase) {
+      return { counts: new Map<number, number>(), positions: new Map<number, Set<number>>() };
+    }
+    const counts = new Map<number, number>();
+    const positions = new Map<number, Set<number>>();
+    books.forEach((book) => {
+      if (book.id === formState.id) {
+        return;
+      }
+      if (book.bookcase_id !== selectedBookcase.id) {
+        return;
+      }
+      if (!book.shelf || !book.position) {
+        return;
+      }
+      counts.set(book.shelf, (counts.get(book.shelf) ?? 0) + 1);
+      const slot = positions.get(book.shelf) ?? new Set<number>();
+      slot.add(book.position);
+      positions.set(book.shelf, slot);
+    });
+    return { counts, positions };
+  }, [books, formState.id, selectedBookcase]);
 
   useEffect(() => {
     if (existing) {
@@ -70,6 +104,33 @@ export const BookDetailPage = () => {
 
   const handleChange = (key: keyof Book, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleBookcaseChange = (value: string) => {
+    const nextBookcaseId = value ? Number(value) : null;
+    setFormState((prev) => ({
+      ...prev,
+      bookcase_id: Number.isFinite(nextBookcaseId) ? nextBookcaseId : null,
+      shelf: null,
+      position: null,
+    }));
+  };
+
+  const handleShelfChange = (value: string) => {
+    const nextShelf = value ? Number(value) : null;
+    setFormState((prev) => ({
+      ...prev,
+      shelf: Number.isFinite(nextShelf) ? nextShelf : null,
+      position: null,
+    }));
+  };
+
+  const handlePositionChange = (value: string) => {
+    const nextPosition = value ? Number(value) : null;
+    setFormState((prev) => ({
+      ...prev,
+      position: Number.isFinite(nextPosition) ? nextPosition : null,
+    }));
   };
 
   const handleCoverUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +154,9 @@ export const BookDetailPage = () => {
     const normalized = normalizeBook({
       ...formState,
       id: existing?.id ?? Number(formState.id),
+      bookcase_id: formState.bookcase_id ?? null,
+      shelf: formState.bookcase_id ? formState.shelf : null,
+      position: formState.bookcase_id ? formState.position : null,
       updated_at: now,
       added_at: existing?.added_at ?? now,
     });
@@ -229,6 +293,17 @@ export const BookDetailPage = () => {
       setUpdateMessage("Update failed. Check your connection.");
     }
   };
+
+  const shelves = selectedBookcase
+    ? Array.from({ length: selectedBookcase.shelves }, (_, index) => index + 1)
+    : [];
+  const capacity = selectedBookcase?.capacity_per_shelf ?? 0;
+  const activeShelf = formState.shelf ?? null;
+  const shelfIsFull = (shelfNumber: number) =>
+    (shelfStats.counts.get(shelfNumber) ?? 0) >= capacity;
+  const occupiedPositions = activeShelf
+    ? shelfStats.positions.get(activeShelf) ?? new Set<number>()
+    : new Set<number>();
 
   return (
     <>
@@ -414,6 +489,73 @@ export const BookDetailPage = () => {
                     </button>
                   ) : null}
                 </div>
+              </label>
+              <label>
+                Bookcase
+                <select
+                  className="input"
+                  value={formState.bookcase_id ?? ""}
+                  onChange={(event) => handleBookcaseChange(event.target.value)}
+                  disabled={!isEditing}
+                >
+                  <option value="">Unassigned</option>
+                  {bookcases.map((bookcase) => (
+                    <option key={bookcase.id} value={bookcase.id}>
+                      {bookcase.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Shelf
+                <select
+                  className="input"
+                  value={formState.shelf ?? ""}
+                  onChange={(event) => handleShelfChange(event.target.value)}
+                  disabled={!isEditing || !selectedBookcase}
+                >
+                  <option value="">Unassigned</option>
+                  {shelves.map((shelfNumber) => {
+                    const full = shelfIsFull(shelfNumber);
+                    const isCurrentShelf = formState.shelf === shelfNumber;
+                    return (
+                      <option
+                        key={`shelf-${shelfNumber}`}
+                        value={shelfNumber}
+                        disabled={!isCurrentShelf && full}
+                      >
+                        Shelf {shelfNumber}
+                        {full && !isCurrentShelf ? " (full)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+              <label>
+                Position
+                <select
+                  className="input"
+                  value={formState.position ?? ""}
+                  onChange={(event) => handlePositionChange(event.target.value)}
+                  disabled={!isEditing || !selectedBookcase || !activeShelf}
+                >
+                  <option value="">Unassigned</option>
+                  {Array.from({ length: capacity }, (_, index) => {
+                    const position = index + 1;
+                    const taken = occupiedPositions.has(position);
+                    const isCurrent = formState.position === position;
+                    return (
+                      <option
+                        key={`position-${position}`}
+                        value={position}
+                        disabled={!isCurrent && taken}
+                      >
+                        Position {position}
+                        {taken && !isCurrent ? " (taken)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
               </label>
               <label>
                 Location
