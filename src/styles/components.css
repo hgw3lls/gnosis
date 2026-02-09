@@ -21,12 +21,15 @@
 .topbar-logo-link {
   display: inline-flex;
   align-items: center;
+  max-width: 180px;
 }
 
 .topbar-logo {
-  height: 36px;
+  height: 32px;
   width: auto;
   display: block;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .topbar-center {

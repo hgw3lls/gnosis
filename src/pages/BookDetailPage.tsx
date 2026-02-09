@@ -117,6 +117,46 @@ export const BookDetailPage = ({
     setIsEditing(isUnlocked);
   }, [existing, books, isUnlocked]);
 
+  useEffect(() => {
+    if (!formState.bookcase_id) {
+      if (formState.shelf || formState.position) {
+        setFormState((prev) => ({ ...prev, shelf: null, position: null }));
+      }
+      return;
+    }
+    const bookcase = bookcases.find((item) => item.id === formState.bookcase_id);
+    if (!bookcase) {
+      setFormState((prev) => ({
+        ...prev,
+        bookcase_id: null,
+        shelf: null,
+        position: null,
+      }));
+      return;
+    }
+    let nextShelf = formState.shelf ?? null;
+    let nextPosition = formState.position ?? null;
+    if (!nextShelf || !nextPosition) {
+      nextShelf = null;
+      nextPosition = null;
+    }
+    if (nextShelf && nextShelf > bookcase.shelves) {
+      nextShelf = null;
+      nextPosition = null;
+    }
+    if (nextPosition && nextPosition > bookcase.capacity_per_shelf) {
+      nextShelf = null;
+      nextPosition = null;
+    }
+    if (nextShelf !== formState.shelf || nextPosition !== formState.position) {
+      setFormState((prev) => ({
+        ...prev,
+        shelf: nextShelf,
+        position: nextPosition,
+      }));
+    }
+  }, [bookcases, formState.bookcase_id, formState.position, formState.shelf]);
+
   const handleChange = (key: keyof Book, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
   };
@@ -165,10 +205,15 @@ export const BookDetailPage = ({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const desiredId = existing?.id ?? Number(formState.id);
+    if (!existing && books.some((book) => book.id === desiredId)) {
+      window.alert("This book ID is already in use. Choose a different ID.");
+      return;
+    }
     const now = new Date().toISOString();
     const normalized = normalizeBook({
       ...formState,
-      id: existing?.id ?? Number(formState.id),
+      id: desiredId,
       bookcase_id: formState.bookcase_id ?? null,
       shelf: formState.bookcase_id ? formState.shelf : null,
       position: formState.bookcase_id ? formState.position : null,

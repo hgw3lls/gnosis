@@ -27,12 +27,15 @@
 .logo-link {
   display: inline-flex;
   align-items: center;
+  max-width: 260px;
 }
 
 .logo {
-  height: 200px;
+  max-height: 180px;
+  max-width: 100%;
   width: auto;
   display: block;
+  object-fit: contain;
 }
 
 .actions {
