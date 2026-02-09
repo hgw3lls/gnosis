@@ -18,6 +18,40 @@ export const ImportPage = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleSync = async () => {
+    try {
+      setError("");
+      const books = await db.books.toArray();
+      const text = exportCsvText(books);
+      const picker = (
+        window as Window & {
+          showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
+        }
+      ).showDirectoryPicker;
+
+      if (!picker) {
+        setError("Sync is not supported in this browser. Use export instead.");
+        return;
+      }
+
+      const directoryHandle = await picker();
+      const writeCsv = async (filename: string) => {
+        const handle = await directoryHandle.getFileHandle(filename, {
+          create: true,
+        });
+        const writable = await handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+      };
+
+      await writeCsv("library.csv");
+      await writeCsv("library.csv.backup.csv");
+      setMessage("Library synced to library.csv and library.csv.backup.csv.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Sync failed.");
+    }
+  };
+
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -73,6 +107,18 @@ export const ImportPage = () => {
           </button>
           <button className="button danger" type="button" onClick={handleReset}>
             Reset local database
+          </button>
+        </div>
+      </div>
+      <div className="panel">
+        <h2>Sync Library</h2>
+        <p>
+          Sync replaces <code>library.csv</code> with your current session library and
+          overwrites <code>library.csv.backup.csv</code> with the synced file.
+        </p>
+        <div className="actions">
+          <button className="button" type="button" onClick={handleSync}>
+            Sync library.csv
           </button>
         </div>
       </div>
