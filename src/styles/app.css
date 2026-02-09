@@ -24,6 +24,17 @@
   margin: 0;
 }
 
+.logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
