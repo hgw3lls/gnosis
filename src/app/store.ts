@@ -8,8 +8,11 @@ type LibraryState = {
   books: Book[];
   bookcases: Bookcase[];
   loading: boolean;
+  isUnlocked: boolean;
   setBooks: (books: Book[]) => void;
   setBookcases: (bookcases: Bookcase[]) => void;
+  unlockWithCode: (code: string) => boolean;
+  lock: () => void;
   loadFromDb: () => Promise<void>;
   seedFromCsv: () => Promise<void>;
   importCsv: (text: string) => Promise<void>;
@@ -25,8 +28,17 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   books: [],
   bookcases: [],
   loading: true,
+  isUnlocked: false,
   setBooks: (books) => set({ books: sortBooks(books) }),
   setBookcases: (bookcases) => set({ bookcases }),
+  unlockWithCode: (code) => {
+    if (code === "1984") {
+      set({ isUnlocked: true });
+      return true;
+    }
+    return false;
+  },
+  lock: () => set({ isUnlocked: false }),
   loadFromDb: async () => {
     const [books, bookcases] = await Promise.all([db.books.toArray(), db.bookcases.toArray()]);
     set({

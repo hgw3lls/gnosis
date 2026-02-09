@@ -1,9 +1,9 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 import { BarcodeScannerModal } from "../components/BarcodeScannerModal";
-import { lookupByIsbn13 } from "../lib/isbnLookup";
+import { isValidIsbn13, lookupByIsbn13 } from "../lib/isbnLookup";
 
 const emptyBook: Book = {
   id: 0,
@@ -33,12 +33,17 @@ export const BookDetailPage = () => {
   const books = useLibraryStore((state) => state.books);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const removeBook = useLibraryStore((state) => state.removeBook);
+  const isUnlocked = useLibraryStore((state) => state.isUnlocked);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [foundIsbn, setFoundIsbn] = useState<string | null>(null);
   const [lookupState, setLookupState] = useState<"idle" | "lookup" | "not_found" | "error" | "success">(
     "idle",
   );
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+  const [updateState, setUpdateState] = useState<"idle" | "updating" | "not_found" | "error" | "success">(
+    "idle",
+  );
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const scanTriggeredRef = useRef(false);
 
   const existing = useMemo(() => {
@@ -49,7 +54,7 @@ export const BookDetailPage = () => {
   }, [books, id]);
 
   const [formState, setFormState] = useState<Book>(emptyBook);
-  const [isEditing, setIsEditing] = useState(!id || id === "new");
+  const [isEditing, setIsEditing] = useState((!id || id === "new") && isUnlocked);
 
   useEffect(() => {
     if (existing) {
@@ -60,11 +65,26 @@ export const BookDetailPage = () => {
     const nextId = books.reduce((max, book) => Math.max(max, book.id), 0) + 1;
     const now = new Date().toISOString();
     setFormState({ ...emptyBook, id: nextId, added_at: now, updated_at: now });
-    setIsEditing(true);
-  }, [existing, books]);
+    setIsEditing(isUnlocked);
+  }, [existing, books, isUnlocked]);
 
   const handleChange = (key: keyof Book, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCoverUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setFormState((prev) => ({ ...prev, cover_image: reader.result }));
+        setIsEditing(true);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -107,6 +127,11 @@ export const BookDetailPage = () => {
   const formId = "book-detail-form";
 
   const handleOpenScanner = () => {
+    if (!isUnlocked) {
+      setLookupState("error");
+      setLookupMessage("Unlock to scan or edit.");
+      return;
+    }
     setScannerOpen(true);
     setFoundIsbn(null);
     setLookupState("idle");
@@ -133,6 +158,11 @@ export const BookDetailPage = () => {
   };
 
   const handleIsbnLookup = async (isbn: string) => {
+    if (!isUnlocked) {
+      setLookupState("error");
+      setLookupMessage("Unlock to edit book details.");
+      return;
+    }
     setFoundIsbn(isbn);
     setLookupState("lookup");
     setLookupMessage("Looking up book metadata...");
@@ -158,6 +188,95 @@ export const BookDetailPage = () => {
     } catch (error) {
       setLookupState("error");
       setLookupMessage("Lookup failed. Check your connection.");
+    }
+  };
+
+  const handleAutoAddFromIsbn = async (isbn: string) => {
+    setFoundIsbn(isbn);
+    setLookupState("lookup");
+    setLookupMessage("Auto-adding book from barcode...");
+    try {
+      const meta = await lookupByIsbn13(isbn);
+      if (!meta) {
+        setLookupState("not_found");
+        setLookupMessage("No Open Library entry found.");
+        return;
+      }
+      const now = new Date().toISOString();
+      const nextId =
+        useLibraryStore
+          .getState()
+          .books.reduce((max, book) => Math.max(max, book.id), 0) + 1;
+      const record = normalizeBook({
+        ...emptyBook,
+        id: nextId,
+        title: meta.title,
+        authors: meta.authors,
+        publisher: meta.publisher,
+        publish_year: meta.publishYear,
+        isbn13: meta.isbn13,
+        cover_image: meta.coverImage,
+        added_at: now,
+        updated_at: now,
+      });
+      await upsertBook(record);
+      setLookupState("success");
+      setLookupMessage(`Added "${record.title || "Untitled"}".`);
+    } catch (error) {
+      setLookupState("error");
+      setLookupMessage("Auto-add failed. Check your connection.");
+    }
+  };
+
+  const handleScannerIsbn = (isbn: string, mode: "lookup" | "auto_add") => {
+    if (mode === "auto_add") {
+      void handleAutoAddFromIsbn(isbn);
+      return;
+    }
+    void handleIsbnLookup(isbn);
+  };
+
+  const handleUpdateFromOpenLibrary = async () => {
+    if (!isUnlocked) {
+      setUpdateState("error");
+      setUpdateMessage("Unlock to update book details.");
+      return;
+    }
+    const isbn = formState.isbn13;
+    if (!isbn || !isValidIsbn13(isbn)) {
+      setUpdateState("error");
+      setUpdateMessage("Enter a valid ISBN-13 to update.");
+      return;
+    }
+    setUpdateState("updating");
+    setUpdateMessage("Updating book details...");
+    try {
+      const meta = await lookupByIsbn13(isbn);
+      if (!meta) {
+        setUpdateState("not_found");
+        setUpdateMessage("No Open Library entry found.");
+        return;
+      }
+      const now = new Date().toISOString();
+      const updated = normalizeBook({
+        ...formState,
+        title: meta.title || formState.title,
+        authors: meta.authors || formState.authors,
+        publisher: meta.publisher || formState.publisher,
+        publish_year: meta.publishYear || formState.publish_year,
+        isbn13: meta.isbn13 || formState.isbn13,
+        cover_image: formState.cover_image || meta.coverImage,
+        updated_at: now,
+        added_at: formState.added_at || now,
+      });
+      await upsertBook(updated);
+      setFormState(updated);
+      setIsEditing(false);
+      setUpdateState("success");
+      setUpdateMessage("Book details updated.");
+    } catch (error) {
+      setUpdateState("error");
+      setUpdateMessage("Update failed. Check your connection.");
     }
   };
 
@@ -211,12 +330,22 @@ export const BookDetailPage = () => {
               className="button ghost"
               type="button"
               onClick={() => setIsEditing((prev) => !prev)}
+              disabled={!isUnlocked}
             >
               {isEditing ? "Cancel" : "Edit"}
+            </button>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleUpdateFromOpenLibrary}
+              disabled={!isUnlocked || updateState === "updating"}
+            >
+              {updateState === "updating" ? "Updating..." : "Update"}
             </button>
             <button className="button primary" type="submit" form={formId} disabled={!isEditing}>
               Save
             </button>
+            {updateMessage ? <span className="helper-text">{updateMessage}</span> : null}
           </div>
         </header>
         <form id={formId} onSubmit={handleSubmit} className="detail-body">
@@ -353,6 +482,13 @@ export const BookDetailPage = () => {
                   onChange={(event) => handleChange("cover_image", event.target.value)}
                   readOnly={!isEditing}
                 />
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  disabled={!isEditing}
+                />
               </label>
               <label>
                 Added
@@ -372,7 +508,7 @@ export const BookDetailPage = () => {
         lookupState={lookupState}
         lookupMessage={lookupMessage}
         onClose={handleCloseScanner}
-        onIsbn={handleIsbnLookup}
+        onIsbn={handleScannerIsbn}
       />
     </>
   );

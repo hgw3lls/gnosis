@@ -8,16 +8,21 @@ import { BookDetailPage } from "../pages/BookDetailPage";
 import { ImportPage } from "../pages/ImportPage";
 import { LibraryPage } from "../pages/LibraryPage";
 import { useLibraryStore } from "./store";
+import { UnlockModal } from "../components/UnlockModal";
 
 export const App = () => {
   const [commandOpen, setCommandOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addBookcaseOpen, setAddBookcaseOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("grid");
   const loadFromDb = useLibraryStore((state) => state.loadFromDb);
   const seedFromCsv = useLibraryStore((state) => state.seedFromCsv);
   const loading = useLibraryStore((state) => state.loading);
+  const isUnlocked = useLibraryStore((state) => state.isUnlocked);
+  const unlockWithCode = useLibraryStore((state) => state.unlockWithCode);
+  const lock = useLibraryStore((state) => state.lock);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,18 +52,41 @@ export const App = () => {
     () => ({
       openCommand: () => setCommandOpen(true),
       closeCommand: () => setCommandOpen(false),
-      openAdd: () => setAddOpen(true),
+      openAdd: () => {
+        if (!isUnlocked) {
+          setUnlockOpen(true);
+          return;
+        }
+        setAddOpen(true);
+      },
       closeAdd: () => setAddOpen(false),
-      openAddBookcase: () => setAddBookcaseOpen(true),
+      openAddBookcase: () => {
+        if (!isUnlocked) {
+          setUnlockOpen(true);
+          return;
+        }
+        setAddBookcaseOpen(true);
+      },
       closeAddBookcase: () => setAddBookcaseOpen(false),
-      openScan: () => navigate("/book/new?scan=1"),
-      goToBook: (id: number) =>
+      openScan: () => {
+        if (!isUnlocked) {
+          setUnlockOpen(true);
+          return;
+        }
+        navigate("/book/new?scan=1");
+      },
+      goToBook: (id: number) => {
+        if (!isUnlocked) {
+          setUnlockOpen(true);
+          return;
+        }
         navigate(`/book/${id}`, {
           state: { from: `${location.pathname}${location.search}` },
-        }),
+        });
+      },
       setView,
     }),
-    [location.pathname, location.search, navigate]
+    [isUnlocked, location.pathname, location.search, navigate]
   );
 
   if (loading) {
@@ -71,6 +99,9 @@ export const App = () => {
         onAddBook={actions.openAdd}
         onAddBookcase={actions.openAddBookcase}
         onScanBarcode={actions.openScan}
+        isUnlocked={isUnlocked}
+        onRequestUnlock={() => setUnlockOpen(true)}
+        onLock={lock}
       >
         <div className="panel">Loading library...</div>
       </AppLayout>
@@ -86,6 +117,9 @@ export const App = () => {
       onAddBook={actions.openAdd}
       onAddBookcase={actions.openAddBookcase}
       onScanBarcode={actions.openScan}
+      isUnlocked={isUnlocked}
+      onRequestUnlock={() => setUnlockOpen(true)}
+      onLock={lock}
     >
       <Routes>
         <Route
@@ -112,6 +146,11 @@ export const App = () => {
       <AddBookcaseModal
         open={addBookcaseOpen}
         onClose={actions.closeAddBookcase}
+      />
+      <UnlockModal
+        open={unlockOpen}
+        onClose={() => setUnlockOpen(false)}
+        onUnlock={unlockWithCode}
       />
     </AppLayout>
   );

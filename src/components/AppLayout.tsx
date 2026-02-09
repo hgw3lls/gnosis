@@ -12,6 +12,9 @@ type AppLayoutProps = {
   onAddBook: () => void;
   onAddBookcase: () => void;
   onScanBarcode: () => void;
+  isUnlocked: boolean;
+  onRequestUnlock: () => void;
+  onLock: () => void;
   children: ReactNode;
 };
 
@@ -23,6 +26,9 @@ export const AppLayout = ({
   onAddBook,
   onAddBookcase,
   onScanBarcode,
+  isUnlocked,
+  onRequestUnlock,
+  onLock,
   children,
 }: AppLayoutProps) => {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -76,16 +82,37 @@ export const AppLayout = ({
           <NavLink to="/import" className="text-link">
             Import/Export
           </NavLink>
-          <button className="button ghost" type="button" onClick={onScanBarcode}>
+          <button
+            className="button ghost"
+            type="button"
+            onClick={onScanBarcode}
+            disabled={!isUnlocked}
+          >
             Scan Barcode
           </button>
+          {isUnlocked ? (
+            <button className="button ghost" type="button" onClick={onLock}>
+              Unlocked
+            </button>
+          ) : (
+            <button className="button ghost" type="button" onClick={onRequestUnlock}>
+              Unlock
+            </button>
+          )}
           <div className="add-menu" ref={addMenuRef}>
             <button
               className="button primary add-trigger"
               type="button"
-              onClick={() => setAddMenuOpen((prev) => !prev)}
+              onClick={() => {
+                if (!isUnlocked) {
+                  onRequestUnlock();
+                  return;
+                }
+                setAddMenuOpen((prev) => !prev);
+              }}
               aria-expanded={addMenuOpen}
               aria-haspopup="true"
+              disabled={!isUnlocked}
             >
               Add
               <span className="add-trigger-caret" aria-hidden="true">
