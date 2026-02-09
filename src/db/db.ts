@@ -14,6 +14,11 @@ export class LibraryDB extends Dexie {
       books: "id, title, authors, tags, collections, projects, status",
       bookcases: "id, name",
     });
+    this.version(3).stores({
+      books:
+        "id, title, authors, tags, collections, projects, status, location, isbn13, updated_at",
+      bookcases: "id, name",
+    });
   }
 }
 
