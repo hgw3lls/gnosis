@@ -191,57 +191,7 @@ export const BookDetailPage = () => {
     }
   };
 
-  const handleAutoAddFromIsbn = async (isbn: string) => {
-    setFoundIsbn(isbn);
-    setLookupState("lookup");
-    setLookupMessage("Auto-adding book from barcode...");
-    try {
-      const meta = await lookupByIsbn13(isbn);
-      if (!meta) {
-        setLookupState("not_found");
-        setLookupMessage("No Open Library entry found.");
-        return;
-      }
-      const now = new Date().toISOString();
-      const nextId =
-        useLibraryStore
-          .getState()
-          .books.reduce((max, book) => Math.max(max, book.id), 0) + 1;
-      const record = normalizeBook({
-        ...emptyBook,
-        id: nextId,
-        title: meta.title,
-        authors: meta.authors,
-        publisher: meta.publisher,
-        publish_year: meta.publishYear,
-        isbn13: meta.isbn13,
-        cover_image: meta.coverImage,
-        added_at: now,
-        updated_at: now,
-      });
-      await upsertBook(record);
-      setLookupState("success");
-      setLookupMessage(`Added "${record.title || "Untitled"}".`);
-    } catch (error) {
-      setLookupState("error");
-      setLookupMessage("Auto-add failed. Check your connection.");
-    }
-  };
-
-  const handleScannerIsbn = (isbn: string, mode: "lookup" | "auto_add") => {
-    if (mode === "auto_add") {
-      void handleAutoAddFromIsbn(isbn);
-      return;
-    }
-    void handleIsbnLookup(isbn);
-  };
-
   const handleUpdateFromOpenLibrary = async () => {
-    if (!isUnlocked) {
-      setUpdateState("error");
-      setUpdateMessage("Unlock to update book details.");
-      return;
-    }
     const isbn = formState.isbn13;
     if (!isbn || !isValidIsbn13(isbn)) {
       setUpdateState("error");
@@ -338,7 +288,7 @@ export const BookDetailPage = () => {
               className="button ghost"
               type="button"
               onClick={handleUpdateFromOpenLibrary}
-              disabled={!isUnlocked || updateState === "updating"}
+              disabled={updateState === "updating"}
             >
               {updateState === "updating" ? "Updating..." : "Update"}
             </button>
