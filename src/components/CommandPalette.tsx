@@ -90,7 +90,7 @@ export const CommandPalette = ({
                 onClose();
               }}
             >
-              Go to Import/Export
+              Go to Manage Library
             </Command.Item>
           </Command.Group>
           <Command.Group heading="Views">

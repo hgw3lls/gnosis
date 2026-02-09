@@ -80,7 +80,7 @@ export const AppLayout = ({
             ))}
           </div>
           <NavLink to="/import" className="text-link">
-            Import/Export
+            Manage Library
           </NavLink>
           <button
             className="button ghost"
