@@ -682,6 +682,13 @@ textarea:focus {
 .detail-actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.helper-text {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .detail-body {
