@@ -44,7 +44,6 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
   );
   const [saveName, setSaveName] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(query);
-  const [savedOpen, setSavedOpen] = useState(false);
 
   const collections = useMemo(() => {
     const values = new Set<string>();
@@ -397,69 +396,55 @@ export const LibraryPage = ({ onSelectBook, query, view }: LibraryPageProps) => 
         </div>
       ) : null}
       <div className="saved-searches">
-        <div className="saved-searches-header">
-          <button
-            className="button ghost"
-            type="button"
-            onClick={() => setSavedOpen((prev) => !prev)}
-            aria-expanded={savedOpen}
-          >
-            Saved searches
-            <span aria-hidden="true">{savedOpen ? " ▴" : " ▾"}</span>
-          </button>
-          {searchIndex.status === "building" ? (
-            <span className="summary helper">Rebuilding search index…</span>
-          ) : null}
-        </div>
-        {savedOpen ? (
-          <div className="saved-searches-panel">
-            <div>
-              {savedSearches.length ? (
-                <div className="saved-searches-list">
-                  {savedSearches.map((search) => (
-                    <div key={search.id} className="saved-search">
-                      <button
-                        type="button"
-                        className="text-link"
-                        onClick={() =>
-                          window.dispatchEvent(
-                            new CustomEvent("gnosis:set-search", { detail: search.query })
-                          )
-                        }
-                      >
-                        {search.name}
-                      </button>
-                      <button
-                        type="button"
-                        className="icon-button"
-                        onClick={() =>
-                          setSavedSearches((prev) => prev.filter((item) => item.id !== search.id))
-                        }
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+        <div>
+          <h3>Saved searches</h3>
+          {savedSearches.length ? (
+            <div className="saved-searches-list">
+              {savedSearches.map((search) => (
+                <div key={search.id} className="saved-search">
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new CustomEvent("gnosis:set-search", { detail: search.query })
+                      )
+                    }
+                  >
+                    {search.name}
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() =>
+                      setSavedSearches((prev) => prev.filter((item) => item.id !== search.id))
+                    }
+                  >
+                    ×
+                  </button>
                 </div>
-              ) : (
-                <p className="summary">No saved searches yet.</p>
-              )}
+              ))}
             </div>
-            <div className="saved-search-create">
-              <input
-                className="input"
-                value={saveName}
-                onChange={(event) => setSaveName(event.target.value)}
-                placeholder="Save current search as"
-              />
-              <button className="button ghost" type="button" onClick={handleSaveSearch}>
-                Save
-              </button>
-            </div>
-            <p className="summary helper">
-              Operators: tag:, status:, location:"", year:&gt;=2020, author:
-            </p>
-          </div>
+          ) : (
+            <p className="summary">No saved searches yet.</p>
+          )}
+        </div>
+        <div className="saved-search-create">
+          <input
+            className="input"
+            value={saveName}
+            onChange={(event) => setSaveName(event.target.value)}
+            placeholder="Save current search as"
+          />
+          <button className="button ghost" type="button" onClick={handleSaveSearch}>
+            Save
+          </button>
+        </div>
+        <p className="summary helper">
+          Operators: tag:, status:, location:"", year:&gt;=2020, author:
+        </p>
+        {searchIndex.status === "building" ? (
+          <p className="summary">Rebuilding search index…</p>
         ) : null}
       </div>
       {view === "case-spines" ? (

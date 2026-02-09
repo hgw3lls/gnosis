@@ -1325,18 +1325,6 @@ textarea:focus {
   gap: 16px;
 }
 
-.saved-searches-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.saved-searches-panel {
-  display: grid;
-  gap: 16px;
-}
-
 .bulk-toolbar {
   margin: 12px 0 24px;
   padding: 16px;
