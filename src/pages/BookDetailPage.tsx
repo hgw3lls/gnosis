@@ -1,9 +1,9 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 import { BarcodeScannerModal } from "../components/BarcodeScannerModal";
-import { lookupByIsbn13 } from "../lib/isbnLookup";
+import { isValidIsbn13, lookupByIsbn13 } from "../lib/isbnLookup";
 
 const emptyBook: Book = {
   id: 0,
@@ -39,6 +39,10 @@ export const BookDetailPage = () => {
     "idle",
   );
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+  const [updateState, setUpdateState] = useState<"idle" | "updating" | "not_found" | "error" | "success">(
+    "idle",
+  );
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const scanTriggeredRef = useRef(false);
 
   const existing = useMemo(() => {
@@ -65,6 +69,21 @@ export const BookDetailPage = () => {
 
   const handleChange = (key: keyof Book, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCoverUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setFormState((prev) => ({ ...prev, cover_image: reader.result }));
+        setIsEditing(true);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -161,6 +180,45 @@ export const BookDetailPage = () => {
     }
   };
 
+  const handleUpdateFromOpenLibrary = async () => {
+    const isbn = formState.isbn13;
+    if (!isbn || !isValidIsbn13(isbn)) {
+      setUpdateState("error");
+      setUpdateMessage("Enter a valid ISBN-13 to update.");
+      return;
+    }
+    setUpdateState("updating");
+    setUpdateMessage("Updating book details...");
+    try {
+      const meta = await lookupByIsbn13(isbn);
+      if (!meta) {
+        setUpdateState("not_found");
+        setUpdateMessage("No Open Library entry found.");
+        return;
+      }
+      const now = new Date().toISOString();
+      const updated = normalizeBook({
+        ...formState,
+        title: meta.title || formState.title,
+        authors: meta.authors || formState.authors,
+        publisher: meta.publisher || formState.publisher,
+        publish_year: meta.publishYear || formState.publish_year,
+        isbn13: meta.isbn13 || formState.isbn13,
+        cover_image: formState.cover_image || meta.coverImage,
+        updated_at: now,
+        added_at: formState.added_at || now,
+      });
+      await upsertBook(updated);
+      setFormState(updated);
+      setIsEditing(false);
+      setUpdateState("success");
+      setUpdateMessage("Book details updated.");
+    } catch (error) {
+      setUpdateState("error");
+      setUpdateMessage("Update failed. Check your connection.");
+    }
+  };
+
   return (
     <>
       <section className="detail">
@@ -214,9 +272,18 @@ export const BookDetailPage = () => {
             >
               {isEditing ? "Cancel" : "Edit"}
             </button>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleUpdateFromOpenLibrary}
+              disabled={updateState === "updating"}
+            >
+              {updateState === "updating" ? "Updating..." : "Update"}
+            </button>
             <button className="button primary" type="submit" form={formId} disabled={!isEditing}>
               Save
             </button>
+            {updateMessage ? <span className="helper-text">{updateMessage}</span> : null}
           </div>
         </header>
         <form id={formId} onSubmit={handleSubmit} className="detail-body">
@@ -352,6 +419,13 @@ export const BookDetailPage = () => {
                   value={formState.cover_image}
                   onChange={(event) => handleChange("cover_image", event.target.value)}
                   readOnly={!isEditing}
+                />
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  disabled={!isEditing}
                 />
               </label>
               <label>
