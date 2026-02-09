@@ -30,14 +30,15 @@ const buildBookcase = (
   books: Book[],
   shelves: number,
   capacityPerShelf: number,
+  name: string,
 ): { bookcase: Bookcase; locations: BookLocation[] } => {
   const bookcase: Bookcase = {
-    name: "Bookcase A",
+    name,
     shelves,
     capacityPerShelf,
     categories: [
       {
-        label: "Bookcase A–Z",
+        label: "Bookcase range",
         scope: "bookcase",
         range: `S1-P1 → S${shelves}-P${capacityPerShelf}`,
       },
@@ -66,13 +67,18 @@ const buildBookcase = (
 export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const bookcases = useLibraryStore((state) => state.bookcases);
-  const [bookcaseName, setBookcaseName] = useState("Bookcase A");
+  const upsertBookcase = useLibraryStore((state) => state.upsertBookcase);
+  const [selectedBookcaseId, setSelectedBookcaseId] = useState<number | null>(
+    bookcases[0]?.id ?? null
+  );
+  const [bookcaseName, setBookcaseName] = useState("Bookcase");
   const [shelvesCount, setShelvesCount] = useState(3);
   const [capacityPerShelf, setCapacityPerShelf] = useState(12);
   const [organizeMode, setOrganizeMode] = useState<
     "category" | "random" | "updated" | "manual"
   >("category");
   const [showDetails, setShowDetails] = useState(false);
+  const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const [quickEditId, setQuickEditId] = useState<number | null>(null);
@@ -90,6 +96,36 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   });
   const clickTimerRef = useRef<number | null>(null);
   const longPressRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!bookcases.length) {
+      setSelectedBookcaseId(null);
+      return;
+    }
+    if (selectedBookcaseId == null || !bookcases.some((item) => item.id === selectedBookcaseId)) {
+      setSelectedBookcaseId(bookcases[0].id);
+    }
+  }, [bookcases, selectedBookcaseId]);
+
+  useEffect(() => {
+    if (selectedBookcaseId == null) {
+      return;
+    }
+    const selected = bookcases.find((item) => item.id === selectedBookcaseId);
+    if (!selected) {
+      return;
+    }
+    setBookcaseName(selected.name);
+    setShelvesCount(selected.shelves);
+    setCapacityPerShelf(selected.capacity_per_shelf);
+  }, [bookcases, selectedBookcaseId]);
+
+  useEffect(() => {
+    if (shelvesCollapsed) {
+      setPreviewId(null);
+      setQuickEditId(null);
+    }
+  }, [shelvesCollapsed]);
 
   const effectiveShelvesCount = showDetails
     ? Math.max(1, shelvesCount)
@@ -129,8 +165,13 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
 
   const { bookcase, locations } = useMemo(
     () =>
-      buildBookcase(arrangedBooks, effectiveShelvesCount, effectiveCapacityPerShelf),
-    [arrangedBooks, effectiveCapacityPerShelf, effectiveShelvesCount]
+      buildBookcase(
+        arrangedBooks,
+        effectiveShelvesCount,
+        effectiveCapacityPerShelf,
+        bookcaseName || "Bookcase"
+      ),
+    [arrangedBooks, bookcaseName, effectiveCapacityPerShelf, effectiveShelvesCount]
   );
   const previewLocation = useMemo(
     () => locations.find((location) => location.book.id === previewId) ?? null,
@@ -224,6 +265,22 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     setOrganizeMode("manual");
   };
 
+  const handleToggleDetails = async () => {
+    if (showDetails) {
+      if (selectedBookcaseId != null) {
+        const now = new Date().toISOString();
+        await upsertBookcase({
+          id: selectedBookcaseId,
+          name: bookcaseName.trim() || "Bookcase",
+          shelves: shelvesCount,
+          capacity_per_shelf: capacityPerShelf,
+          updated_at: now,
+        });
+      }
+    }
+    setShowDetails((current) => !current);
+  };
+
   return (
     <section className="caseLayout">
       <header className="caseHeader">
@@ -235,9 +292,16 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             {bookcases.length ? (
               <div className="caseBookcasesList">
                 {bookcases.map((bookcase) => (
-                  <span key={bookcase.id} className="caseBookcasePill">
-                    {bookcase.name || `Bookcase ${bookcase.id}`}
-                  </span>
+                  <button
+                    key={bookcase.id}
+                    type="button"
+                    className={`caseBookcasePill${
+                      bookcase.id === selectedBookcaseId ? " caseBookcasePillActive" : ""
+                    }`}
+                    onClick={() => setSelectedBookcaseId(bookcase.id)}
+                  >
+                    {bookcase.name}
+                  </button>
                 ))}
               </div>
             ) : (
@@ -254,9 +318,16 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           <button
             type="button"
             className="text-link caseEditLink"
-            onClick={() => setShowDetails((current) => !current)}
+            onClick={handleToggleDetails}
           >
             {showDetails ? "Done" : "Edit"}
+          </button>
+          <button
+            type="button"
+            className="text-link caseEditLink"
+            onClick={() => setShelvesCollapsed((current) => !current)}
+          >
+            {shelvesCollapsed ? "Show shelves" : "Hide shelves"}
           </button>
           {dragUnlocked ? (
             <button
@@ -343,8 +414,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     {previewLocation.book.title || "Untitled"}
                   </p>
                   <p className="casePreviewMeta">
-                    {previewLocation.book.authors || "Unknown author"} · A · S
-                    {previewLocation.shelf} · P{previewLocation.position}
+                    {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·
+                    S{previewLocation.shelf} · P{previewLocation.position}
                   </p>
                   <div className="casePreviewActions">
                     <button
@@ -372,227 +443,234 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           </div>
         </section>
       ) : null}
-      <div className="caseShelves">
-        {shelves.map((shelf) => (
-          <section key={shelf.shelfNumber} className="caseShelf">
-            <header className="caseShelfHeader">
-              <span>Shelf {shelf.shelfNumber}</span>
-            </header>
-            <div className="caseShelfRow" role="list">
-              {shelf.books.map((location) => (
-                <button
-                  key={location.book.id}
-                  type="button"
-                  className="caseSpine"
-                  role="listitem"
-                  aria-label={`${location.book.title || "Untitled"} · Bookcase A · Shelf ${
-                    location.shelf
-                  } · Position ${location.position}`}
-                  draggable={dragUnlocked}
-                  onClick={(event) => handleClick(event, location.book.id)}
-                  onDoubleClick={() => handleDoubleClick(location.book.id)}
-                  onMouseEnter={(event) => {
-                    setPreviewId(location.book.id);
-                    setHoverPosition({ x: event.clientX, y: event.clientY });
-                  }}
-                  onMouseMove={(event) =>
-                    setHoverPosition({ x: event.clientX, y: event.clientY })
-                  }
-                  onMouseLeave={() => setPreviewId(null)}
-                  onFocus={() => setPreviewId(location.book.id)}
-                  onBlur={() => setPreviewId(null)}
-                  onTouchStart={() => setPreviewId(location.book.id)}
-                  onPointerDown={() => {
-                    if (longPressRef.current) {
-                      window.clearTimeout(longPressRef.current);
-                    }
-                    longPressRef.current = window.setTimeout(() => {
-                      setDragUnlocked(true);
-                    }, 550);
-                  }}
-                  onPointerUp={() => {
-                    if (longPressRef.current) {
-                      window.clearTimeout(longPressRef.current);
-                      longPressRef.current = null;
-                    }
-                  }}
-                  onPointerLeave={() => {
-                    if (longPressRef.current) {
-                      window.clearTimeout(longPressRef.current);
-                      longPressRef.current = null;
-                    }
-                  }}
-                  onDragStart={() => setDraggingId(location.book.id)}
-                  onDragEnd={() => setDraggingId(null)}
-                  onDragOver={(event) => {
-                    if (dragUnlocked) {
-                      event.preventDefault();
-                    }
-                  }}
-                  onDrop={() => handleDragReorder(location.book.id)}
-                >
-                  <span className="caseSpineTitle">
-                    {location.book.title || "Untitled"}
-                  </span>
-                  <span className="caseSpineAuthor">
-                    {location.book.authors || "Unknown author"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-      {previewLocation && !quickEditLocation ? (
-        <div
-          className="caseHoverCard"
-          style={{
-            left: hoverPosition.x + 12,
-            top: hoverPosition.y + 12,
-          }}
-        >
-          <p className="casePreviewTitle">
-            {previewLocation.book.title || "Untitled"}
-          </p>
-          <p className="casePreviewMeta">
-            {previewLocation.book.authors || "Unknown author"} · A · S
-            {previewLocation.shelf} · P{previewLocation.position}
-          </p>
-        </div>
-      ) : null}
-      {quickEditLocation ? (
-        <div
-          className="caseQuickEdit"
-          style={{
-            left: quickEditPosition.x + 12,
-            top: quickEditPosition.y + 12,
-          }}
-        >
-          <header className="caseQuickEditHeader">
-            <div>
+      {!shelvesCollapsed ? (
+        <>
+          <div className="caseShelves">
+            {shelves.map((shelf) => (
+              <section key={shelf.shelfNumber} className="caseShelf">
+                <header className="caseShelfHeader">
+                  <span>Shelf {shelf.shelfNumber}</span>
+                </header>
+                <div className="caseShelfRow" role="list">
+                  {shelf.books.map((location) => (
+                    <button
+                      key={location.book.id}
+                      type="button"
+                      className="caseSpine"
+                      role="listitem"
+                      aria-label={`${
+                        location.book.title || "Untitled"
+                      } · ${bookcaseName} · Shelf ${location.shelf} · Position ${
+                        location.position
+                      }`}
+                      draggable={dragUnlocked}
+                      onClick={(event) => handleClick(event, location.book.id)}
+                      onDoubleClick={() => handleDoubleClick(location.book.id)}
+                      onMouseEnter={(event) => {
+                        setPreviewId(location.book.id);
+                        setHoverPosition({ x: event.clientX, y: event.clientY });
+                      }}
+                      onMouseMove={(event) =>
+                        setHoverPosition({ x: event.clientX, y: event.clientY })
+                      }
+                      onMouseLeave={() => setPreviewId(null)}
+                      onFocus={() => setPreviewId(location.book.id)}
+                      onBlur={() => setPreviewId(null)}
+                      onTouchStart={() => setPreviewId(location.book.id)}
+                      onPointerDown={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                        }
+                        longPressRef.current = window.setTimeout(() => {
+                          setDragUnlocked(true);
+                        }, 550);
+                      }}
+                      onPointerUp={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                          longPressRef.current = null;
+                        }
+                      }}
+                      onPointerLeave={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                          longPressRef.current = null;
+                        }
+                      }}
+                      onDragStart={() => setDraggingId(location.book.id)}
+                      onDragEnd={() => setDraggingId(null)}
+                      onDragOver={(event) => {
+                        if (dragUnlocked) {
+                          event.preventDefault();
+                        }
+                      }}
+                      onDrop={() => handleDragReorder(location.book.id)}
+                    >
+                      <span className="caseSpineTitle">
+                        {location.book.title || "Untitled"}
+                      </span>
+                      <span className="caseSpineAuthor">
+                        {location.book.authors || "Unknown author"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+          {previewLocation && !quickEditLocation ? (
+            <div
+              className="caseHoverCard"
+              style={{
+                left: hoverPosition.x + 12,
+                top: hoverPosition.y + 12,
+              }}
+            >
               <p className="casePreviewTitle">
-                {quickEditLocation.book.title || "Untitled"}
+                {previewLocation.book.title || "Untitled"}
               </p>
               <p className="casePreviewMeta">
-                {quickEditLocation.book.authors || "Unknown author"} · A · S
-                {quickEditLocation.shelf} · P{quickEditLocation.position}
+                {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·
+                S{previewLocation.shelf} · P{previewLocation.position}
               </p>
             </div>
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => setQuickEditId(null)}
+          ) : null}
+          {quickEditLocation ? (
+            <div
+              className="caseQuickEdit"
+              style={{
+                left: quickEditPosition.x + 12,
+                top: quickEditPosition.y + 12,
+              }}
             >
-              Close
-            </button>
-          </header>
-          <form
-            className="caseQuickEditForm"
-            onSubmit={async (event) => {
-              event.preventDefault();
-              const updated = {
-                ...quickEditLocation.book,
-                status: formState.status as Book["status"],
-                location: formState.location,
-                tags: formState.tags,
-                collections: formState.collections,
-                projects: formState.projects,
-                notes: formState.notes,
-                updated_at: new Date().toISOString(),
-              };
-              await upsertBook(updated);
-              setQuickEditId(null);
-            }}
-          >
-            <label>
-              Status
-              <select
-                value={formState.status}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    status: event.target.value,
-                  }))
-                }
+              <header className="caseQuickEditHeader">
+                <div>
+                  <p className="casePreviewTitle">
+                    {quickEditLocation.book.title || "Untitled"}
+                  </p>
+                  <p className="casePreviewMeta">
+                    {quickEditLocation.book.authors || "Unknown author"} ·{" "}
+                    {bookcaseName} · S{quickEditLocation.shelf} · P
+                    {quickEditLocation.position}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={() => setQuickEditId(null)}
+                >
+                  Close
+                </button>
+              </header>
+              <form
+                className="caseQuickEditForm"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const updated = {
+                    ...quickEditLocation.book,
+                    status: formState.status as Book["status"],
+                    location: formState.location,
+                    tags: formState.tags,
+                    collections: formState.collections,
+                    projects: formState.projects,
+                    notes: formState.notes,
+                    updated_at: new Date().toISOString(),
+                  };
+                  await upsertBook(updated);
+                  setQuickEditId(null);
+                }}
               >
-                <option value="to_read">To read</option>
-                <option value="reading">Reading</option>
-                <option value="referenced">Referenced</option>
-                <option value="finished">Finished</option>
-              </select>
-            </label>
-            <label>
-              Location
-              <input
-                value={formState.location}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    location: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Tags
-              <input
-                value={formState.tags}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, tags: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              Collections
-              <input
-                value={formState.collections}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    collections: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Projects
-              <input
-                value={formState.projects}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    projects: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Notes
-              <textarea
-                rows={3}
-                value={formState.notes}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    notes: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <div className="caseQuickEditActions">
-              <button type="submit" className="button primary">
-                Save
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => setQuickEditId(null)}
-              >
-                Cancel
-              </button>
+                <label>
+                  Status
+                  <select
+                    value={formState.status}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        status: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="to_read">To read</option>
+                    <option value="reading">Reading</option>
+                    <option value="referenced">Referenced</option>
+                    <option value="finished">Finished</option>
+                  </select>
+                </label>
+                <label>
+                  Location
+                  <input
+                    value={formState.location}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        location: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  Tags
+                  <input
+                    value={formState.tags}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, tags: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  Collections
+                  <input
+                    value={formState.collections}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        collections: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  Projects
+                  <input
+                    value={formState.projects}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        projects: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  Notes
+                  <textarea
+                    rows={3}
+                    value={formState.notes}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <div className="caseQuickEditActions">
+                  <button type="submit" className="button primary">
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setQuickEditId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   );

@@ -879,6 +879,12 @@ textarea:focus {
   border: 1px solid var(--border);
   background: #fff;
   color: var(--ink);
+  cursor: pointer;
+}
+
+.caseBookcasePillActive {
+  border-color: var(--red);
+  color: var(--red);
 }
 
 .caseBookcasesEmpty {
