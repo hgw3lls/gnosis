@@ -6,12 +6,14 @@ type BookCardProps = {
   book: Book;
   view: ViewMode;
   onSelect: (id: number) => void;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
 };
 
-export const BookCard = ({ book, view, onSelect }: BookCardProps) => {
+export const BookCard = ({ book, view, onSelect, selected, onToggleSelect }: BookCardProps) => {
   return (
     <article
-      className={clsx("card", view === "list" && "list")}
+      className={clsx("card", view === "list" && "list", selected && "selected")}
       tabIndex={0}
       role="button"
       aria-label={`Open ${book.title || "Untitled"}`}
@@ -23,6 +25,16 @@ export const BookCard = ({ book, view, onSelect }: BookCardProps) => {
         }
       }}
     >
+      {onToggleSelect ? (
+        <label className="card-select">
+          <input
+            type="checkbox"
+            checked={Boolean(selected)}
+            onChange={() => onToggleSelect(book.id)}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </label>
+      ) : null}
       <div
         className="cover"
         style={

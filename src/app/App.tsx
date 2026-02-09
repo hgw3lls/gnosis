@@ -48,6 +48,17 @@ export const App = () => {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (typeof detail === "string") {
+        setQuery(detail);
+      }
+    };
+    window.addEventListener("gnosis:set-search", handler);
+    return () => window.removeEventListener("gnosis:set-search", handler);
+  }, []);
+
   const actions = useMemo(
     () => ({
       openCommand: () => setCommandOpen(true),

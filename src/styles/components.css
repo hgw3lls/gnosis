@@ -556,6 +556,11 @@ textarea:focus {
   gap: 12px;
 }
 
+.list-virtualized {
+  height: calc(100vh - 360px);
+  min-height: 320px;
+}
+
 .card {
   border: 1px solid var(--border);
   background: #fff;
@@ -564,6 +569,7 @@ textarea:focus {
   flex-direction: column;
   gap: 10px;
   min-height: 320px;
+  position: relative;
   cursor: pointer;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
@@ -586,6 +592,19 @@ textarea:focus {
   min-height: auto;
   align-items: center;
   padding: 12px 16px;
+}
+
+.card.selected {
+  outline: 2px solid rgba(86, 160, 255, 0.6);
+}
+
+.card-select {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(16, 19, 24, 0.75);
+  padding: 6px;
+  border-radius: 8px;
 }
 
 
@@ -803,6 +822,7 @@ textarea:focus {
   gap: 12px;
   justify-content: space-between;
   margin-top: 16px;
+  flex-wrap: wrap;
 }
 
 .command-overlay {
@@ -1294,6 +1314,79 @@ textarea:focus {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.saved-searches {
+  margin: 16px 0 24px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(18, 21, 26, 0.55);
+  display: grid;
+  gap: 16px;
+}
+
+.saved-searches-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.saved-searches-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.bulk-toolbar {
+  margin: 12px 0 24px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(18, 21, 26, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bulk-summary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.bulk-actions {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.bulk-chip {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+}
+
+.saved-searches-list {
+  display: grid;
+  gap: 8px;
+}
+
+.saved-search {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.saved-search-create {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.summary.helper {
+  opacity: 0.7;
+  font-size: 0.85rem;
 }
 
 .scanner-modal {
