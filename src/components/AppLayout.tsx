@@ -52,7 +52,7 @@ export const AppLayout = ({
       <header className="topbar">
         <div className="topbar-left">
           <NavLink to="/" className="topbar-logo-link">
-            <img src="/gnosis-logo.png" alt="Gnosis" className="topbar-logo" />
+            <img src="/exlibris.png" alt="Ex Libris" className="topbar-logo" />
           </NavLink>
         </div>
         <div className="topbar-center">
