@@ -1821,9 +1821,6 @@ textarea {
   transform: translateY(0);
 }
 
-.saved-searches-dock {
-  width: min(100%, 420px);
-}
 
 @media (min-width: 721px) {
   .app {
