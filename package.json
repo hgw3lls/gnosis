@@ -8,7 +8,10 @@
     "build": "npm run sync:library && vite build",
     "preview": "vite preview",
     "sync:library": "node scripts/sync-library-csv.js",
-    "isbn-lookup-test": "tsx scripts/isbn-lookup-test.ts"
+    "isbn-lookup-test": "tsx scripts/isbn-lookup-test.ts",
+    "test:quick-add": "tsx --test src/utils/isbn.test.ts src/services/openLibraryLookup.test.ts",
+    "test:library-query": "tsx --test src/services/libraryQueryEngine.test.ts",
+    "test:dedupe": "tsx --test src/services/duplicates.test.ts"
   },
   "dependencies": {
     "@ericblade/quagga2": "^1.8.5",

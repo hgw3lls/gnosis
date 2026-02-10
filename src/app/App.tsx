@@ -9,6 +9,16 @@ import { ImportPage } from "../pages/ImportPage";
 import { LibraryPage } from "../pages/LibraryPage";
 import { useLibraryStore } from "./store";
 import { UnlockModal } from "../components/UnlockModal";
+import { needsReview } from "../services/reviewQueue";
+
+
+const isTypingElement = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  const tag = target.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
+};
 
 export const App = () => {
   const [commandOpen, setCommandOpen] = useState(false);
@@ -25,6 +35,10 @@ export const App = () => {
   const isUnlocked = useLibraryStore((state) => state.isUnlocked);
   const unlockWithCode = useLibraryStore((state) => state.unlockWithCode);
   const lock = useLibraryStore((state) => state.lock);
+  const books = useLibraryStore((state) => state.books);
+  const reviewedBookIds = useLibraryStore((state) => state.reviewedBookIds);
+
+  const reviewCount = books.filter((book) => needsReview(book) && !reviewedBookIds.has(book.id)).length;
 
   useEffect(() => {
     const init = async () => {
@@ -42,11 +56,34 @@ export const App = () => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setCommandOpen(true);
+        return;
+      }
+
+      if (event.key === "/" && !isTypingElement(event.target)) {
+        event.preventDefault();
+        const search = document.getElementById("global-library-search");
+        if (search instanceof HTMLInputElement) {
+          search.focus();
+          search.select();
+        }
+        return;
+      }
+
+      if (event.key.toLowerCase() === "a" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (isTypingElement(event.target)) {
+          return;
+        }
+        event.preventDefault();
+        if (!isUnlocked) {
+          setUnlockOpen(true);
+          return;
+        }
+        setAddOpen(true);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [isUnlocked]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -117,6 +154,7 @@ export const App = () => {
         isUnlocked={isUnlocked}
         onRequestUnlock={() => setUnlockOpen(true)}
         onLock={lock}
+        reviewCount={reviewCount}
       >
         <div className="panel">Loading library...</div>
       </AppLayout>
@@ -135,6 +173,7 @@ export const App = () => {
       isUnlocked={isUnlocked}
       onRequestUnlock={() => setUnlockOpen(true)}
       onLock={lock}
+      reviewCount={reviewCount}
     >
       <Routes>
         <Route
@@ -143,6 +182,7 @@ export const App = () => {
             <LibraryPage
               onSelectBook={actions.goToBook}
               query={query}
+              onQueryChange={setQuery}
               view={view}
             />
           }
@@ -164,10 +204,6 @@ export const App = () => {
         onCreated={(id) => {
           actions.closeAdd();
           actions.goToBook(id);
-        }}
-        onScan={() => {
-          actions.closeAdd();
-          actions.openScan();
         }}
       />
       <AddBookcaseModal

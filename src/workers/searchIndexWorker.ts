@@ -10,6 +10,9 @@ type SearchDocument = {
   projects: string;
   location: string;
   status: string;
+  format: string;
+  language: string;
+  publish_year: string;
   notes: string;
   isbn13: string;
 };
@@ -23,6 +26,9 @@ const SEARCH_FIELDS = [
   "projects",
   "location",
   "status",
+  "format",
+  "language",
+  "publish_year",
   "notes",
   "isbn13",
 ];

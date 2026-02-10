@@ -1642,3 +1642,142 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.quick-add-modal {
+  width: min(860px, 96vw);
+}
+
+.inline-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-stack .input {
+  flex: 1 1 260px;
+}
+
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-chips .chip {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.library-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.library-main {
+  min-width: 0;
+}
+
+.facets-panel {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  max-height: calc(100vh - 190px);
+  overflow: auto;
+  position: sticky;
+  top: 96px;
+}
+
+.facets-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.facet-block {
+  display: grid;
+  gap: 8px;
+}
+
+.facet-title {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.facet-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.year-range {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.filters-trigger,
+.facets-close {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .library-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-trigger,
+  .facets-close {
+    display: inline-flex;
+  }
+
+  .facets-panel {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(360px, 88vw);
+    max-height: 100vh;
+    z-index: 80;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    box-shadow: var(--shadow);
+  }
+
+  .facets-panel.open {
+    transform: translateX(0);
+  }
+}
+
+.duplicate-group,
+.review-row {
+  border: 1px solid var(--border);
+  padding: 10px;
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.duplicate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.review-edit-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.review-list {
+  display: grid;
+  gap: 10px;
+}
