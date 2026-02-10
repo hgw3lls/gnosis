@@ -41,13 +41,25 @@ export const ImportPage = () => {
       setError("");
       const books = await db.books.toArray();
       const text = exportCsvText(books);
-      const response = await fetch(`${import.meta.env.BASE_URL}api/library`, {
-        method: "PUT",
+      const endpoint = `${import.meta.env.BASE_URL}api/library`;
+      const requestInit = {
         headers: {
           "Content-Type": "text/csv",
         },
         body: text,
+      };
+
+      let response = await fetch(endpoint, {
+        ...requestInit,
+        method: "PUT",
       });
+
+      if (response.status === 405) {
+        response = await fetch(endpoint, {
+          ...requestInit,
+          method: "POST",
+        });
+      }
 
       if (!response.ok) {
         const details = await response.text();

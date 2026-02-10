@@ -96,12 +96,18 @@ export const normalizeBook = (data: Partial<Book>): Book => {
   const shelf = Number.parseInt(String(draft.shelf), 10);
   const position = Number.parseInt(String(draft.position), 10);
 
+  const coverImage = String(draft.cover_image ?? "").trim();
+  const normalizedCoverImage = coverImage.startsWith("/covers/")
+    ? coverImage.slice(1)
+    : coverImage;
+
   const normalized = {
     ...draft,
     id: Number.isFinite(id) ? id : 0,
     status,
     isbn13: String(draft.isbn13 ?? ""),
     language: draft.language?.trim() || "en",
+    cover_image: normalizedCoverImage,
     publish_year: draft.publish_year ? String(draft.publish_year) : "",
     bookcase_id: Number.isFinite(bookcaseId) && bookcaseId > 0 ? bookcaseId : null,
     shelf: Number.isFinite(shelf) && shelf > 0 ? shelf : null,
