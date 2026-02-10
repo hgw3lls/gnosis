@@ -1,10 +1,12 @@
 import { LibraryFacets, emptyFacets } from "./libraryQueryEngine";
+import { LibrarySort } from "./libraryQueryEngine";
 
 export type SavedSearch = {
   id: string;
   name: string;
   query: string;
   facets: LibraryFacets;
+  sort: LibrarySort;
   createdAt: string;
 };
 
@@ -12,13 +14,13 @@ const STORAGE_KEY = "gnosis.savedSearches.v2";
 const LEGACY_STORAGE_KEY = "gnosis.savedSearches";
 
 const defaultShelves = (): SavedSearch[] => [
-  createSavedSearch("Unread", "", { ...emptyFacets(), status: ["to_read"] }),
-  createSavedSearch("Reading", "", { ...emptyFacets(), status: ["reading"] }),
-  createSavedSearch("Owned – Theory Tag", "", { ...emptyFacets(), tags: ["theory"] }),
+  createSavedSearch("Unread", "", { ...emptyFacets(), status: ["to_read"] }, "updated"),
+  createSavedSearch("Reading", "", { ...emptyFacets(), status: ["reading"] }, "updated"),
+  createSavedSearch("Owned – Theory Tag", "", { ...emptyFacets(), tags: ["theory"] }, "updated"),
   createSavedSearch("Project: Dissertation", "", {
     ...emptyFacets(),
     projects: ["dissertation"],
-  }),
+  }, "updated"),
 ];
 
 const normalizeLegacy = (raw: unknown): SavedSearch[] => {
@@ -30,8 +32,21 @@ const normalizeLegacy = (raw: unknown): SavedSearch[] => {
       if (!entry || typeof entry !== "object") {
         return null;
       }
-      const item = entry as { id?: string; name?: string; query?: string; createdAt?: string };
-      return createSavedSearch(item.name || "Saved search", item.query || "", emptyFacets(), item.id, item.createdAt);
+      const item = entry as {
+        id?: string;
+        name?: string;
+        query?: string;
+        createdAt?: string;
+        sort?: LibrarySort;
+      };
+      return createSavedSearch(
+        item.name || "Saved search",
+        item.query || "",
+        emptyFacets(),
+        item.sort || "updated",
+        item.id,
+        item.createdAt
+      );
     })
     .filter((entry): entry is SavedSearch => Boolean(entry));
 };
@@ -68,6 +83,7 @@ export const createSavedSearch = (
   name: string,
   query: string,
   facets: LibraryFacets,
+  sort: LibrarySort,
   id?: string,
   createdAt?: string
 ): SavedSearch => ({
@@ -75,5 +91,6 @@ export const createSavedSearch = (
   name: name.trim() || "Saved search",
   query: query.trim(),
   facets: { ...facets },
+  sort,
   createdAt: createdAt ?? new Date().toISOString(),
 });
