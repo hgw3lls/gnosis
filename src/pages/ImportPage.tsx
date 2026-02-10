@@ -41,42 +41,26 @@ export const ImportPage = () => {
       setError("");
       const books = await db.books.toArray();
       const text = exportCsvText(books);
-      const picker = (
-        window as Window & {
-          showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
-        }
-      ).showDirectoryPicker;
+      const response = await fetch(`${import.meta.env.BASE_URL}api/library`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "text/csv",
+        },
+        body: text,
+      });
 
-      if (!picker) {
-        setError("Sync is not supported in this browser. Use export instead.");
-        return;
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(details || `Sync failed with status ${response.status}.`);
       }
 
-      const directoryHandle = await picker();
-      const writeCsv = async (filename: string, payload: string) => {
-        const handle = await directoryHandle.getFileHandle(filename, {
-          create: true,
-        });
-        const writable = await handle.createWritable();
-        await writable.write(payload);
-        await writable.close();
-      };
-
-      let backupMessage = "";
-      try {
-        const existingHandle = await directoryHandle.getFileHandle("library.csv");
-        const existingFile = await existingHandle.getFile();
-        const existingText = await existingFile.text();
-        await writeCsv("library.csv.backup.csv", existingText);
-        backupMessage = "Previous library.csv moved to library.csv.backup.csv.";
-      } catch {
-        backupMessage = "No existing library.csv to back up.";
-      }
-
-      await writeCsv("library.csv", text);
-      setMessage(`Library synced to library.csv. ${backupMessage}`);
+      setMessage("Library synced to website library.csv. Future visitors will load this update.");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Sync failed.");
+      setError(
+        error instanceof Error
+          ? `${error.message} If this site does not provide /api/library, use Export and replace library.csv in deployment.`
+          : "Sync failed. If this site does not provide /api/library, use Export and replace library.csv in deployment."
+      );
     }
   };
 
@@ -144,8 +128,8 @@ export const ImportPage = () => {
       <div className="panel">
         <h2>Sync Library</h2>
         <p>
-          Sync replaces <code>library.csv</code> with your current session library and
-          moves the previous <code>library.csv</code> to <code>library.csv.backup.csv</code> first.
+          Sync publishes your current session library to the website&rsquo;s canonical
+          <code> library.csv</code> so later visitors load the same updated data.
         </p>
         <div className="actions">
           <button className="button" type="button" onClick={handleSync}>
