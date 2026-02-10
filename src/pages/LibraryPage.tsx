@@ -7,12 +7,6 @@ import { ViewMode } from "../components/AppLayout";
 import { normalizeMultiValue } from "../utils/libraryFilters";
 import { buildSearchIndexState, SearchIndexState } from "../services/searchIndex";
 import {
-  createSavedSearch,
-  loadSavedSearches,
-  persistSavedSearches,
-  SavedSearch,
-} from "../services/savedSearches";
-import {
   emptyFacets,
   LibraryFacets,
   LibrarySort,
@@ -71,9 +65,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     index: null,
     status: "idle",
   });
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => loadSavedSearches());
-  const [saveName, setSaveName] = useState("");
-  const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<"results" | "duplicates" | "review">("results");
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
@@ -173,9 +164,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     };
   }, [books]);
 
-  useEffect(() => {
-    persistSavedSearches(savedSearches);
-  }, [savedSearches]);
 
   useEffect(() => {
     setSkippedDuplicateIds((prev) => {
@@ -189,11 +177,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     });
   }, [books]);
 
-  const handleSaveSearch = () => {
-    const saved = createSavedSearch(saveName || query || "Smart Shelf", query, facets);
-    setSavedSearches((prev) => [saved, ...prev]);
-    setSaveName("");
-  };
 
   const handleSelectBook = (id: number) => {
     if (view === "list") {
@@ -616,52 +599,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
         </div>
       ) : null}
 
-      <div className={`saved-searches-dock ${isSavedSearchesOpen ? "open" : ""}`}>
-        {isSavedSearchesOpen ? (
-          <div className="saved-searches-panel">
-            <div className="saved-searches-header">
-              <h3>Smart Shelves</h3>
-              <button type="button" className="icon-button" onClick={() => setIsSavedSearchesOpen(false)}>
-                ×
-              </button>
-            </div>
-            {savedSearches.length ? (
-              <div className="saved-searches-list">
-                {savedSearches.map((search) => (
-                  <div key={search.id} className="saved-search">
-                    <button
-                      type="button"
-                      className="text-link"
-                      onClick={() => {
-                        onQueryChange(search.query);
-                        setFacets(search.facets);
-                      }}
-                    >
-                      {search.name}
-                    </button>
-                    <button type="button" className="icon-button" onClick={() => setSavedSearches((prev) => prev.filter((item) => item.id !== search.id))}>
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="summary">No saved searches yet.</p>
-            )}
-            <div className="saved-search-create">
-              <input className="input" value={saveName} onChange={(event) => setSaveName(event.target.value)} placeholder="Save current shelf as" />
-              <button className="button ghost" type="button" onClick={handleSaveSearch}>
-                Save
-              </button>
-            </div>
-            {searchIndex.status === "building" ? <p className="summary">Rebuilding search index…</p> : null}
-          </div>
-        ) : null}
-        <button type="button" className={`tab-button ${isSavedSearchesOpen ? "active" : ""}`} onClick={() => setIsSavedSearchesOpen((prev) => !prev)}>
-          Smart Shelves
-          <span className="tab-count">{savedSearches.length}</span>
-        </button>
-      </div>
     </section>
   );
 };

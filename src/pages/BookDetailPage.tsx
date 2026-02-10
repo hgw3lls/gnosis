@@ -4,6 +4,7 @@ import { useLibraryStore } from "../app/store";
 import { Book, STATUS_OPTIONS, normalizeBook } from "../db/schema";
 import { BarcodeScannerModal } from "../components/BarcodeScannerModal";
 import { isValidIsbn13, lookupByIsbn13 } from "../lib/isbnLookup";
+import { findIsbn13ByTitleAuthor, IsbnCandidate } from "../services/isbnLookup";
 
 const emptyBook: Book = {
   id: 0,
@@ -347,39 +348,102 @@ export const BookDetailPage = ({
     }
   };
 
-  const handleUpdateFromOpenLibrary = async () => {
-    const isbn = formState.isbn13;
-    if (!isbn || !isValidIsbn13(isbn)) {
-      setUpdateState("error");
-      setUpdateMessage("Enter a valid ISBN-13 to update.");
-      return;
+
+  const findBestCandidate = (candidates: IsbnCandidate[], publishYear: string) => {
+    if (!candidates.length) {
+      return null;
     }
+
+    const normalizedYear = publishYear.trim();
+    if (!normalizedYear) {
+      return candidates[0];
+    }
+
+    const exact = candidates.find((candidate) => candidate.publish_year === normalizedYear);
+    if (exact) {
+      return exact;
+    }
+
+    const prefix = candidates.find((candidate) =>
+      candidate.publish_year ? candidate.publish_year.startsWith(normalizedYear.slice(0, 4)) : false
+    );
+    return prefix ?? candidates[0];
+  };
+
+  const findLookupSeed = async () => {
+    const isbn = formState.isbn13.trim();
+    if (isbn && isValidIsbn13(isbn)) {
+      return {
+        isbn,
+        source: "isbn" as const,
+        candidate: null as IsbnCandidate | null,
+      };
+    }
+
+    const title = formState.title.trim();
+    const author = formState.authors.trim();
+    if (!title || !author) {
+      return null;
+    }
+
+    const result = await findIsbn13ByTitleAuthor({ title, author });
+    const best = findBestCandidate(
+      [result.candidate, ...result.alternatives].filter(Boolean) as IsbnCandidate[],
+      formState.publish_year,
+    );
+
+    if (!best?.isbn13) {
+      return null;
+    }
+
+    return {
+      isbn: best.isbn13,
+      source: "title-author" as const,
+      candidate: best as IsbnCandidate,
+    };
+  };
+
+  const handleUpdateFromOpenLibrary = async () => {
     setUpdateState("updating");
-    setUpdateMessage("Updating book details...");
+    setUpdateMessage("Finding best metadata source...");
+
     try {
-      const meta = await lookupByIsbn13(isbn);
-      if (!meta) {
+      const seed = await findLookupSeed();
+      if (!seed) {
+        setUpdateState("error");
+        setUpdateMessage("Provide ISBN-13 or at least title + author to update details.");
+        return;
+      }
+
+      const meta = await lookupByIsbn13(seed.isbn);
+      if (!meta && !seed.candidate) {
         setUpdateState("not_found");
         setUpdateMessage("No Open Library entry found.");
         return;
       }
+
       const now = new Date().toISOString();
       const updated = normalizeBook({
         ...formState,
-        title: meta.title || formState.title,
-        authors: meta.authors || formState.authors,
-        publisher: meta.publisher || formState.publisher,
-        publish_year: meta.publishYear || formState.publish_year,
-        isbn13: meta.isbn13 || formState.isbn13,
-        cover_image: formState.cover_image || meta.coverImage,
+        title: meta?.title || seed.candidate?.title || formState.title,
+        authors: meta?.authors || seed.candidate?.authors || formState.authors,
+        publisher: meta?.publisher || seed.candidate?.publisher || formState.publisher,
+        publish_year: meta?.publishYear || seed.candidate?.publish_year || formState.publish_year,
+        isbn13: meta?.isbn13 || seed.isbn || formState.isbn13,
+        cover_image: formState.cover_image || meta?.coverImage || seed.candidate?.cover_image || "",
         updated_at: now,
         added_at: formState.added_at || now,
       });
+
       await upsertBook(updated);
       setFormState(updated);
       setIsEditing(false);
       setUpdateState("success");
-      setUpdateMessage("Book details updated.");
+      setUpdateMessage(
+        seed.source === "isbn"
+          ? "Book details updated from ISBN."
+          : "Book details updated from title/author/year match.",
+      );
     } catch (error) {
       setUpdateState("error");
       setUpdateMessage("Update failed. Check your connection.");
@@ -462,7 +526,7 @@ export const BookDetailPage = ({
               onClick={handleUpdateFromOpenLibrary}
               disabled={updateState === "updating"}
             >
-              {updateState === "updating" ? "Updating..." : "Update"}
+              {updateState === "updating" ? "Updating..." : "Update Metadata"}
             </button>
             <button className="button primary" type="submit" form={formId} disabled={!isEditing}>
               Save
