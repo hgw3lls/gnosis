@@ -13,11 +13,16 @@ export const ImportPage = () => {
   const reviewedBookIds = useLibraryStore((state) => state.reviewedBookIds);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const markReviewed = useLibraryStore((state) => state.markReviewed);
+  const removeBook = useLibraryStore((state) => state.removeBook);
 
   const reviewBooks = useMemo(
     () => books.filter((book) => needsReview(book) && !reviewedBookIds.has(book.id)),
     [books, reviewedBookIds]
   );
+
+  const handleMarkAllReviewed = () => {
+    reviewBooks.forEach((book) => markReviewed(book.id));
+  };
 
   const handleExport = async () => {
     const books = await db.books.toArray();
@@ -151,7 +156,17 @@ export const ImportPage = () => {
 
       {showReview ? (
         <div className="panel">
-          <h2>Import Review Queue</h2>
+          <div className="actions">
+            <h2>Import Review Queue</h2>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleMarkAllReviewed}
+              disabled={!reviewBooks.length}
+            >
+              Mark all reviewed
+            </button>
+          </div>
           {reviewBooks.length ? (
             <div className="review-list">
               {reviewBooks.map((book) => (
@@ -166,9 +181,22 @@ export const ImportPage = () => {
                     <input className="input" value={book.publish_year} placeholder="Publish year" onChange={(event) => void upsertBook({ ...book, publish_year: event.target.value, updated_at: new Date().toISOString() })} />
                     <input className="input" value={book.location} placeholder="Location" onChange={(event) => void upsertBook({ ...book, location: event.target.value, updated_at: new Date().toISOString() })} />
                     <input className="input" value={book.cover_image} placeholder="Cover URL" onChange={(event) => void upsertBook({ ...book, cover_image: event.target.value, updated_at: new Date().toISOString() })} />
-                    <button className="button ghost" type="button" onClick={() => markReviewed(book.id)}>
-                      Mark reviewed
-                    </button>
+                    <div className="review-actions">
+                      <button className="button ghost" type="button" onClick={() => markReviewed(book.id)}>
+                        Accept
+                      </button>
+                      <button
+                        className="button danger"
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Reject this review item and remove the book from your library?")) {
+                            void removeBook(book.id);
+                          }
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -1350,10 +1350,6 @@ textarea:focus {
   gap: 12px;
 }
 
-.saved-searches-tabs {
-  display: flex;
-  justify-content: center;
-}
 
 .tab-button {
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -1771,10 +1767,23 @@ textarea:focus {
   gap: 10px;
 }
 
+.duplicate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .review-edit-grid {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .review-list {
