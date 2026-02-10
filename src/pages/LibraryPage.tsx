@@ -5,6 +5,9 @@ import { CaseView } from "../components/CaseView";
 import { useLibraryStore } from "../app/store";
 import { ViewMode } from "../components/AppLayout";
 import { normalizeMultiValue } from "../utils/libraryFilters";
+import { normalizeBook } from "../db/schema";
+import { isValidIsbn13, lookupByIsbn13 } from "../lib/isbnLookup";
+import { findIsbn13ByTitleAuthor } from "../services/isbnLookup";
 import { buildSearchIndexState, SearchIndexState } from "../services/searchIndex";
 import {
   emptyFacets,
@@ -55,6 +58,9 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   const [bulkCollection, setBulkCollection] = useState("");
   const [bulkProject, setBulkProject] = useState("");
   const [bulkNotes, setBulkNotes] = useState("");
+  const [metadataScope, setMetadataScope] = useState<"selected" | "all_filtered" | "all_except_selected">("selected");
+  const [metadataState, setMetadataState] = useState<"idle" | "updating" | "success" | "error">("idle");
+  const [metadataMessage, setMetadataMessage] = useState("");
   const bulkUpdateBooks = useLibraryStore((state) => state.bulkUpdateBooks);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const mergeBooks = useLibraryStore((state) => state.mergeBooks);
@@ -285,6 +291,65 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     setBulkNotes("");
   };
 
+  const handleUpdateMetadata = async () => {
+    const targets =
+      metadataScope === "selected"
+        ? filtered.filter((book) => selectedIds.has(book.id))
+        : metadataScope === "all_except_selected"
+          ? filtered.filter((book) => !selectedIds.has(book.id))
+          : filtered;
+
+    if (!targets.length) {
+      setMetadataState("error");
+      setMetadataMessage("No books match this metadata update scope.");
+      return;
+    }
+
+    setMetadataState("updating");
+    setMetadataMessage(`Updating metadata for ${targets.length} books...`);
+
+    try {
+      const updates = [];
+      let skipped = 0;
+
+      for (const book of targets) {
+        const trimmedIsbn = book.isbn13.trim();
+        const seededIsbn = isValidIsbn13(trimmedIsbn) ? trimmedIsbn : "";
+        const candidate =
+          seededIsbn || !book.title.trim() || !book.authors.trim()
+            ? null
+            : await findIsbn13ByTitleAuthor(book.title, book.authors, book.publish_year);
+        const lookupIsbn = seededIsbn || candidate?.isbn13 || "";
+        const meta = lookupIsbn ? await lookupByIsbn13(lookupIsbn) : null;
+
+        if (!meta && !candidate) {
+          skipped += 1;
+          continue;
+        }
+
+        const updated = normalizeBook({
+          ...book,
+          title: meta?.title || candidate?.title || book.title,
+          authors: meta?.authors || candidate?.authors || book.authors,
+          publisher: meta?.publisher || candidate?.publisher || book.publisher,
+          publish_year: meta?.publishYear || candidate?.publish_year || book.publish_year,
+          isbn13: meta?.isbn13 || lookupIsbn || book.isbn13,
+          cover_image: book.cover_image || meta?.coverImage || candidate?.cover_image || "",
+          updated_at: new Date().toISOString(),
+        });
+
+        updates.push(updated);
+      }
+
+      await bulkUpdateBooks(updates);
+      setMetadataState("success");
+      setMetadataMessage(`Metadata updated for ${updates.length} books. Skipped ${skipped}.`);
+    } catch {
+      setMetadataState("error");
+      setMetadataMessage("Metadata update failed. Check your connection and try again.");
+    }
+  };
+
   const handleCloseDrawer = () => {
     setSelectedBookId(null);
   };
@@ -506,7 +571,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
 
           <div className="summary">{filtered.length} of {books.length} books</div>
 
-          {selectedIds.size ? (
+          {filtered.length ? (
             <div className="bulk-toolbar">
               <div className="bulk-summary">
                 {selectedIds.size} selected
@@ -539,6 +604,20 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
                 <button className="button primary" type="button" onClick={handleApplyBulk}>
                   Apply
                 </button>
+                <select value={metadataScope} onChange={(event) => setMetadataScope(event.target.value as typeof metadataScope)}>
+                  <option value="selected">Metadata: selected</option>
+                  <option value="all_filtered">Metadata: all filtered</option>
+                  <option value="all_except_selected">Metadata: all except selected</option>
+                </select>
+                <button
+                  className="button ghost"
+                  type="button"
+                  onClick={() => void handleUpdateMetadata()}
+                  disabled={metadataState === "updating" || (metadataScope === "selected" && !selectedIds.size)}
+                >
+                  {metadataState === "updating" ? "Updating metadata..." : "Update metadata"}
+                </button>
+                {metadataMessage ? <span className="helper-text">{metadataMessage}</span> : null}
               </div>
             </div>
           ) : null}
