@@ -9,7 +9,7 @@ type BookGridProps = {
   view: ViewMode;
   onSelect: (id: number) => void;
   selectedIds: Set<number>;
-  onToggleSelect: (id: number) => void;
+  onToggleSelect: (id: number, options?: { shiftKey?: boolean }) => void;
 };
 
 const estimateListHeight = () => Math.max(320, window.innerHeight - 360);

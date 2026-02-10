@@ -1,10 +1,23 @@
-import { useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { db } from "../db/db";
-import { exportCsvText, parseCsvText } from "../utils/csv";
+import { useLibraryStore } from "../app/store";
+import { exportCsvText } from "../utils/csv";
+import { getReviewIssues, needsReview } from "../services/reviewQueue";
 
 export const ImportPage = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showReview, setShowReview] = useState(false);
+  const importCsv = useLibraryStore((state) => state.importCsv);
+  const books = useLibraryStore((state) => state.books);
+  const reviewedBookIds = useLibraryStore((state) => state.reviewedBookIds);
+  const upsertBook = useLibraryStore((state) => state.upsertBook);
+  const markReviewed = useLibraryStore((state) => state.markReviewed);
+
+  const reviewBooks = useMemo(
+    () => books.filter((book) => needsReview(book) && !reviewedBookIds.has(book.id)),
+    [books, reviewedBookIds]
+  );
 
   const handleExport = async () => {
     const books = await db.books.toArray();
@@ -51,7 +64,7 @@ export const ImportPage = () => {
         const existingText = await existingFile.text();
         await writeCsv("library.csv.backup.csv", existingText);
         backupMessage = "Previous library.csv moved to library.csv.backup.csv.";
-      } catch (error) {
+      } catch {
         backupMessage = "No existing library.csv to back up.";
       }
 
@@ -70,9 +83,9 @@ export const ImportPage = () => {
     try {
       setError("");
       const text = await file.text();
-      const books = parseCsvText(text);
-      await db.books.bulkPut(books);
+      await importCsv(text);
       setMessage("Library updated from CSV.");
+      setShowReview(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Import failed.");
     } finally {
@@ -104,6 +117,9 @@ export const ImportPage = () => {
             Import CSV
             <input type="file" accept=".csv" onChange={handleImport} hidden />
           </label>
+          <button className="button ghost" type="button" onClick={() => setShowReview((prev) => !prev)}>
+            {showReview ? "Hide" : "Show"} Review Queue ({reviewBooks.length})
+          </button>
         </div>
         {error ? <p className="summary error-text">{error}</p> : null}
         {message ? <p className="summary">{message}</p> : null}
@@ -124,8 +140,7 @@ export const ImportPage = () => {
         <h2>Sync Library</h2>
         <p>
           Sync replaces <code>library.csv</code> with your current session library and
-          moves the previous <code>library.csv</code> to{" "}
-          <code>library.csv.backup.csv</code> first.
+          moves the previous <code>library.csv</code> to <code>library.csv.backup.csv</code> first.
         </p>
         <div className="actions">
           <button className="button" type="button" onClick={handleSync}>
@@ -133,6 +148,36 @@ export const ImportPage = () => {
           </button>
         </div>
       </div>
+
+      {showReview ? (
+        <div className="panel">
+          <h2>Import Review Queue</h2>
+          {reviewBooks.length ? (
+            <div className="review-list">
+              {reviewBooks.map((book) => (
+                <div key={book.id} className="review-row">
+                  <div>
+                    <p><strong>#{book.id}</strong> {book.title || "Untitled"}</p>
+                    <p className="summary">Needs: {getReviewIssues(book).join(", ")}</p>
+                  </div>
+                  <div className="review-edit-grid">
+                    <input className="input" value={book.title} placeholder="Title" onChange={(event) => void upsertBook({ ...book, title: event.target.value, updated_at: new Date().toISOString() })} />
+                    <input className="input" value={book.authors} placeholder="Authors" onChange={(event) => void upsertBook({ ...book, authors: event.target.value, updated_at: new Date().toISOString() })} />
+                    <input className="input" value={book.publish_year} placeholder="Publish year" onChange={(event) => void upsertBook({ ...book, publish_year: event.target.value, updated_at: new Date().toISOString() })} />
+                    <input className="input" value={book.location} placeholder="Location" onChange={(event) => void upsertBook({ ...book, location: event.target.value, updated_at: new Date().toISOString() })} />
+                    <input className="input" value={book.cover_image} placeholder="Cover URL" onChange={(event) => void upsertBook({ ...book, cover_image: event.target.value, updated_at: new Date().toISOString() })} />
+                    <button className="button ghost" type="button" onClick={() => markReviewed(book.id)}>
+                      Mark reviewed
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="summary">No books currently require review.</p>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 };

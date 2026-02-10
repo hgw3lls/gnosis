@@ -74,7 +74,7 @@ export const CommandPalette = ({
                 onClose();
               }}
             >
-              Add book
+              Quick add book
             </Command.Item>
             <Command.Item
               className="command-item"

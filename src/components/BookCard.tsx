@@ -7,7 +7,7 @@ type BookCardProps = {
   view: ViewMode;
   onSelect: (id: number) => void;
   selected?: boolean;
-  onToggleSelect?: (id: number) => void;
+  onToggleSelect?: (id: number, options?: { shiftKey?: boolean }) => void;
 };
 
 export const BookCard = ({ book, view, onSelect, selected, onToggleSelect }: BookCardProps) => {
@@ -30,7 +30,7 @@ export const BookCard = ({ book, view, onSelect, selected, onToggleSelect }: Boo
           <input
             type="checkbox"
             checked={Boolean(selected)}
-            onChange={() => onToggleSelect(book.id)}
+            onChange={(event) => onToggleSelect(book.id, { shiftKey: event.nativeEvent.shiftKey })}
             onClick={(event) => event.stopPropagation()}
           />
         </label>

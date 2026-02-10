@@ -15,6 +15,9 @@ const SEARCH_FIELDS = [
   "projects",
   "location",
   "status",
+  "format",
+  "language",
+  "publish_year",
   "notes",
   "isbn13",
 ];
@@ -34,6 +37,9 @@ type SearchDocument = {
   projects: string;
   location: string;
   status: string;
+  format: string;
+  language: string;
+  publish_year: string;
   notes: string;
   isbn13: string;
 };
@@ -48,6 +54,9 @@ const createDocument = (book: Book): SearchDocument => ({
   projects: book.projects ?? "",
   location: book.location ?? "",
   status: book.status ?? "",
+  format: book.format ?? "",
+  language: book.language ?? "",
+  publish_year: book.publish_year ?? "",
   notes: book.notes ?? "",
   isbn13: book.isbn13 ?? "",
 });

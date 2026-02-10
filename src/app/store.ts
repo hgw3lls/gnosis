@@ -3,10 +3,16 @@ import { db } from "../db/db";
 import { seedFromCsv } from "../db/seedFromCsv";
 import { normalizeBook, normalizeBookcase, Book, Bookcase } from "../db/schema";
 import { exportCsvText, parseCsvText } from "../utils/csv";
+import { mergeBookRecords } from "../services/duplicates";
+import {
+  loadReviewedBookIds,
+  persistReviewedBookIds,
+} from "../services/reviewQueue";
 
 type LibraryState = {
   books: Book[];
   bookcases: Bookcase[];
+  reviewedBookIds: Set<number>;
   loading: boolean;
   isUnlocked: boolean;
   setBooks: (books: Book[]) => void;
@@ -21,6 +27,9 @@ type LibraryState = {
   bulkUpdateBooks: (books: Book[]) => Promise<void>;
   upsertBookcase: (bookcase: Bookcase) => Promise<void>;
   removeBook: (id: number) => Promise<void>;
+  markReviewed: (id: number) => void;
+  clearReviewed: (id: number) => void;
+  mergeBooks: (primaryId: number, duplicateId: number) => Promise<void>;
 };
 
 const sortBooks = (books: Book[]) => [...books].sort((a, b) => a.id - b.id);
@@ -78,17 +87,11 @@ const normalizeBookcaseAssignments = (
       nextShelf = null;
       nextPosition = null;
     }
-    if (
-      nextShelf &&
-      (nextShelf < 1 || nextShelf > bookcase.shelves)
-    ) {
+    if (nextShelf && (nextShelf < 1 || nextShelf > bookcase.shelves)) {
       nextShelf = null;
       nextPosition = null;
     }
-    if (
-      nextPosition &&
-      (nextPosition < 1 || nextPosition > bookcase.capacity_per_shelf)
-    ) {
+    if (nextPosition && (nextPosition < 1 || nextPosition > bookcase.capacity_per_shelf)) {
       nextShelf = null;
       nextPosition = null;
     }
@@ -117,9 +120,13 @@ const normalizeBookcaseAssignments = (
   return { books: normalizedBooks, updates };
 };
 
+const loadReviewedSet = () => new Set(loadReviewedBookIds());
+const persistReviewedSet = (setValue: Set<number>) => persistReviewedBookIds(Array.from(setValue));
+
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   books: [],
   bookcases: [],
+  reviewedBookIds: loadReviewedSet(),
   loading: true,
   isUnlocked: false,
   setBooks: (books) => set({ books: sortBooks(books) }),
@@ -162,29 +169,21 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   importCsv: async (text) => {
     const books = parseCsvText(text);
     const state = get();
-    const sanitizedBooks = books.map((book) =>
-      sanitizeBookPlacement(book, state.bookcases, books)
-    );
+    const sanitizedBooks = books.map((book) => sanitizeBookPlacement(book, state.bookcases, books));
     await db.books.clear();
     await db.books.bulkAdd(sanitizedBooks);
-    set({ books: sortBooks(sanitizedBooks) });
+    const reviewed = new Set<number>();
+    persistReviewedSet(reviewed);
+    set({ books: sortBooks(sanitizedBooks), reviewedBookIds: reviewed });
   },
   exportCsv: () => exportCsvText(get().books),
   upsertBook: async (book) => {
     const normalized = normalizeBook(book);
     const state = get();
-    const sanitized = sanitizeBookPlacement(
-      normalized,
-      state.bookcases,
-      state.books
-    );
+    const sanitized = sanitizeBookPlacement(normalized, state.bookcases, state.books);
     await db.books.put(sanitized);
     set({
-      books: sortBooks(
-        get()
-          .books.filter((item) => item.id !== sanitized.id)
-          .concat(sanitized)
-      ),
+      books: sortBooks(get().books.filter((item) => item.id !== sanitized.id).concat(sanitized)),
     });
   },
   bulkUpdateBooks: async (books) => {
@@ -200,13 +199,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const normalized = normalizeBookcase(bookcase);
     await db.bookcases.put(normalized);
     const state = get();
-    const nextBookcases = state.bookcases
-      .filter((item) => item.id !== normalized.id)
-      .concat(normalized);
-    const { books: nextBooks, updates } = normalizeBookcaseAssignments(
-      state.books,
-      normalized
-    );
+    const nextBookcases = state.bookcases.filter((item) => item.id !== normalized.id).concat(normalized);
+    const { books: nextBooks, updates } = normalizeBookcaseAssignments(state.books, normalized);
     if (updates.length) {
       await Promise.all(updates.map((update) => db.books.put(update)));
     }
@@ -217,6 +211,45 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
   removeBook: async (id) => {
     await db.books.delete(id);
-    set({ books: get().books.filter((book) => book.id !== id) });
+    const nextReviewed = new Set(get().reviewedBookIds);
+    nextReviewed.delete(id);
+    persistReviewedSet(nextReviewed);
+    set({ books: get().books.filter((book) => book.id !== id), reviewedBookIds: nextReviewed });
+  },
+  markReviewed: (id) => {
+    const next = new Set(get().reviewedBookIds);
+    next.add(id);
+    persistReviewedSet(next);
+    set({ reviewedBookIds: next });
+  },
+  clearReviewed: (id) => {
+    const next = new Set(get().reviewedBookIds);
+    next.delete(id);
+    persistReviewedSet(next);
+    set({ reviewedBookIds: next });
+  },
+  mergeBooks: async (primaryId, duplicateId) => {
+    const state = get();
+    const primary = state.books.find((book) => book.id === primaryId);
+    const duplicate = state.books.find((book) => book.id === duplicateId);
+    if (!primary || !duplicate || primaryId === duplicateId) {
+      return;
+    }
+    const merged = normalizeBook(mergeBookRecords(primary, duplicate));
+    await db.books.put(merged);
+    await db.books.delete(duplicateId);
+
+    const nextReviewed = new Set(state.reviewedBookIds);
+    nextReviewed.delete(duplicateId);
+    persistReviewedSet(nextReviewed);
+
+    set({
+      books: sortBooks(
+        state.books
+          .filter((book) => book.id !== duplicateId && book.id !== primaryId)
+          .concat(merged)
+      ),
+      reviewedBookIds: nextReviewed,
+    });
   },
 }));

@@ -15,6 +15,7 @@ type AppLayoutProps = {
   isUnlocked: boolean;
   onRequestUnlock: () => void;
   onLock: () => void;
+  reviewCount?: number;
   children: ReactNode;
 };
 
@@ -29,6 +30,7 @@ export const AppLayout = ({
   isUnlocked,
   onRequestUnlock,
   onLock,
+  reviewCount = 0,
   children,
 }: AppLayoutProps) => {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -57,6 +59,7 @@ export const AppLayout = ({
         </div>
         <div className="topbar-center">
           <input
+            id="global-library-search"
             className="input input-dominant"
             type="search"
             placeholder="Search titles, authors, tags"
@@ -84,7 +87,7 @@ export const AppLayout = ({
             ))}
           </div>
           <NavLink to="/import" className="text-link">
-            Manage Library
+            Manage Library{reviewCount ? ` · Needs review: ${reviewCount}` : ""}
           </NavLink>
           <button
             className="button ghost"
