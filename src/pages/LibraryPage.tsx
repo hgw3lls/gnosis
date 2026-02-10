@@ -64,6 +64,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   const bulkUpdateBooks = useLibraryStore((state) => state.bulkUpdateBooks);
   const upsertBook = useLibraryStore((state) => state.upsertBook);
   const mergeBooks = useLibraryStore((state) => state.mergeBooks);
+  const removeBook = useLibraryStore((state) => state.removeBook);
   const reviewedBookIds = useLibraryStore((state) => state.reviewedBookIds);
   const markReviewed = useLibraryStore((state) => state.markReviewed);
   const [searchIndex, setSearchIndex] = useState<SearchIndexState>({
@@ -363,9 +364,22 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
                 <input className="input" value={book.publish_year} placeholder="Publish year" onChange={(event) => void upsertBook({ ...book, publish_year: event.target.value, updated_at: new Date().toISOString() })} />
                 <input className="input" value={book.location} placeholder="Location" onChange={(event) => void upsertBook({ ...book, location: event.target.value, updated_at: new Date().toISOString() })} />
                 <input className="input" value={book.cover_image} placeholder="Cover URL" onChange={(event) => void upsertBook({ ...book, cover_image: event.target.value, updated_at: new Date().toISOString() })} />
-                <button className="button ghost" type="button" onClick={() => markReviewed(book.id)}>
-                  Mark reviewed
-                </button>
+                <div className="review-actions">
+                  <button className="button ghost" type="button" onClick={() => markReviewed(book.id)}>
+                    Accept
+                  </button>
+                  <button
+                    className="button danger"
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Reject this review item and remove the book from your library?")) {
+                        void removeBook(book.id);
+                      }
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
             </div>
           )) : <p className="summary">No books need review.</p>}
