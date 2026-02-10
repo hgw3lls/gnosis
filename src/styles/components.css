@@ -1350,10 +1350,6 @@ textarea:focus {
   gap: 12px;
 }
 
-.saved-searches-tabs {
-  display: flex;
-  justify-content: center;
-}
 
 .tab-button {
   border: 2px solid rgba(255, 255, 255, 0.3);

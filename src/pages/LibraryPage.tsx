@@ -657,12 +657,10 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
             {searchIndex.status === "building" ? <p className="summary">Rebuilding search index…</p> : null}
           </div>
         ) : null}
-        <div className="saved-searches-tabs">
-          <button type="button" className={`tab-button ${isSavedSearchesOpen ? "active" : ""}`} onClick={() => setIsSavedSearchesOpen((prev) => !prev)}>
-            Smart Shelves
-            <span className="tab-count">{savedSearches.length}</span>
-          </button>
-        </div>
+        <button type="button" className={`tab-button ${isSavedSearchesOpen ? "active" : ""}`} onClick={() => setIsSavedSearchesOpen((prev) => !prev)}>
+          Smart Shelves
+          <span className="tab-count">{savedSearches.length}</span>
+        </button>
       </div>
     </section>
   );
