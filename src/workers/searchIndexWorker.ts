@@ -1,4 +1,5 @@
 import MiniSearch from "minisearch";
+import { SEARCH_INDEX_OPTIONS } from "../services/searchIndexConfig";
 
 type SearchDocument = {
   id: number;
@@ -17,32 +18,9 @@ type SearchDocument = {
   isbn13: string;
 };
 
-const SEARCH_FIELDS = [
-  "title",
-  "authors",
-  "publisher",
-  "tags",
-  "collections",
-  "projects",
-  "location",
-  "status",
-  "format",
-  "language",
-  "publish_year",
-  "notes",
-  "isbn13",
-];
-
 self.onmessage = (event: MessageEvent<{ documents: SearchDocument[] }>) => {
   const { documents } = event.data;
-  const miniSearch = new MiniSearch({
-    fields: SEARCH_FIELDS,
-    storeFields: ["id"],
-    searchOptions: {
-      prefix: true,
-      fuzzy: 0.2,
-    },
-  });
+  const miniSearch = new MiniSearch(SEARCH_INDEX_OPTIONS);
   miniSearch.addAll(documents);
   const indexJson = JSON.stringify(miniSearch.toJSON());
   self.postMessage({ indexJson });

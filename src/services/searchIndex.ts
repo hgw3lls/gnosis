@@ -2,25 +2,10 @@ import MiniSearch from "minisearch";
 import { Book } from "../db/schema";
 import { normalizeMultiValue } from "../utils/libraryFilters";
 import { parseSearchQuery, SearchFilter } from "../utils/searchQuery";
+import { SEARCH_INDEX_OPTIONS } from "./searchIndexConfig";
 
 const INDEX_STORAGE_KEY = "gnosis.searchIndex.v1";
 const INDEX_META_KEY = "gnosis.searchIndex.meta.v1";
-
-const SEARCH_FIELDS = [
-  "title",
-  "authors",
-  "publisher",
-  "tags",
-  "collections",
-  "projects",
-  "location",
-  "status",
-  "format",
-  "language",
-  "publish_year",
-  "notes",
-  "isbn13",
-];
 
 type SearchIndexMeta = {
   signature: string;
@@ -73,14 +58,7 @@ const getSignature = (books: Book[]) => {
 };
 
 const buildIndex = (documents: SearchDocument[]) => {
-  const miniSearch = new MiniSearch({
-    fields: SEARCH_FIELDS,
-    storeFields: ["id"],
-    searchOptions: {
-      prefix: true,
-      fuzzy: 0.2,
-    },
-  });
+  const miniSearch = new MiniSearch(SEARCH_INDEX_OPTIONS);
   miniSearch.addAll(documents);
   return miniSearch;
 };
@@ -96,7 +74,7 @@ const buildIndexInWorker = async (documents: SearchDocument[]) => {
     });
     worker.onmessage = (event) => {
       const { indexJson } = event.data as { indexJson: string };
-      const miniSearch = MiniSearch.loadJSON(indexJson);
+      const miniSearch = MiniSearch.loadJSON(indexJson, SEARCH_INDEX_OPTIONS);
       worker.terminate();
       resolve(miniSearch);
     };
@@ -129,7 +107,7 @@ const loadIndexCache = (signature: string): MiniSearch | null => {
       return null;
     }
     const indexJson = JSON.parse(indexRaw);
-    return MiniSearch.loadJSON(indexJson);
+    return MiniSearch.loadJSON(indexJson, SEARCH_INDEX_OPTIONS);
   } catch (error) {
     return null;
   }

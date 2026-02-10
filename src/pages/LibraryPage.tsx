@@ -190,7 +190,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   }, [books]);
 
   const handleSaveSearch = () => {
-    const saved = createSavedSearch(saveName || query || "Smart Shelf", query, facets);
+    const saved = createSavedSearch(saveName || query || "Smart Shelf", query, facets, sort);
     setSavedSearches((prev) => [saved, ...prev]);
     setSaveName("");
   };
@@ -635,6 +635,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
                       onClick={() => {
                         onQueryChange(search.query);
                         setFacets(search.facets);
+                        setSort(search.sort);
                       }}
                     >
                       {search.name}
