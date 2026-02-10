@@ -1771,6 +1771,13 @@ textarea:focus {
   gap: 10px;
 }
 
+.duplicate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .review-edit-grid {
   display: grid;
   gap: 8px;

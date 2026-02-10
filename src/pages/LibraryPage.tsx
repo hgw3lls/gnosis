@@ -77,6 +77,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<"results" | "duplicates" | "review">("results");
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [skippedDuplicateIds, setSkippedDuplicateIds] = useState<Set<number>>(new Set());
 
   const facetOptions = useMemo(() => makeFacetOptions(books), [books]);
 
@@ -98,10 +99,32 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   }, [books, filteredIds]);
 
   const duplicateGroups = useMemo(() => detectDuplicateGroups(books), [books]);
+  const visibleDuplicateGroups = useMemo(
+    () =>
+      duplicateGroups
+        .map((group) => ({
+          ...group,
+          books: [group.books[0], ...group.books.slice(1).filter((book) => !skippedDuplicateIds.has(book.id))],
+        }))
+        .filter((group) => group.books.length > 1),
+    [duplicateGroups, skippedDuplicateIds]
+  );
   const reviewBooks = useMemo(
     () => books.filter((book) => needsReview(book) && !reviewedBookIds.has(book.id)),
     [books, reviewedBookIds]
   );
+
+  const handleMarkAllReviewed = () => {
+    reviewBooks.forEach((book) => markReviewed(book.id));
+  };
+
+  const handleSkipDuplicate = (id: number) => {
+    setSkippedDuplicateIds((prev) => new Set(prev).add(id));
+  };
+
+  const handleResetSkippedDuplicates = () => {
+    setSkippedDuplicateIds(new Set());
+  };
 
   const selectedBook = useMemo(
     () => filtered.find((book) => book.id === selectedBookId) ?? null,
@@ -153,6 +176,18 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
   useEffect(() => {
     persistSavedSearches(savedSearches);
   }, [savedSearches]);
+
+  useEffect(() => {
+    setSkippedDuplicateIds((prev) => {
+      const next = new Set<number>();
+      books.forEach((book) => {
+        if (prev.has(book.id)) {
+          next.add(book.id);
+        }
+      });
+      return next;
+    });
+  }, [books]);
 
   const handleSaveSearch = () => {
     const saved = createSavedSearch(saveName || query || "Smart Shelf", query, facets);
@@ -311,7 +346,7 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
         <div className="chip-group">
           {[
             ["results", "Results"],
-            ["duplicates", `Duplicates (${duplicateGroups.length})`],
+            ["duplicates", `Duplicates (${visibleDuplicateGroups.length})`],
             ["review", `Review (${reviewBooks.length})`],
           ].map(([value, label]) => (
             <button
@@ -328,8 +363,18 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
 
       {screenMode === "duplicates" ? (
         <div className="panel">
-          <h3>Duplicate candidates</h3>
-          {duplicateGroups.length ? duplicateGroups.map((group) => {
+          <div className="actions">
+            <h3>Duplicate candidates</h3>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleResetSkippedDuplicates}
+              disabled={!skippedDuplicateIds.size}
+            >
+              Reset skipped
+            </button>
+          </div>
+          {visibleDuplicateGroups.length ? visibleDuplicateGroups.map((group) => {
             const [primary, ...rest] = group.books;
             return (
               <div key={group.key} className="duplicate-group">
@@ -338,9 +383,14 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
                 {rest.map((candidate) => (
                   <div key={candidate.id} className="duplicate-row">
                     <span>{candidate.title || "Untitled"} · {candidate.authors || "Unknown"}</span>
-                    <button className="button ghost" type="button" onClick={() => void mergeBooks(primary.id, candidate.id)}>
-                      Merge into primary
-                    </button>
+                    <div className="duplicate-actions">
+                      <button className="button ghost" type="button" onClick={() => void mergeBooks(primary.id, candidate.id)}>
+                        Merge into primary
+                      </button>
+                      <button className="button ghost" type="button" onClick={() => handleSkipDuplicate(candidate.id)}>
+                        Skip
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -351,7 +401,17 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
 
       {screenMode === "review" ? (
         <div className="panel">
-          <h3>Import review queue</h3>
+          <div className="actions">
+            <h3>Import review queue</h3>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleMarkAllReviewed}
+              disabled={!reviewBooks.length}
+            >
+              Mark all reviewed
+            </button>
+          </div>
           {reviewBooks.length ? reviewBooks.map((book) => (
             <div key={book.id} className="review-row">
               <div>

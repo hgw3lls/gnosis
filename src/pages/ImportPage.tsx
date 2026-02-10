@@ -20,6 +20,10 @@ export const ImportPage = () => {
     [books, reviewedBookIds]
   );
 
+  const handleMarkAllReviewed = () => {
+    reviewBooks.forEach((book) => markReviewed(book.id));
+  };
+
   const handleExport = async () => {
     const books = await db.books.toArray();
     const text = exportCsvText(books);
@@ -152,7 +156,17 @@ export const ImportPage = () => {
 
       {showReview ? (
         <div className="panel">
-          <h2>Import Review Queue</h2>
+          <div className="actions">
+            <h2>Import Review Queue</h2>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleMarkAllReviewed}
+              disabled={!reviewBooks.length}
+            >
+              Mark all reviewed
+            </button>
+          </div>
           {reviewBooks.length ? (
             <div className="review-list">
               {reviewBooks.map((book) => (
