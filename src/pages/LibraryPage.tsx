@@ -7,12 +7,6 @@ import { ViewMode } from "../components/AppLayout";
 import { normalizeMultiValue } from "../utils/libraryFilters";
 import { buildSearchIndexState, SearchIndexState } from "../services/searchIndex";
 import {
-  createSavedSearch,
-  loadSavedSearches,
-  persistSavedSearches,
-  SavedSearch,
-} from "../services/savedSearches";
-import {
   emptyFacets,
   LibraryFacets,
   LibrarySort,
@@ -71,9 +65,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     index: null,
     status: "idle",
   });
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => loadSavedSearches());
-  const [saveName, setSaveName] = useState("");
-  const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<"results" | "duplicates" | "review">("results");
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
@@ -173,9 +164,6 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
     };
   }, [books]);
 
-  useEffect(() => {
-    persistSavedSearches(savedSearches);
-  }, [savedSearches]);
 
   useEffect(() => {
     setSkippedDuplicateIds((prev) => {
