@@ -1069,7 +1069,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       ) : null}
       {!shelvesCollapsed ? (
         <>
-          <div className="caseShelves">
+          {collectionView === "spines" ? (
+            <div className="caseShelves">
             {layout.shelves.map((shelf) => (
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
@@ -1234,7 +1235,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </div>
             </section>
           </div>
-          {collectionView !== "spines" ? (
+          ) : (
             <section className="caseDetachedCollection" aria-live="polite">
               <header className="caseDetachedCollectionHeader">
                 <div>
@@ -1276,7 +1277,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 )}
               </div>
             </section>
-          ) : null}
+          )}
           <section className="caseShelf caseUnorganized caseUnorganizedDetached">
             <header className="caseShelfHeader">
               <span>Global unorganized</span>
