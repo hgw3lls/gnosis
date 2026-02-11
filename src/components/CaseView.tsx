@@ -288,6 +288,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     "category" | "random" | "updated" | "manual"
   >("category");
   const [showDetails, setShowDetails] = useState(false);
+  const [pendingAutoPopulate, setPendingAutoPopulate] = useState(false);
   const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
@@ -613,6 +614,41 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     void handlePlaceBook(draggingId, null);
   };
 
+  const runAutoPopulate = async () => {
+    if (!selectedBookcaseId) {
+      return;
+    }
+
+    const emptySlots = buildEmptySlotPlan(layout.shelves, autoPopulatePlacement);
+    if (!emptySlots.length || !layout.unorganized.length) {
+      return;
+    }
+
+    let candidates = sortBooksForAutoPopulate(
+      layout.unorganized,
+      autoPopulateOrder,
+      autoPopulateCategory
+    );
+    if (autoPopulateOrder === "category_focus" && autoPopulateCategoryMode === "only") {
+      candidates = candidates.filter((book) => hasCategory(book, autoPopulateCategory));
+    }
+
+    const now = new Date().toISOString();
+    const updates: Book[] = [];
+    candidates.slice(0, emptySlots.length).forEach((book, index) => {
+      const slot = emptySlots[index];
+      updates.push({
+        ...book,
+        bookcase_id: selectedBookcaseId,
+        shelf: slot.shelf,
+        position: slot.position,
+        updated_at: now,
+      });
+    });
+
+    await persistUpdates(updates);
+  };
+
   const handleToggleDetails = async () => {
     if (showDetails) {
       if (selectedBookcaseId != null) {
@@ -627,7 +663,11 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           updated_at: now,
         });
       }
+      if (pendingAutoPopulate) {
+        await runAutoPopulate();
+      }
     }
+    setPendingAutoPopulate(false);
     setShowDetails((current) => !current);
   };
 
@@ -749,6 +789,12 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             <div className="caseControls">
               <p className="caseKicker">Bookcase setup</p>
               <div className="caseControlGrid">
+                {pendingAutoPopulate ? (
+                  <p className="caseAutoPopulateHint" role="status">
+                    Review or update these settings, then click <strong>Done</strong> to save and
+                    auto-populate this bookcase.
+                  </p>
+                ) : null}
                 <label>
                   Name
                   <input
