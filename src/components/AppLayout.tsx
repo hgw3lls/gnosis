@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
@@ -13,6 +14,8 @@ type AppLayoutProps = {
   onRequestUnlock: () => void;
   onLock: () => void;
   reviewCount?: number;
+  view: ViewMode;
+  onViewChange: (value: ViewMode) => void;
   children: ReactNode;
 };
 
@@ -26,6 +29,8 @@ export const AppLayout = ({
   onRequestUnlock,
   onLock,
   reviewCount = 0,
+  view,
+  onViewChange,
   children,
 }: AppLayoutProps) => {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -46,24 +51,50 @@ export const AppLayout = ({
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div className="topbar-left">
-          <NavLink to="/" className="topbar-logo-link">
-            <img src="exlibris.png" alt="Ex Libris" className="topbar-logo" />
-          </NavLink>
+      <header className="topbar brutal-surface">
+        <div className="topbar-brand">
+          <p className="topbar-kicker">Private archive system</p>
+          <div className="topbar-brand-row">
+            <NavLink to="/" className="topbar-logo-link" aria-label="Open library home">
+              <img src="exlibris.png" alt="Ex Libris" className="topbar-logo" />
+            </NavLink>
+            <div className="topbar-status-pill" aria-live="polite">
+              {isUnlocked ? "Editable" : "Read only"}
+            </div>
+          </div>
         </div>
-        <div className="topbar-center">
-          <input
-            id="global-library-search"
-            className="input input-dominant"
-            type="search"
-            placeholder="Search titles, authors, tags"
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-          />
+
+        <div className="topbar-search-block">
+          <label htmlFor="global-library-search" className="topbar-label">
+            Search catalogue
+          </label>
+          <div className="topbar-search-row">
+            <input
+              id="global-library-search"
+              className="input input-dominant"
+              type="search"
+              placeholder="Title, author, tags, location"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+            />
+            <button className="button ghost hotkey-badge" type="button" onClick={() => onQueryChange("")}>
+              Clear
+            </button>
+          </div>
+          <p className="topbar-hint">Shortcuts: / focus search · A add book · ⌘/Ctrl K command palette</p>
         </div>
-        <div className="topbar-right">
-          <div className="view-toggle">
+
+        <div className="topbar-controls">
+          <div className="topbar-meta-row">
+            <NavLink to="/import" className="text-link topbar-meta-link">
+              Manage Library
+            </NavLink>
+            <span className="topbar-review-pill">
+              {reviewCount ? `${reviewCount} pending review` : "No pending review"}
+            </span>
+          </div>
+
+          <div className="view-toggle" role="tablist" aria-label="Library view selector">
             {(
               [
                 ["case-spines", "Spines"],
@@ -75,78 +106,75 @@ export const AppLayout = ({
                 key={option}
                 className={clsx("toggle", view === option && "active")}
                 type="button"
+                role="tab"
+                aria-selected={view === option}
                 onClick={() => onViewChange(option)}
               >
                 {label}
               </button>
             ))}
           </div>
-          <NavLink to="/import" className="text-link">
-            Manage Library{reviewCount ? ` · Needs review: ${reviewCount}` : ""}
-          </NavLink>
-          <button
-            className="button ghost"
-            type="button"
-            onClick={onScanBarcode}
-            disabled={!isUnlocked}
-          >
-            Scan Barcode
-          </button>
-          {isUnlocked ? (
-            <button className="button ghost" type="button" onClick={onLock}>
-              Unlocked
+
+          <div className="topbar-actions">
+            <button className="button ghost" type="button" onClick={onScanBarcode} disabled={!isUnlocked}>
+              Scan
             </button>
-          ) : (
-            <button className="button ghost" type="button" onClick={onRequestUnlock}>
-              Unlock
-            </button>
-          )}
-          <div className="add-menu" ref={addMenuRef}>
-            <button
-              className="button primary add-trigger"
-              type="button"
-              onClick={() => {
-                if (!isUnlocked) {
-                  onRequestUnlock();
-                  return;
-                }
-                setAddMenuOpen((prev) => !prev);
-              }}
-              aria-expanded={addMenuOpen}
-              aria-haspopup="true"
-              disabled={!isUnlocked}
-            >
-              Add
-              <span className="add-trigger-caret" aria-hidden="true">
-                ▾
-              </span>
-            </button>
-            {addMenuOpen ? (
-              <div className="add-menu-panel" role="menu">
-                <button
-                  className="add-menu-item"
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setAddMenuOpen(false);
-                    onAddBook();
-                  }}
-                >
-                  Book
-                </button>
-                <button
-                  className="add-menu-item"
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setAddMenuOpen(false);
-                    onAddBookcase();
-                  }}
-                >
-                  Bookcase
-                </button>
-              </div>
-            ) : null}
+            {isUnlocked ? (
+              <button className="button ghost" type="button" onClick={onLock}>
+                Lock
+              </button>
+            ) : (
+              <button className="button ghost" type="button" onClick={onRequestUnlock}>
+                Unlock
+              </button>
+            )}
+
+            <div className="add-menu" ref={addMenuRef}>
+              <button
+                className="button primary add-trigger"
+                type="button"
+                onClick={() => {
+                  if (!isUnlocked) {
+                    onRequestUnlock();
+                    return;
+                  }
+                  setAddMenuOpen((prev) => !prev);
+                }}
+                aria-expanded={addMenuOpen}
+                aria-haspopup="true"
+              >
+                Add
+                <span className="add-trigger-caret" aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+              {addMenuOpen ? (
+                <div className="add-menu-panel" role="menu">
+                  <button
+                    className="add-menu-item"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setAddMenuOpen(false);
+                      onAddBook();
+                    }}
+                  >
+                    Add Book
+                  </button>
+                  <button
+                    className="add-menu-item"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setAddMenuOpen(false);
+                      onAddBookcase();
+                    }}
+                  >
+                    Add Bookcase
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>

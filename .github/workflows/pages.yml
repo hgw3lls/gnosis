@@ -37,7 +37,17 @@ jobs:
         run: npm run build
 
       - name: Setup Pages
+        id: configure_pages
         uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: false
+
+      - name: Explain skipped Pages setup
+        if: steps.configure_pages.outcome == 'failure'
+        run: |
+          echo "actions/configure-pages failed (often due to token scope or repo Pages settings)."
+          echo "Continuing with upload/deploy steps using existing repository configuration."
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

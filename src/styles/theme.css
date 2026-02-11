@@ -1,12 +1,16 @@
 :root {
   color-scheme: light;
-  --paper: #fafaf8;
-  --ink: #111111;
-  --muted: #2f2f2f;
-  --border: #d6d6d1;
-  --red: #d11f2a;
-  --red-wash: rgba(209, 31, 42, 0.06);
-  --shadow: 0 8px 20px rgba(17, 17, 17, 0.08);
+  --paper: #f6f3ea;
+  --paper-alt: #fffdf8;
+  --ink: #121212;
+  --muted: #45423d;
+  --border: #1c1b19;
+  --line-soft: rgba(18, 18, 18, 0.2);
+  --red: #c4282f;
+  --red-deep: #8f161b;
+  --red-wash: rgba(196, 40, 47, 0.1);
+  --focus: #c4282f;
+  --shadow: 7px 7px 0 rgba(18, 18, 18, 0.95);
 }
 
 * {
@@ -16,7 +20,10 @@
 body {
   margin: 0;
   font-family: "Inter", "SF Pro Text", system-ui, -apple-system, sans-serif;
-  background: var(--paper);
+  background:
+    linear-gradient(90deg, rgba(18, 18, 18, 0.03) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(rgba(18, 18, 18, 0.03) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--paper);
   color: var(--ink);
 }
 
@@ -30,4 +37,10 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+.brutal-surface {
+  background: var(--paper-alt);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
 }
