@@ -1973,3 +1973,120 @@ textarea {
     top: 96px;
   }
 }
+
+.caseCollectionNav {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  background: color-mix(in oklab, #fff 85%, var(--paper));
+  gap: 3px;
+}
+
+.caseCollectionNavButton {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.caseCollectionNavButtonActive {
+  background: var(--red-wash);
+  color: var(--red);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--red) 40%, var(--border));
+}
+
+.caseUnorganizedDetached {
+  margin-top: 4px;
+}
+
+.caseDetachedCollection {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fff 0%, #fcfbf8 100%);
+  box-shadow: var(--shadow);
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.caseDetachedCollectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.caseDetachedCollectionTitle {
+  margin: 0;
+  font-family: "Times New Roman", "Iowan Old Style", serif;
+  font-size: 22px;
+}
+
+.caseDetachedCollectionMeta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.caseDetachedCollectionItems {
+  display: grid;
+  gap: 10px;
+  max-height: 56vh;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.caseDetachedCollectionItems--grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.caseDetachedCollectionItems--list {
+  grid-template-columns: 1fr;
+}
+
+.caseDetachedBook {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.caseDetachedBook--grid {
+  min-height: 120px;
+  padding: 12px;
+}
+
+.caseDetachedBook--list {
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding: 10px 12px;
+}
+
+.caseDetachedBook:hover,
+.caseDetachedBook:focus-visible {
+  border-color: var(--red);
+  background: var(--red-wash);
+  outline: none;
+}
+
+.caseDetachedBookTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.caseDetachedBookMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
