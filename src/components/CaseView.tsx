@@ -614,6 +614,24 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     void handlePlaceBook(draggingId, null);
   };
 
+  const handleClearShelf = async (shelfNumber: number) => {
+    const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
+    if (!shelf) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = shelf.slots
+      .filter((book): book is Book => Boolean(book))
+      .map((book) => ({
+        ...book,
+        bookcase_id: null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      }));
+    await persistUpdates(updates);
+  };
+
   const runAutoPopulate = async () => {
     if (!selectedBookcaseId) {
       return;
@@ -957,6 +975,14 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
                   <span>Shelf {shelf.shelfNumber}</span>
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => void handleClearShelf(shelf.shelfNumber)}
+                    disabled={!shelf.slots.some(Boolean)}
+                  >
+                    Clear shelf
+                  </button>
                 </header>
                 <div
                   className="caseShelfRow"
