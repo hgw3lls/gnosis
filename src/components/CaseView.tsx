@@ -311,7 +311,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [pendingAutoPopulate, setPendingAutoPopulate] = useState(false);
   const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
   const [collectionView, setCollectionView] = useState<CaseCollectionView>("spines");
-  const [globalUnorganizedOpen, setGlobalUnorganizedOpen] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const [quickEditId, setQuickEditId] = useState<number | null>(null);
@@ -849,14 +848,24 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           </div>
         </div>
         <div className="caseHeaderActions">
-          <button
-            type="button"
-            className={`button ghost caseGlobalToggle${globalUnorganizedOpen ? " caseGlobalToggleActive" : ""}`}
-            onClick={() => setGlobalUnorganizedOpen((current) => !current)}
-            aria-expanded={globalUnorganizedOpen}
-          >
-            {globalUnorganizedOpen ? "Hide global unorganized" : `Global unorganized (${layout.unorganizedGlobal.length})`}
-          </button>
+          <div className="caseCollectionNav" role="tablist" aria-label="Bookcase collection views">
+            {([
+              ["spines", "Spines"],
+              ["grid", "Grid"],
+              ["list", "List"],
+            ] as const).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                role="tab"
+                aria-selected={collectionView === mode}
+                className={`caseCollectionNavButton${collectionView === mode ? " caseCollectionNavButtonActive" : ""}`}
+                onClick={() => setCollectionView(mode)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {dragUnlocked ? (
             <span className="caseUnlockBadge" aria-live="polite">
               Reorder unlocked
@@ -895,7 +904,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             className="text-link caseEditLink"
             onClick={() => setShelvesCollapsed((current) => !current)}
           >
-            {shelvesCollapsed ? "Show shelves" : "Hide shelves"}
+            {shelvesCollapsed ? `Show ${collectionView}` : `Hide ${collectionView}`}
           </button>
           {dragUnlocked ? (
             <button
@@ -1082,8 +1091,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         </section>
       ) : null}
       {!shelvesCollapsed ? (
-        <div className={`caseBody${hasSidebar ? "" : " caseBodySingle"}`}>
-          <div className="casePrimary">
+        <>
+          {collectionView === "spines" ? (
             <div className="caseShelves">
             {layout.shelves.map((shelf) => (
               <section key={shelf.shelfNumber} className="caseShelf">
@@ -1248,12 +1257,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 )}
               </div>
             </section>
-            </div>
           </div>
-          {hasSidebar ? (
-            <aside className="caseSidebar">
-            {collectionView !== "spines" ? (
-              <section className="caseDetachedCollection" aria-live="polite">
+          ) : (
+            <section className="caseDetachedCollection" aria-live="polite">
               <header className="caseDetachedCollectionHeader">
                 <div>
                   <p className="caseKicker">{collectionView === "grid" ? "Grid" : "List"} collection view</p>
@@ -1294,9 +1300,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 )}
               </div>
             </section>
-            ) : null}
-            {globalUnorganizedOpen ? (
-              <section className="caseShelf caseUnorganized caseUnorganizedDetached">
+          )}
+          <section className="caseShelf caseUnorganized caseUnorganizedDetached">
             <header className="caseShelfHeader">
               <span>Global unorganized</span>
               <span>{layout.unorganizedGlobal.length} books</span>
@@ -1366,10 +1371,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 <div className="caseUnorganizedEmpty">Global unorganized is empty.</div>
               )}
             </div>
-            </section>
-            ) : null}
-            </aside>
-          ) : null}
+          </section>
           {previewLocation && !quickEditLocation ? (
             <div
               className="caseHoverCard"
