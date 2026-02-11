@@ -292,6 +292,7 @@ const buildLayout = (
 
 export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const upsertBook = useLibraryStore((state) => state.upsertBook);
+  const bulkUpdateBooks = useLibraryStore((state) => state.bulkUpdateBooks);
   const bookcases = useLibraryStore((state) => state.bookcases);
   const upsertBookcase = useLibraryStore((state) => state.upsertBookcase);
   const [selectedBookcaseId, setSelectedBookcaseId] = useState<number | null>(
@@ -328,6 +329,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   });
   const clickTimerRef = useRef<number | null>(null);
   const longPressRef = useRef<number | null>(null);
+  const defaultBookcaseInitRef = useRef(false);
 
   useEffect(() => {
     if (!bookcases.length) {
@@ -352,6 +354,43 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     setCapacityPerShelf(selected.capacity_per_shelf);
     setBookcaseNotes(selected.notes || "");
   }, [bookcases, selectedBookcaseId]);
+
+  useEffect(() => {
+    if (defaultBookcaseInitRef.current || bookcases.length || !books.length) {
+      return;
+    }
+    defaultBookcaseInitRef.current = true;
+
+    const initializeDefaultBookcase = async () => {
+      const now = new Date().toISOString();
+      const shelves = 3;
+      const capacityPerShelf = Math.max(6, Math.ceil(books.length / shelves));
+      const defaultBookcaseId = 1;
+
+      await upsertBookcase({
+        id: defaultBookcaseId,
+        name: "Bookcase A",
+        shelves,
+        capacity_per_shelf: capacityPerShelf,
+        notes: "",
+        added_at: now,
+        updated_at: now,
+      });
+
+      const updates = books.map((book, index) => ({
+        ...book,
+        bookcase_id: defaultBookcaseId,
+        shelf: Math.floor(index / capacityPerShelf) + 1,
+        position: (index % capacityPerShelf) + 1,
+        updated_at: now,
+      }));
+
+      await bulkUpdateBooks(updates);
+      setSelectedBookcaseId(defaultBookcaseId);
+    };
+
+    void initializeDefaultBookcase();
+  }, [bookcases.length, books, bulkUpdateBooks, upsertBookcase]);
 
   useEffect(() => {
     if (shelvesCollapsed) {
@@ -822,27 +861,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             ) : (
               <span className="caseBookcasesEmpty">No bookcases yet.</span>
             )}
-          </div>
-          <div className="caseBookcaseTools">
-            <span className="caseBookcasesLabel">View</span>
-            <div className="caseCollectionNav" role="tablist" aria-label="Bookcase collection views">
-              {([
-                ["spines", "Spines"],
-                ["grid", "Grid"],
-                ["list", "List"],
-              ] as const).map(([mode, label]) => (
-                <button
-                  key={mode}
-                  type="button"
-                  role="tab"
-                  aria-selected={collectionView === mode}
-                  className={`caseCollectionNavButton${collectionView === mode ? " caseCollectionNavButtonActive" : ""}`}
-                  onClick={() => setCollectionView(mode)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
         <div className="caseHeaderActions">
