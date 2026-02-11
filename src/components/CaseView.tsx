@@ -1532,7 +1532,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </form>
             </div>
           ) : null}
-        </div>
+        </>
       ) : null}
     </section>
   );
