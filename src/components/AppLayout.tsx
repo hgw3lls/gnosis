@@ -94,26 +94,28 @@ export const AppLayout = ({
             </span>
           </div>
 
-          <div className="view-toggle" role="tablist" aria-label="Library view selector">
-            {(
-              [
-                ["case-spines", "Spines"],
-                ["grid", "Grid"],
-                ["list", "List"],
-              ] as const
-            ).map(([option, label]) => (
-              <button
-                key={option}
-                className={clsx("toggle", view === option && "active")}
-                type="button"
-                role="tab"
-                aria-selected={view === option}
-                onClick={() => onViewChange(option)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {view !== "case-spines" ? (
+            <div className="view-toggle" role="tablist" aria-label="Library view selector">
+              {(
+                [
+                  ["case-spines", "Spines"],
+                  ["grid", "Grid"],
+                  ["list", "List"],
+                ] as const
+              ).map(([option, label]) => (
+                <button
+                  key={option}
+                  className={clsx("toggle", view === option && "active")}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === option}
+                  onClick={() => onViewChange(option)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="topbar-actions">
             <button className="button ghost" type="button" onClick={onScanBarcode} disabled={!isUnlocked}>
