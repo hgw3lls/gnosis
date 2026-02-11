@@ -1112,6 +1112,15 @@ textarea:focus {
   color: var(--muted);
 }
 
+.caseShelfClearButton {
+  color: var(--red);
+  border-color: color-mix(in oklab, var(--red) 35%, var(--border));
+}
+
+.caseShelfClearButton:hover:not(:disabled) {
+  border-color: var(--red);
+}
+
 .caseHeaderActions {
   display: flex;
   align-items: center;
