@@ -630,11 +630,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const handleClearShelf = async (shelfNumber: number) => {
-    if (!selectedBookcaseId) {
-      return;
-    }
     const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
-    if (!shelf || !shelf.slots.some(Boolean)) {
+    if (!shelf) {
       return;
     }
     const now = new Date().toISOString();
@@ -995,12 +992,11 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                   <span>Shelf {shelf.shelfNumber}</span>
                   <button
                     type="button"
-                    className="text-link caseShelfClearButton"
-                    aria-label={`Clear Shelf ${shelf.shelfNumber}`}
+                    className="text-link"
                     onClick={() => void handleClearShelf(shelf.shelfNumber)}
                     disabled={!shelf.slots.some(Boolean)}
                   >
-                    Clear
+                    Clear shelf
                   </button>
                 </header>
                 <div
