@@ -153,6 +153,8 @@ export const App = () => {
         onRequestUnlock={() => setUnlockOpen(true)}
         onLock={lock}
         reviewCount={reviewCount}
+        view={view}
+        onViewChange={setView}
       >
         <div className="panel">Loading library...</div>
       </AppLayout>
@@ -170,6 +172,8 @@ export const App = () => {
       onRequestUnlock={() => setUnlockOpen(true)}
       onLock={lock}
       reviewCount={reviewCount}
+      view={view}
+      onViewChange={setView}
     >
       <Routes>
         <Route
