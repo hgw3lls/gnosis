@@ -6,7 +6,7 @@ type BookLocation = {
   book: Book;
   shelf: number | null;
   position: number | null;
-  zone: "shelf" | "unorganized";
+  zone: "shelf" | "bookcase_unorganized" | "global_unorganized";
 };
 
 type ShelfLayout = {
@@ -16,7 +16,8 @@ type ShelfLayout = {
 
 type CaseLayout = {
   shelves: ShelfLayout[];
-  unorganized: Book[];
+  unorganizedBookcase: Book[];
+  unorganizedGlobal: Book[];
   locationMap: Map<number, BookLocation>;
 };
 
@@ -172,23 +173,24 @@ const buildLayout = (
     })
   );
   const locationMap = new Map<number, BookLocation>();
-  const unorganized: Book[] = [];
+  const unorganizedBookcase: Book[] = [];
+  const unorganizedGlobal: Book[] = [];
 
   if (!bookcaseId || shelvesCount <= 0 || capacityPerShelf <= 0) {
-    const arranged = arrangeBooks(
+    const arrangedGlobal = arrangeBooks(
       books.filter((book) => !book.bookcase_id),
       organizeMode,
       manualOrderIds
     );
-    arranged.forEach((book) => {
+    arrangedGlobal.forEach((book) => {
       locationMap.set(book.id, {
         book,
         shelf: null,
         position: null,
-        zone: "unorganized",
+        zone: "global_unorganized",
       });
     });
-    return { shelves: [], unorganized: arranged, locationMap };
+    return { shelves: [], unorganizedBookcase: [], unorganizedGlobal: arrangedGlobal, locationMap };
   }
 
   const assigned: Book[] = [];
@@ -206,12 +208,12 @@ const buildLayout = (
       ) {
         assigned.push(book);
       } else {
-        unorganized.push(book);
+        unorganizedBookcase.push(book);
       }
       return;
     }
     if (!book.bookcase_id) {
-      unorganized.push(book);
+      unorganizedGlobal.push(book);
     }
   });
 
@@ -239,8 +241,9 @@ const buildLayout = (
     shelf.slots[positionIndex] = book;
   });
 
-  const arrangedUnorganized = arrangeBooks(
-    [...unorganized, ...overflow],
+  const arrangedBookcaseUnorganized = arrangeBooks(unorganizedBookcase, organizeMode, manualOrderIds);
+  const arrangedGlobalUnorganized = arrangeBooks(
+    [...unorganizedGlobal, ...overflow],
     organizeMode,
     manualOrderIds
   );
@@ -258,16 +261,31 @@ const buildLayout = (
       });
     });
   });
-  arrangedUnorganized.forEach((book) => {
+
+  arrangedBookcaseUnorganized.forEach((book) => {
     locationMap.set(book.id, {
       book,
       shelf: null,
       position: null,
-      zone: "unorganized",
+      zone: "bookcase_unorganized",
     });
   });
 
-  return { shelves, unorganized: arrangedUnorganized, locationMap };
+  arrangedGlobalUnorganized.forEach((book) => {
+    locationMap.set(book.id, {
+      book,
+      shelf: null,
+      position: null,
+      zone: "global_unorganized",
+    });
+  });
+
+  return {
+    shelves,
+    unorganizedBookcase: arrangedBookcaseUnorganized,
+    unorganizedGlobal: arrangedGlobalUnorganized,
+    locationMap,
+  };
 };
 
 export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
@@ -496,7 +514,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const handlePlaceBook = async (
     bookId: number,
     targetShelf: number | null,
-    targetPosition?: number
+    targetPosition?: number,
+    keepInBookcaseWhenUnshelved = false
   ) => {
     if (!dragUnlocked) {
       return;
@@ -597,7 +616,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       }
       updates.push({
         ...book,
-        bookcase_id: null,
+        bookcase_id: destination === "bookcase" ? selectedBookcaseId : null,
         shelf: null,
         position: null,
         updated_at: now,
@@ -622,11 +641,61 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     void handlePlaceBook(draggingId, shelfNumber, position);
   };
 
-  const handleDropUnorganized = () => {
+  const handleDropUnorganizedBookcase = () => {
     if (draggingId == null) {
       return;
     }
-    void handlePlaceBook(draggingId, null);
+    void handlePlaceBook(draggingId, null, undefined, true);
+  };
+
+  const handleDropUnorganizedGlobal = () => {
+    if (draggingId == null) {
+      return;
+    }
+    void handlePlaceBook(draggingId, null, undefined, false);
+  };
+
+  const clearShelf = async (shelfNumber: number, destination: "bookcase" | "global") => {
+    if (!selectedBookcaseId) {
+      return;
+    }
+    const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
+    if (!shelf || !shelf.slots.some(Boolean)) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = shelf.slots
+      .filter((book): book is Book => Boolean(book))
+      .map((book) => ({
+        ...book,
+        bookcase_id: destination === "bookcase" ? selectedBookcaseId : null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      }));
+    await persistUpdates(updates);
+  };
+
+  const handleClearShelf = async (shelfNumber: number) => {
+    await clearShelf(shelfNumber, "bookcase");
+  };
+
+  const handleClearBookcase = async (destination: "bookcase" | "global") => {
+    if (!selectedBookcaseId) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = layout.shelves
+      .flatMap((shelf) => shelf.slots)
+      .filter((book): book is Book => Boolean(book))
+      .map((book) => ({
+        ...book,
+        bookcase_id: destination === "bookcase" ? selectedBookcaseId : null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      }));
+    await persistUpdates(updates);
   };
 
   const handleClearShelf = async (shelfNumber: number) => {
@@ -653,18 +722,12 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     }
 
     const emptySlots = buildEmptySlotPlan(layout.shelves, autoPopulatePlacement);
-    if (!emptySlots.length || !layout.unorganized.length) {
+    const unorganizedCandidates = [...layout.unorganizedBookcase, ...layout.unorganizedGlobal];
+    if (!emptySlots.length || !unorganizedCandidates.length) {
       return;
     }
 
-    let candidates = sortBooksForAutoPopulate(
-      layout.unorganized,
-      autoPopulateOrder,
-      autoPopulateCategory
-    );
-    if (autoPopulateOrder === "category_focus" && autoPopulateCategoryMode === "only") {
-      candidates = candidates.filter((book) => hasCategory(book, autoPopulateCategory));
-    }
+    const candidates = sortBooksForAutoPopulate(unorganizedCandidates, autoPopulateOrder);
 
     const now = new Date().toISOString();
     const updates: Book[] = [];
@@ -719,11 +782,12 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     }
 
     const emptySlots = buildEmptySlotPlan(layout.shelves, autoPopulatePlacement);
-    if (!emptySlots.length || !layout.unorganized.length) {
+    const unorganizedCandidates = [...layout.unorganizedBookcase, ...layout.unorganizedGlobal];
+    if (!emptySlots.length || !unorganizedCandidates.length) {
       return;
     }
 
-    const candidates = sortBooksForAutoPopulate(layout.unorganized, autoPopulateOrder);
+    const candidates = sortBooksForAutoPopulate(unorganizedCandidates, autoPopulateOrder);
     const now = new Date().toISOString();
     const updates: Book[] = [];
     candidates.slice(0, emptySlots.length).forEach((book, index) => {
@@ -750,7 +814,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             <span className="caseStatPill">Shelved {occupancy.shelved}/{occupancy.totalSlots}</span>
             <span className="caseStatPill">Free slots {occupancy.free}</span>
             <span className="caseStatPill">Utilization {occupancy.percent}%</span>
-            <span className="caseStatPill">Unorganized {layout.unorganized.length}</span>
+            <span className="caseStatPill">Bookcase unorganized {layout.unorganizedBookcase.length}</span>
+            <span className="caseStatPill">Global unorganized {layout.unorganizedGlobal.length}</span>
           </div>
           <div className="caseBookcases">
             <span className="caseBookcasesLabel">Bookcases</span>
@@ -793,6 +858,20 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             onClick={() => void handleAutoPlaceUnorganized()}
           >
             Auto-place
+          </button>
+          <button
+            type="button"
+            className="text-link caseEditLink"
+            onClick={() => void handleClearBookcase("bookcase")}
+          >
+            Clear bookcase → local
+          </button>
+          <button
+            type="button"
+            className="text-link caseEditLink"
+            onClick={() => void handleClearBookcase("global")}
+          >
+            Clear bookcase → global
           </button>
           <button
             type="button"
@@ -957,7 +1036,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·{" "}
                     {previewLocation.shelf && previewLocation.position
                       ? `S${previewLocation.shelf} · P${previewLocation.position}`
-                      : "Unorganized"}
+                      : previewLocation.zone === "bookcase_unorganized"
+                      ? `${bookcaseName} unorganized`
+                      : "Global unorganized"}
                   </p>
                   <div className="casePreviewActions">
                     <button
@@ -1080,8 +1161,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             ))}
             <section className="caseShelf caseUnorganized">
               <header className="caseShelfHeader">
-                <span>Unorganized</span>
-                <span>{layout.unorganized.length} books</span>
+                <span>Bookcase unorganized</span>
+                <span>{layout.unorganizedBookcase.length} books</span>
               </header>
               <div
                 className="caseUnorganizedList"
@@ -1091,16 +1172,16 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     event.preventDefault();
                   }
                 }}
-                onDrop={handleDropUnorganized}
+                onDrop={handleDropUnorganizedBookcase}
               >
-                {layout.unorganized.length ? (
-                  layout.unorganized.map((book) => (
+                {layout.unorganizedBookcase.length ? (
+                  layout.unorganizedBookcase.map((book) => (
                     <button
                       key={book.id}
                       type="button"
                       className="caseSpine caseSpineUnorganized"
                       role="listitem"
-                      aria-label={`${book.title || "Untitled"} · Unorganized`}
+                      aria-label={`${book.title || "Untitled"} · ${bookcaseName} unorganized`}
                       draggable={dragUnlocked}
                       onClick={(event) => handleClick(event, book.id)}
                       onDoubleClick={() => handleDoubleClick(book.id)}
@@ -1145,7 +1226,78 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     </button>
                   ))
                 ) : (
-                  <div className="caseUnorganizedEmpty">All books are shelved.</div>
+                  <div className="caseUnorganizedEmpty">No books are unshelved in this bookcase.</div>
+                )}
+              </div>
+            </section>
+            <section className="caseShelf caseUnorganized">
+              <header className="caseShelfHeader">
+                <span>Global unorganized</span>
+                <span>{layout.unorganizedGlobal.length} books</span>
+              </header>
+              <div
+                className="caseUnorganizedList"
+                role="list"
+                onDragOver={(event) => {
+                  if (dragUnlocked) {
+                    event.preventDefault();
+                  }
+                }}
+                onDrop={handleDropUnorganizedGlobal}
+              >
+                {layout.unorganizedGlobal.length ? (
+                  layout.unorganizedGlobal.map((book) => (
+                    <button
+                      key={book.id}
+                      type="button"
+                      className="caseSpine caseSpineUnorganized"
+                      role="listitem"
+                      aria-label={`${book.title || "Untitled"} · Global unorganized`}
+                      draggable={dragUnlocked}
+                      onClick={(event) => handleClick(event, book.id)}
+                      onDoubleClick={() => handleDoubleClick(book.id)}
+                      onMouseEnter={(event) => {
+                        setPreviewId(book.id);
+                        setHoverPosition({ x: event.clientX, y: event.clientY });
+                      }}
+                      onMouseMove={(event) =>
+                        setHoverPosition({ x: event.clientX, y: event.clientY })
+                      }
+                      onMouseLeave={() => setPreviewId(null)}
+                      onFocus={() => setPreviewId(book.id)}
+                      onBlur={() => setPreviewId(null)}
+                      onTouchStart={() => setPreviewId(book.id)}
+                      onPointerDown={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                        }
+                        longPressRef.current = window.setTimeout(() => {
+                          setDragUnlocked(true);
+                        }, 550);
+                      }}
+                      onPointerUp={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                          longPressRef.current = null;
+                        }
+                      }}
+                      onPointerLeave={() => {
+                        if (longPressRef.current) {
+                          window.clearTimeout(longPressRef.current);
+                          longPressRef.current = null;
+                        }
+                      }}
+                      onDragStart={() => setDraggingId(book.id)}
+                      onDragEnd={() => setDraggingId(null)}
+                    >
+                      <span className="caseSpineTitle">{book.title || "Untitled"}</span>
+                      <span className="caseSpineAuthor">
+                        {book.authors || "Unknown author"}
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="caseUnorganizedEmpty">Global unorganized is empty.</div>
                 )}
               </div>
             </section>
@@ -1165,7 +1317,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 {previewLocation.book.authors || "Unknown author"} · {bookcaseName} ·{" "}
                 {previewLocation.shelf && previewLocation.position
                   ? `S${previewLocation.shelf} · P${previewLocation.position}`
-                  : "Unorganized"}
+                  : previewLocation.zone === "bookcase_unorganized"
+                      ? `${bookcaseName} unorganized`
+                      : "Global unorganized"}
               </p>
             </div>
           ) : null}
@@ -1187,7 +1341,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     {bookcaseName} ·{" "}
                     {quickEditLocation.shelf && quickEditLocation.position
                       ? `S${quickEditLocation.shelf} · P${quickEditLocation.position}`
-                      : "Unorganized"}
+                      : quickEditLocation.zone === "bookcase_unorganized"
+                      ? `${bookcaseName} unorganized`
+                      : "Global unorganized"}
                   </p>
                 </div>
                 <button
