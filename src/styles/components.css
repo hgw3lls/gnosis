@@ -897,6 +897,24 @@ textarea:focus {
   font-size: 28px;
 }
 
+.caseStats {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.caseStatPill {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .caseBookcases {
   margin-top: 8px;
   display: flex;
@@ -1003,7 +1021,8 @@ textarea:focus {
 }
 
 .caseControlGrid input,
-.caseControlGrid select {
+.caseControlGrid select,
+.caseControlGrid textarea {
   border: 1px solid var(--border);
   padding: 6px 8px;
   font-size: 13px;
@@ -1011,6 +1030,22 @@ textarea:focus {
   letter-spacing: normal;
 }
 
+
+.casePresetRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.caseControlFull {
+  grid-column: 1 / -1;
+}
+
+.caseControlFull textarea {
+  min-height: 72px;
+  resize: vertical;
+}
 .casePreviewMeta {
   margin: 0;
   font-size: 12px;

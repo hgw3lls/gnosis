@@ -16,11 +16,18 @@ npm run build
 npm run preview
 ```
 
+Quality checks:
+
+```bash
+npm run typecheck
+npm test
+```
+
 ## Schema contract
 
 The app treats `./public/library.csv` as the canonical schema. The header must match the exact order below:
 
-`id,title,authors,publisher,publish_year,language,format,isbn13,tags,collections,projects,location,status,notes,cover_image,added_at,updated_at`
+`id,title,authors,publisher,publish_year,language,format,isbn13,tags,collections,projects,location,bookcase_id,shelf,position,status,notes,cover_image,added_at,updated_at`
 
 ## CSV import/export
 
