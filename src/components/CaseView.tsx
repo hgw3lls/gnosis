@@ -26,6 +26,8 @@ type CaseViewProps = {
   onOpenBook: (id: number) => void;
 };
 
+type CaseCollectionView = "spines" | "grid" | "list";
+
 type BookcasePreset = {
   id: string;
   label: string;
@@ -308,6 +310,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [pendingAutoPopulate, setPendingAutoPopulate] = useState(false);
   const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
+  const [collectionView, setCollectionView] = useState<CaseCollectionView>("spines");
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const [quickEditId, setQuickEditId] = useState<number | null>(null);
@@ -616,7 +619,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       }
       updates.push({
         ...book,
-        bookcase_id: destination === "bookcase" ? selectedBookcaseId : null,
+        bookcase_id: keepInBookcaseWhenUnshelved ? selectedBookcaseId : null,
         shelf: null,
         position: null,
         updated_at: now,
@@ -819,6 +822,27 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             ) : (
               <span className="caseBookcasesEmpty">No bookcases yet.</span>
             )}
+          </div>
+          <div className="caseBookcaseTools">
+            <span className="caseBookcasesLabel">View</span>
+            <div className="caseCollectionNav" role="tablist" aria-label="Bookcase collection views">
+              {([
+                ["spines", "Spines"],
+                ["grid", "Grid"],
+                ["list", "List"],
+              ] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={collectionView === mode}
+                  className={`caseCollectionNavButton${collectionView === mode ? " caseCollectionNavButtonActive" : ""}`}
+                  onClick={() => setCollectionView(mode)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="caseHeaderActions">
@@ -1047,8 +1071,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         </section>
       ) : null}
       {!shelvesCollapsed ? (
-        <>
-          <div className="caseShelves">
+        <div className="caseBody">
+          <div className="casePrimary">
+            <div className="caseShelves">
             {layout.shelves.map((shelf) => (
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
@@ -1212,78 +1237,124 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 )}
               </div>
             </section>
-            <section className="caseShelf caseUnorganized">
-              <header className="caseShelfHeader">
-                <span>Global unorganized</span>
-                <span>{layout.unorganizedGlobal.length} books</span>
+            </div>
+          </div>
+          <aside className="caseSidebar">
+            {collectionView !== "spines" ? (
+              <section className="caseDetachedCollection" aria-live="polite">
+              <header className="caseDetachedCollectionHeader">
+                <div>
+                  <p className="caseKicker">{collectionView === "grid" ? "Grid" : "List"} collection view</p>
+                  <h3 className="caseDetachedCollectionTitle">{bookcaseName}</h3>
+                </div>
+                <p className="caseDetachedCollectionMeta">
+                  {layout.shelves.reduce((count, shelf) => count + shelf.slots.filter(Boolean).length, 0)} shelved · {layout.unorganizedBookcase.length} bookcase unorganized
+                </p>
               </header>
-              <div
-                className="caseUnorganizedList"
-                role="list"
-                onDragOver={(event) => {
-                  if (dragUnlocked) {
-                    event.preventDefault();
-                  }
-                }}
-                onDrop={handleDropUnorganizedGlobal}
-              >
-                {layout.unorganizedGlobal.length ? (
-                  layout.unorganizedGlobal.map((book) => (
-                    <button
-                      key={book.id}
-                      type="button"
-                      className="caseSpine caseSpineUnorganized"
-                      role="listitem"
-                      aria-label={`${book.title || "Untitled"} · Global unorganized`}
-                      draggable={dragUnlocked}
-                      onClick={(event) => handleClick(event, book.id)}
-                      onDoubleClick={() => handleDoubleClick(book.id)}
-                      onMouseEnter={(event) => {
-                        setPreviewId(book.id);
-                        setHoverPosition({ x: event.clientX, y: event.clientY });
-                      }}
-                      onMouseMove={(event) =>
-                        setHoverPosition({ x: event.clientX, y: event.clientY })
-                      }
-                      onMouseLeave={() => setPreviewId(null)}
-                      onFocus={() => setPreviewId(book.id)}
-                      onBlur={() => setPreviewId(null)}
-                      onTouchStart={() => setPreviewId(book.id)}
-                      onPointerDown={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                        }
-                        longPressRef.current = window.setTimeout(() => {
-                          setDragUnlocked(true);
-                        }, 550);
-                      }}
-                      onPointerUp={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                          longPressRef.current = null;
-                        }
-                      }}
-                      onPointerLeave={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                          longPressRef.current = null;
-                        }
-                      }}
-                      onDragStart={() => setDraggingId(book.id)}
-                      onDragEnd={() => setDraggingId(null)}
-                    >
-                      <span className="caseSpineTitle">{book.title || "Untitled"}</span>
-                      <span className="caseSpineAuthor">
-                        {book.authors || "Unknown author"}
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="caseUnorganizedEmpty">Global unorganized is empty.</div>
+              <div className={`caseDetachedCollectionItems caseDetachedCollectionItems--${collectionView}`}>
+                {layout.shelves.flatMap((shelf) =>
+                  shelf.slots
+                    .map((book, index) => ({ book, shelf: shelf.shelfNumber, position: index + 1 }))
+                    .filter((entry) => entry.book)
+                    .map((entry) => {
+                      const book = entry.book as Book;
+                      return (
+                        <button
+                          key={book.id}
+                          type="button"
+                          className={`caseDetachedBook caseDetachedBook--${collectionView}`}
+                          onClick={(event) => handleClick(event, book.id)}
+                          onDoubleClick={() => handleDoubleClick(book.id)}
+                          onMouseEnter={(event) => {
+                            setPreviewId(book.id);
+                            setHoverPosition({ x: event.clientX, y: event.clientY });
+                          }}
+                          onMouseMove={(event) => setHoverPosition({ x: event.clientX, y: event.clientY })}
+                          onMouseLeave={() => setPreviewId(null)}
+                        >
+                          <span className="caseDetachedBookTitle">{book.title || "Untitled"}</span>
+                          <span className="caseDetachedBookMeta">
+                            {book.authors || "Unknown author"} · S{entry.shelf} · P{entry.position}
+                          </span>
+                        </button>
+                      );
+                    })
                 )}
               </div>
             </section>
-          </div>
+            ) : null}
+            <section className="caseShelf caseUnorganized caseUnorganizedDetached">
+            <header className="caseShelfHeader">
+              <span>Global unorganized</span>
+              <span>{layout.unorganizedGlobal.length} books</span>
+            </header>
+            <div
+              className="caseUnorganizedList"
+              role="list"
+              onDragOver={(event) => {
+                if (dragUnlocked) {
+                  event.preventDefault();
+                }
+              }}
+              onDrop={handleDropUnorganizedGlobal}
+            >
+              {layout.unorganizedGlobal.length ? (
+                layout.unorganizedGlobal.map((book) => (
+                  <button
+                    key={book.id}
+                    type="button"
+                    className="caseSpine caseSpineUnorganized"
+                    role="listitem"
+                    aria-label={`${book.title || "Untitled"} · Global unorganized`}
+                    draggable={dragUnlocked}
+                    onClick={(event) => handleClick(event, book.id)}
+                    onDoubleClick={() => handleDoubleClick(book.id)}
+                    onMouseEnter={(event) => {
+                      setPreviewId(book.id);
+                      setHoverPosition({ x: event.clientX, y: event.clientY });
+                    }}
+                    onMouseMove={(event) =>
+                      setHoverPosition({ x: event.clientX, y: event.clientY })
+                    }
+                    onMouseLeave={() => setPreviewId(null)}
+                    onFocus={() => setPreviewId(book.id)}
+                    onBlur={() => setPreviewId(null)}
+                    onTouchStart={() => setPreviewId(book.id)}
+                    onPointerDown={() => {
+                      if (longPressRef.current) {
+                        window.clearTimeout(longPressRef.current);
+                      }
+                      longPressRef.current = window.setTimeout(() => {
+                        setDragUnlocked(true);
+                      }, 550);
+                    }}
+                    onPointerUp={() => {
+                      if (longPressRef.current) {
+                        window.clearTimeout(longPressRef.current);
+                        longPressRef.current = null;
+                      }
+                    }}
+                    onPointerLeave={() => {
+                      if (longPressRef.current) {
+                        window.clearTimeout(longPressRef.current);
+                        longPressRef.current = null;
+                      }
+                    }}
+                    onDragStart={() => setDraggingId(book.id)}
+                    onDragEnd={() => setDraggingId(null)}
+                  >
+                    <span className="caseSpineTitle">{book.title || "Untitled"}</span>
+                    <span className="caseSpineAuthor">
+                      {book.authors || "Unknown author"}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="caseUnorganizedEmpty">Global unorganized is empty.</div>
+              )}
+            </div>
+            </section>
+          </aside>
           {previewLocation && !quickEditLocation ? (
             <div
               className="caseHoverCard"
@@ -1444,7 +1515,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </form>
             </div>
           ) : null}
-        </>
+        </div>
       ) : null}
     </section>
   );
