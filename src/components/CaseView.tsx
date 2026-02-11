@@ -423,8 +423,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     [layout.locationMap, quickEditId]
   );
 
-  const hasSidebar = collectionView !== "spines" || globalUnorganizedOpen;
-
   useEffect(() => {
     if (!quickEditLocation) {
       return;
