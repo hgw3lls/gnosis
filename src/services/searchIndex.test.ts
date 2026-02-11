@@ -16,7 +16,6 @@ test("MiniSearch serialized index reloads with shared options", () => {
       tags: "theory",
       collections: "library",
       projects: "app",
-      location: "desk",
       status: "to_read",
       format: "book",
       language: "en",

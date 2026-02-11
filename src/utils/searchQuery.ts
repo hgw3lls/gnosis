@@ -1,9 +1,10 @@
 export type SearchFilter =
   | { type: "tag"; value: string }
   | { type: "status"; value: string }
-  | { type: "location"; value: string }
   | { type: "author"; value: string }
   | { type: "year"; op: ">" | "<" | ">=" | "<=" | "="; value: number };
+
+type YearOperator = ">" | "<" | ">=" | "<=" | "=";
 
 export type ParsedSearchQuery = {
   text: string;
@@ -29,10 +30,6 @@ export const parseSearchQuery = (query: string): ParsedSearchQuery => {
       filters.push({ type: "status", value: stripQuotes(token.slice(7)) });
       return;
     }
-    if (lower.startsWith("location:")) {
-      filters.push({ type: "location", value: stripQuotes(token.slice(9)) });
-      return;
-    }
     if (lower.startsWith("author:")) {
       filters.push({ type: "author", value: stripQuotes(token.slice(7)) });
       return;
@@ -42,7 +39,7 @@ export const parseSearchQuery = (query: string): ParsedSearchQuery => {
       const match = payload.match(/^(>=|<=|=|>|<)?(\d{4})$/);
       if (match) {
         const [, op = "=", value] = match;
-        filters.push({ type: "year", op: op as SearchFilter["op"], value: Number(value) });
+        filters.push({ type: "year", op: op as YearOperator, value: Number(value) });
         return;
       }
     }

@@ -9,7 +9,6 @@ type SearchDocument = {
   tags: string;
   collections: string;
   projects: string;
-  location: string;
   status: string;
   format: string;
   language: string;

@@ -10,7 +10,6 @@ export const CSV_SCHEMA = [
   "tags",
   "collections",
   "projects",
-  "location",
   "status",
   "notes",
   "cover_image",
@@ -30,7 +29,7 @@ export type Book = {
   tags: string;
   collections: string;
   projects: string;
-  location: string;
+  location?: string;
   status: "to_read" | "reading" | "referenced" | "finished";
   notes: string;
   cover_image: string;
