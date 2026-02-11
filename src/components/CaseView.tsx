@@ -508,25 +508,35 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     if (!movingBook) {
       return;
     }
+
     const now = new Date().toISOString();
     const shelves = cloneShelves();
-    const targetShelfIndex = targetShelf ? targetShelf - 1 : null;
+    const sourceLocation = layout.locationMap.get(bookId);
 
-    let removedBook: Book | null = null;
-    shelves.forEach((shelf) => {
-      const removed = removeFromShelf(shelf.slots, bookId);
-      if (removed) {
-        removedBook = removed;
+    const removeBookFromShelves = (id: number) => {
+      let removed: Book | null = null;
+      shelves.forEach((shelf) => {
+        const candidate = removeFromShelf(shelf.slots, id);
+        if (candidate) {
+          removed = candidate;
+        }
+      });
+      return removed;
+    };
+
+    const removedBook = removeBookFromShelves(bookId);
+    const bookToMove = removedBook ?? movingBook;
+    const unshelved: Book[] = [];
+
+    if (targetShelf == null) {
+      unshelved.push(bookToMove);
+    } else {
+      const target = shelves.find((entry) => entry.shelfNumber === targetShelf);
+      if (!target) {
+        return;
       }
-    });
 
-    const unorganizedIndex = layout.unorganized.findIndex((book) => book.id === bookId);
-    const unorganizedBook = unorganizedIndex >= 0 ? layout.unorganized[unorganizedIndex] : null;
-    const bookToMove = removedBook ?? unorganizedBook ?? movingBook;
-
-    let overflow: Book | null = null;
-    if (targetShelfIndex != null && shelves[targetShelfIndex]) {
-      const slots = shelves[targetShelfIndex].slots;
+      const slots = target.slots;
       let insertIndex = 0;
       if (typeof targetPosition === "number") {
         insertIndex = Math.min(Math.max(0, targetPosition - 1), slots.length - 1);
@@ -534,11 +544,26 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         const firstEmpty = slots.findIndex((slot) => slot == null);
         insertIndex = firstEmpty >= 0 ? firstEmpty : slots.length - 1;
       }
-      overflow = insertIntoShelf(slots, insertIndex, bookToMove);
+
+      if (
+        sourceLocation?.zone === "shelf" &&
+        sourceLocation.shelf === targetShelf &&
+        sourceLocation.position != null &&
+        typeof targetPosition === "number" &&
+        sourceLocation.position < targetPosition
+      ) {
+        insertIndex = Math.max(0, insertIndex - 1);
+      }
+
+      const overflow = insertIntoShelf(slots, insertIndex, bookToMove);
+      if (overflow) {
+        unshelved.push(overflow);
+      }
     }
 
     const updates: Book[] = [];
     const touched = new Set<number>();
+
     shelves.forEach((shelf) => {
       shelf.slots.forEach((book, index) => {
         if (!book) {
@@ -563,10 +588,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       });
     });
 
-    const unassignBook = (book: Book | null) => {
-      if (!book) {
-        return;
-      }
+    unshelved.forEach((book) => {
       if (touched.has(book.id)) {
         return;
       }
@@ -580,14 +602,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         position: null,
         updated_at: now,
       });
-    };
-
-    if (targetShelfIndex == null) {
-      unassignBook(bookToMove);
-    }
-    if (overflow) {
-      unassignBook(overflow);
-    }
+    });
 
     await persistUpdates(updates);
     setDraggingId(null);
@@ -612,6 +627,27 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       return;
     }
     void handlePlaceBook(draggingId, null);
+  };
+
+  const handleClearShelf = async (shelfNumber: number) => {
+    if (!selectedBookcaseId) {
+      return;
+    }
+    const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
+    if (!shelf || !shelf.slots.some(Boolean)) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = shelf.slots
+      .filter((book): book is Book => Boolean(book))
+      .map((book) => ({
+        ...book,
+        bookcase_id: null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      }));
+    await persistUpdates(updates);
   };
 
   const runAutoPopulate = async () => {
@@ -957,6 +993,15 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
                   <span>Shelf {shelf.shelfNumber}</span>
+                  <button
+                    type="button"
+                    className="text-link caseShelfClearButton"
+                    aria-label={`Clear Shelf ${shelf.shelfNumber}`}
+                    onClick={() => void handleClearShelf(shelf.shelfNumber)}
+                    disabled={!shelf.slots.some(Boolean)}
+                  >
+                    Clear
+                  </button>
                 </header>
                 <div
                   className="caseShelfRow"
