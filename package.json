@@ -11,7 +11,9 @@
     "isbn-lookup-test": "tsx scripts/isbn-lookup-test.ts",
     "test:quick-add": "tsx --test src/utils/isbn.test.ts src/services/openLibraryLookup.test.ts",
     "test:library-query": "tsx --test src/services/libraryQueryEngine.test.ts",
-    "test:dedupe": "tsx --test src/services/duplicates.test.ts"
+    "test:dedupe": "tsx --test src/services/duplicates.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@ericblade/quagga2": "^1.8.5",

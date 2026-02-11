@@ -25,6 +25,153 @@ type CaseViewProps = {
   onOpenBook: (id: number) => void;
 };
 
+type BookcasePreset = {
+  id: string;
+  label: string;
+  shelves: number;
+  capacityPerShelf: number;
+};
+
+const BOOKCASE_PRESETS: BookcasePreset[] = [
+  { id: "small", label: "Small (3 shelves × 12)", shelves: 3, capacityPerShelf: 12 },
+  { id: "standard", label: "Standard (5 shelves × 24)", shelves: 5, capacityPerShelf: 24 },
+  { id: "tall", label: "Tall wall (7 shelves × 30)", shelves: 7, capacityPerShelf: 30 },
+  { id: "dense", label: "Dense archive (8 shelves × 36)", shelves: 8, capacityPerShelf: 36 },
+];
+
+type AutoPopulateOrder =
+  | "current"
+  | "title_asc"
+  | "author_asc"
+  | "year_asc"
+  | "year_desc"
+  | "status"
+  | "updated_desc"
+  | "random"
+  | "category_focus";
+
+type AutoPopulatePlacement = "sequential" | "snake" | "balanced";
+
+type EmptySlot = { shelf: number; position: number };
+
+const readPublishYear = (book: Book) => {
+  const year = Number.parseInt(book.publish_year || "", 10);
+  return Number.isFinite(year) ? year : null;
+};
+
+const DEFAULT_AUTO_CATEGORIES = [
+  "philosophy",
+  "theory",
+  "fiction",
+  "history",
+  "technology",
+  "politics",
+  "art",
+  "economics",
+];
+
+const splitMultiValue = (value: string) =>
+  String(value || "")
+    .split(/[|,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const getBookCategories = (book: Book) => [
+  ...splitMultiValue(book.tags),
+  ...splitMultiValue(book.collections),
+  ...splitMultiValue(book.projects),
+];
+
+const hasCategory = (book: Book, category: string) =>
+  getBookCategories(book).some((item) => item.toLowerCase() === category.toLowerCase());
+
+const sortBooksForAutoPopulate = (
+  books: Book[],
+  order: AutoPopulateOrder,
+  selectedCategory: string
+) => {
+  const source = [...books];
+  switch (order) {
+    case "title_asc":
+      return source.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    case "author_asc":
+      return source.sort((a, b) => (a.authors || "").localeCompare(b.authors || ""));
+    case "year_asc":
+      return source.sort((a, b) => (readPublishYear(a) ?? 9999) - (readPublishYear(b) ?? 9999));
+    case "year_desc":
+      return source.sort((a, b) => (readPublishYear(b) ?? 0) - (readPublishYear(a) ?? 0));
+    case "status":
+      return source.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+    case "updated_desc":
+      return source.sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+    case "random":
+      return source.sort(() => Math.random() - 0.5);
+    case "category_focus":
+      return source.sort((a, b) => {
+        const aMatch = hasCategory(a, selectedCategory);
+        const bMatch = hasCategory(b, selectedCategory);
+        if (aMatch !== bMatch) {
+          return aMatch ? -1 : 1;
+        }
+        return (a.title || "").localeCompare(b.title || "");
+      });
+    case "current":
+    default:
+      return source;
+  }
+};
+
+const buildEmptySlotPlan = (
+  shelves: ShelfLayout[],
+  placement: AutoPopulatePlacement
+): EmptySlot[] => {
+  const sequential: EmptySlot[] = [];
+  shelves.forEach((shelf) => {
+    shelf.slots.forEach((slot, index) => {
+      if (!slot) {
+        sequential.push({ shelf: shelf.shelfNumber, position: index + 1 });
+      }
+    });
+  });
+
+  if (placement === "sequential") {
+    return sequential;
+  }
+
+  if (placement === "snake") {
+    const byShelf = new Map<number, EmptySlot[]>();
+    sequential.forEach((slot) => {
+      const current = byShelf.get(slot.shelf) ?? [];
+      current.push(slot);
+      byShelf.set(slot.shelf, current);
+    });
+    return Array.from(byShelf.entries())
+      .sort((a, b) => a[0] - b[0])
+      .flatMap(([shelf, slots]) =>
+        shelf % 2 === 0 ? [...slots].sort((a, b) => b.position - a.position) : slots
+      );
+  }
+
+  const queueByShelf = shelves.map((shelf) =>
+    shelf.slots
+      .map((slot, index) => (!slot ? { shelf: shelf.shelfNumber, position: index + 1 } : null))
+      .filter(Boolean) as EmptySlot[]
+  );
+  const balanced: EmptySlot[] = [];
+  let remaining = true;
+  while (remaining) {
+    remaining = false;
+    queueByShelf.forEach((queue) => {
+      const next = queue.shift();
+      if (next) {
+        balanced.push(next);
+        remaining = true;
+      }
+    });
+  }
+  return balanced;
+};
+
 const arrangeBooks = (
   books: Book[],
   organizeMode: "category" | "random" | "updated" | "manual",
@@ -173,10 +320,17 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [bookcaseName, setBookcaseName] = useState("Bookcase");
   const [shelvesCount, setShelvesCount] = useState(3);
   const [capacityPerShelf, setCapacityPerShelf] = useState(12);
+  const [bookcaseNotes, setBookcaseNotes] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState(BOOKCASE_PRESETS[1].id);
+  const [autoPopulateOrder, setAutoPopulateOrder] = useState<AutoPopulateOrder>("current");
+  const [autoPopulatePlacement, setAutoPopulatePlacement] = useState<AutoPopulatePlacement>("sequential");
+  const [autoPopulateCategory, setAutoPopulateCategory] = useState(DEFAULT_AUTO_CATEGORIES[0]);
+  const [autoPopulateCategoryMode, setAutoPopulateCategoryMode] = useState<"prioritize" | "only">("prioritize");
   const [organizeMode, setOrganizeMode] = useState<
     "category" | "random" | "updated" | "manual"
   >("category");
   const [showDetails, setShowDetails] = useState(false);
+  const [pendingAutoPopulate, setPendingAutoPopulate] = useState(false);
   const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
@@ -217,6 +371,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     setBookcaseName(selected.name);
     setShelvesCount(selected.shelves);
     setCapacityPerShelf(selected.capacity_per_shelf);
+    setBookcaseNotes(selected.notes || "");
   }, [bookcases, selectedBookcaseId]);
 
   useEffect(() => {
@@ -265,6 +420,41 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     () => (previewId != null ? layout.locationMap.get(previewId) ?? null : null),
     [layout.locationMap, previewId]
   );
+
+  const selectedBookcase = useMemo(
+    () =>
+      selectedBookcaseId == null
+        ? null
+        : bookcases.find((bookcase) => bookcase.id === selectedBookcaseId) ?? null,
+    [bookcases, selectedBookcaseId]
+  );
+
+  const occupancy = useMemo(() => {
+    const totalSlots = effectiveShelvesCount * effectiveCapacityPerShelf;
+    const shelved = layout.shelves.reduce(
+      (count, shelf) => count + shelf.slots.filter(Boolean).length,
+      0
+    );
+    const free = Math.max(0, totalSlots - shelved);
+    const percent = totalSlots ? Math.round((shelved / totalSlots) * 100) : 0;
+    return { totalSlots, shelved, free, percent };
+  }, [effectiveCapacityPerShelf, effectiveShelvesCount, layout.shelves]);
+
+  const autoPopulateCategoryOptions = useMemo(() => {
+    const fromLibrary = books.flatMap((book) => getBookCategories(book));
+    return Array.from(new Set([...DEFAULT_AUTO_CATEGORIES, ...fromLibrary])).sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }, [books]);
+
+  useEffect(() => {
+    if (!autoPopulateCategoryOptions.length) {
+      return;
+    }
+    if (!autoPopulateCategoryOptions.includes(autoPopulateCategory)) {
+      setAutoPopulateCategory(autoPopulateCategoryOptions[0]);
+    }
+  }, [autoPopulateCategory, autoPopulateCategoryOptions]);
   const quickEditLocation = useMemo(
     () => (quickEditId != null ? layout.locationMap.get(quickEditId) ?? null : null),
     [layout.locationMap, quickEditId]
@@ -482,6 +672,41 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     void handlePlaceBook(draggingId, null);
   };
 
+  const runAutoPopulate = async () => {
+    if (!selectedBookcaseId) {
+      return;
+    }
+
+    const emptySlots = buildEmptySlotPlan(layout.shelves, autoPopulatePlacement);
+    if (!emptySlots.length || !layout.unorganized.length) {
+      return;
+    }
+
+    let candidates = sortBooksForAutoPopulate(
+      layout.unorganized,
+      autoPopulateOrder,
+      autoPopulateCategory
+    );
+    if (autoPopulateOrder === "category_focus" && autoPopulateCategoryMode === "only") {
+      candidates = candidates.filter((book) => hasCategory(book, autoPopulateCategory));
+    }
+
+    const now = new Date().toISOString();
+    const updates: Book[] = [];
+    candidates.slice(0, emptySlots.length).forEach((book, index) => {
+      const slot = emptySlots[index];
+      updates.push({
+        ...book,
+        bookcase_id: selectedBookcaseId,
+        shelf: slot.shelf,
+        position: slot.position,
+        updated_at: now,
+      });
+    });
+
+    await persistUpdates(updates);
+  };
+
   const handleToggleDetails = async () => {
     if (showDetails) {
       if (selectedBookcaseId != null) {
@@ -491,11 +716,39 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           name: bookcaseName.trim() || "Bookcase",
           shelves: shelvesCount,
           capacity_per_shelf: capacityPerShelf,
+          notes: bookcaseNotes.trim(),
+          added_at: selectedBookcase?.added_at || now,
           updated_at: now,
         });
       }
+      if (pendingAutoPopulate) {
+        await runAutoPopulate();
+      }
     }
+    setPendingAutoPopulate(false);
     setShowDetails((current) => !current);
+  };
+
+  const handleApplyPreset = () => {
+    const preset = BOOKCASE_PRESETS.find((entry) => entry.id === selectedPresetId);
+    if (!preset) {
+      return;
+    }
+    setShelvesCount(preset.shelves);
+    setCapacityPerShelf(preset.capacityPerShelf);
+  };
+
+  const handleAutoPlaceUnorganized = async () => {
+    if (!showDetails) {
+      setPendingAutoPopulate(true);
+      setShowDetails(true);
+      return;
+    }
+    if (!selectedBookcaseId) {
+      return;
+    }
+
+    await runAutoPopulate();
   };
 
   return (
@@ -504,6 +757,12 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
         <div>
           <p className="caseKicker">Spines</p>
           <h2 className="caseTitle">{bookcaseName}</h2>
+          <div className="caseStats" aria-live="polite">
+            <span className="caseStatPill">Shelved {occupancy.shelved}/{occupancy.totalSlots}</span>
+            <span className="caseStatPill">Free slots {occupancy.free}</span>
+            <span className="caseStatPill">Utilization {occupancy.percent}%</span>
+            <span className="caseStatPill">Unorganized {layout.unorganized.length}</span>
+          </div>
           <div className="caseBookcases">
             <span className="caseBookcasesLabel">Bookcases</span>
             {bookcases.length ? (
@@ -542,6 +801,13 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           <button
             type="button"
             className="text-link caseEditLink"
+            onClick={() => void handleAutoPlaceUnorganized()}
+          >
+            Auto-place
+          </button>
+          <button
+            type="button"
+            className="text-link caseEditLink"
             onClick={() => setShelvesCollapsed((current) => !current)}
           >
             {shelvesCollapsed ? "Show shelves" : "Hide shelves"}
@@ -567,6 +833,12 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             <div className="caseControls">
               <p className="caseKicker">Bookcase setup</p>
               <div className="caseControlGrid">
+                {pendingAutoPopulate ? (
+                  <p className="caseAutoPopulateHint" role="status">
+                    Review or update these settings, then click <strong>Done</strong> to save and
+                    auto-populate this bookcase.
+                  </p>
+                ) : null}
                 <label>
                   Name
                   <input
@@ -620,6 +892,100 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     <option value="random">Random shuffle</option>
                     <option value="manual">Manual (drag)</option>
                   </select>
+                </label>
+                <label>
+                  Preset layout
+                  <div className="casePresetRow">
+                    <select
+                      value={selectedPresetId}
+                      onChange={(event) => setSelectedPresetId(event.target.value)}
+                    >
+                      {BOOKCASE_PRESETS.map((preset) => (
+                        <option key={preset.id} value={preset.id}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="button ghost"
+                      onClick={handleApplyPreset}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </label>
+                <label>
+                  Auto-populate order
+                  <select
+                    value={autoPopulateOrder}
+                    onChange={(event) =>
+                      setAutoPopulateOrder(event.target.value as AutoPopulateOrder)
+                    }
+                  >
+                    <option value="current">Current unorganized order</option>
+                    <option value="title_asc">Title (A → Z)</option>
+                    <option value="author_asc">Author (A → Z)</option>
+                    <option value="year_asc">Publish year (oldest first)</option>
+                    <option value="year_desc">Publish year (newest first)</option>
+                    <option value="status">Status group</option>
+                    <option value="updated_desc">Recently updated</option>
+                    <option value="category_focus">Category-focused</option>
+                    <option value="random">Random</option>
+                  </select>
+                </label>
+                {autoPopulateOrder === "category_focus" ? (
+                  <>
+                    <label>
+                      Category
+                      <select
+                        value={autoPopulateCategory}
+                        onChange={(event) => setAutoPopulateCategory(event.target.value)}
+                      >
+                        {autoPopulateCategoryOptions.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Category behavior
+                      <select
+                        value={autoPopulateCategoryMode}
+                        onChange={(event) =>
+                          setAutoPopulateCategoryMode(
+                            event.target.value as "prioritize" | "only"
+                          )
+                        }
+                      >
+                        <option value="prioritize">Prioritize selected category first</option>
+                        <option value="only">Only place selected category</option>
+                      </select>
+                    </label>
+                  </>
+                ) : null}
+                <label>
+                  Auto-populate placement
+                  <select
+                    value={autoPopulatePlacement}
+                    onChange={(event) =>
+                      setAutoPopulatePlacement(event.target.value as AutoPopulatePlacement)
+                    }
+                  >
+                    <option value="sequential">Sequential (top-left to bottom-right)</option>
+                    <option value="snake">Snake (alternate shelf direction)</option>
+                    <option value="balanced">Balanced (spread evenly by shelf)</option>
+                  </select>
+                </label>
+                <label className="caseControlFull">
+                  Notes / room
+                  <textarea
+                    rows={2}
+                    value={bookcaseNotes}
+                    onChange={(event) => setBookcaseNotes(event.target.value)}
+                    placeholder="e.g. Study wall, north side. Top shelf for oversized books."
+                  />
                 </label>
               </div>
             </div>
