@@ -957,6 +957,52 @@ textarea:focus {
   color: var(--muted);
 }
 
+
+.caseBookcaseTools {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.caseBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+.caseBodySingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.caseGlobalToggle {
+  white-space: nowrap;
+}
+
+.caseGlobalToggleActive {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-wash);
+}
+
+.casePrimary {
+  min-width: 0;
+  min-height: 0;
+}
+
+.caseSidebar {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
 .caseMeta {
   margin: 6px 0 0;
   font-size: 13px;
@@ -1125,6 +1171,8 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .caseUnlockBadge {

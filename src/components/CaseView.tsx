@@ -423,6 +423,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     [layout.locationMap, quickEditId]
   );
 
+  const hasSidebar = collectionView !== "spines" || globalUnorganizedOpen;
+
   useEffect(() => {
     if (!quickEditLocation) {
       return;
@@ -822,6 +824,27 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             ) : (
               <span className="caseBookcasesEmpty">No bookcases yet.</span>
             )}
+          </div>
+          <div className="caseBookcaseTools">
+            <span className="caseBookcasesLabel">View</span>
+            <div className="caseCollectionNav" role="tablist" aria-label="Bookcase collection views">
+              {([
+                ["spines", "Spines"],
+                ["grid", "Grid"],
+                ["list", "List"],
+              ] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={collectionView === mode}
+                  className={`caseCollectionNavButton${collectionView === mode ? " caseCollectionNavButtonActive" : ""}`}
+                  onClick={() => setCollectionView(mode)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="caseHeaderActions">
@@ -1509,7 +1532,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </form>
             </div>
           ) : null}
-        </>
+        </div>
       ) : null}
     </section>
   );
