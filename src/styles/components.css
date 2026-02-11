@@ -974,6 +974,21 @@ textarea:focus {
   overflow: hidden;
 }
 
+
+.caseBodySingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.caseGlobalToggle {
+  white-space: nowrap;
+}
+
+.caseGlobalToggleActive {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-wash);
+}
+
 .casePrimary {
   min-width: 0;
   min-height: 0;
