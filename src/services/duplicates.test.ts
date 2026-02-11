@@ -10,7 +10,6 @@ const base = {
   tags: "",
   collections: "",
   projects: "",
-  location: "",
   bookcase_id: null,
   shelf: null,
   position: null,

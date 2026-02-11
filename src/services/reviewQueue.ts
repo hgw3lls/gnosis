@@ -3,7 +3,7 @@ import { Book } from "../db/schema";
 export type ReviewIssue =
   | "missing_title_or_authors"
   | "missing_publish_year"
-  | "missing_status_or_location"
+  | "missing_status"
   | "missing_cover_image";
 
 export const getReviewIssues = (book: Book): ReviewIssue[] => {
@@ -14,8 +14,8 @@ export const getReviewIssues = (book: Book): ReviewIssue[] => {
   if (!book.publish_year.trim()) {
     issues.push("missing_publish_year");
   }
-  if (!book.status.trim() || !book.location.trim()) {
-    issues.push("missing_status_or_location");
+  if (!book.status.trim()) {
+    issues.push("missing_status");
   }
   if (!book.cover_image.trim()) {
     issues.push("missing_cover_image");

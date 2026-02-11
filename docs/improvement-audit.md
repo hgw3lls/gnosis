@@ -1,118 +1,173 @@
-# Gnosis improvement audit (detailed)
+# Gnosis product audit: from inventory log to true library management
 
-This audit focuses on maintainability, reliability, and product quality opportunities discovered from a pass over the current codebase.
+This audit reframes Gnosis as a **library operations tool** (not just a catalog), with emphasis on:
+- non-uniform bookcases,
+- multiple physical locations,
+- practical retrieval workflows,
+- and better documentation history for each book.
 
-## 1) Highest-priority opportunities
+## Current strengths
 
-### A. Introduce real authentication for edit access
-**Current state**
-- Edit access is currently guarded by a hardcoded unlock code (`1984`) in client state. This is easy to bypass and offers no meaningful protection if the app is shared or synced across devices.
+Gnosis already has several strong foundations:
+- Canonical schema fields for placement (`bookcase_id`, `shelf`, `position`) so every book can have a physical address.
+- A `Bookcase` model with per-case capacity (`shelves`, `capacity_per_shelf`) and normalization safeguards.
+- Placement validation to avoid impossible slots and duplicate slot collisions.
+- Useful metadata dimensions (`tags`, `collections`, `projects`, `status`, `notes`) that can support categorization and workflows.
 
-**Evidence**
-- `unlockWithCode` validates a fixed string in the Zustand store.
+## Main product gap
 
-**Recommendation**
-- Replace hardcoded code-gate with one of:
-  1. Local passphrase hash check (minimum baseline for an offline app), or
-  2. Proper account auth if remote sync is introduced.
-- At minimum, move the value to environment configuration and avoid storing literal secrets in source.
+Right now, placement models each bookcase as a **uniform grid** (same capacity for every shelf in a case). That works for simple cases, but it breaks down when your real environment includes:
+- mixed shelf heights,
+- half-width shelves,
+- deep vs shallow shelves,
+- horizontal stacks,
+- boxes/carts/end tables,
+- and multiple rooms/buildings.
 
-### B. Add a CI quality gate (typecheck + tests)
-**Current state**
-- Scripts exist for targeted tests, but there is no default `test` script and no explicit `typecheck` script. This makes automated validation harder and increases regression risk.
+In short: the app stores *where books are* but not enough structure to represent *how your storage actually works*.
 
-**Recommendation**
-- Keep a single top-level `npm test` that runs all unit tests.
-- Add `npm run typecheck` and run both commands in CI on each PR.
+## Priority recommendations (what to build next)
 
-### C. Keep schema contract docs synchronized with implementation
-**Current state**
-- The project emphasizes CSV schema correctness. Implementation includes placement columns (`bookcase_id`, `shelf`, `position`) in the canonical schema.
-- Documentation now needs to stay aligned whenever schema evolves.
+## 1) Upgrade storage model to hierarchical locations
 
-**Recommendation**
-- Treat schema docs as part of the contract and require update in same PR whenever `CSV_SCHEMA` changes.
-- Optionally generate docs directly from `CSV_SCHEMA` to prevent drift.
+### Goal
+Support complex real-world placement without forcing fake shelf numbers.
 
-## 2) Data correctness and operational reliability
+### Recommendation
+Move from the current flat placement fields to a hierarchy:
 
-### D. Seed/import observability and failure surfacing
-**Current state**
-- CSV seed failures are swallowed into `console.warn`, and user feedback is limited.
+- **Site** (House, Office, Cabin)
+- **Room/Zone** (Living Room, Upstairs Hall)
+- **Container** (Bookcase, Cabinet, Cart, Box)
+- **Shelf/Section** (Top-left, Middle, Oversize bay)
+- **Slot/Sequence** (Position or stack order)
 
-**Recommendation**
-- Add explicit user-facing error notifications for seed/import failure paths.
-- Persist last seed/import outcome in app state to aid troubleshooting.
+### Why this helps
+- Handles different furniture types cleanly.
+- Lets users browse library physically: Site -> Room -> Container.
+- Supports future maps and routing (“which room should I check?”).
 
-### E. Placement sanitization logic duplication risk
-**Current state**
-- Placement normalization and conflict checks are robust but spread across multiple helper paths in store flows (`loadFromDb`, `seedFromCsv`, import/update flows).
+### Migration strategy
+Keep existing fields for backward compatibility, but introduce new normalized tables and auto-map existing records during migration.
 
-**Recommendation**
-- Consolidate placement normalization into one reusable domain service with tests.
-- Ensure every write path uses the same normalization pipeline.
+## 2) Replace uniform shelf capacity with per-shelf configuration
 
-## 3) Search and performance
+### Goal
+Model non-identical shelves in the same bookcase.
 
-### F. Search index cache invalidation could be stricter
-**Current state**
-- Search cache signature is based on count + max `updated_at`. If two edits happen without increasing max timestamp or with timestamp anomalies, stale cache risk rises.
+### Recommendation
+Add a `BookcaseShelf` (or `ContainerSection`) entity:
+- `id`, `container_id`, `label`
+- `kind` (`linear`, `stack`, `bin`, `oversize`)
+- `capacity_mode` (`count`, `width_mm`, `mixed`)
+- `capacity_value`
+- optional dimensions (`height_mm`, `depth_mm`, `width_mm`)
 
-**Recommendation**
-- Use a stronger signature (e.g., deterministic hash over `id + updated_at` pairs).
-- Add lightweight telemetry (build time, cache-hit rate) to validate effectiveness.
+Then make book placement reference the specific shelf/section id, not just `(bookcase_id, shelf number)`.
 
-### G. Worker fallback handling can be more resilient
-**Current state**
-- Worker errors reject build promise and can degrade UX during index build.
+### Why this helps
+- One case can have shelf 1 = 40 books, shelf 2 = 18 oversize, shelf 3 = stacked journals.
+- Eliminates false validation failures from a single `capacity_per_shelf`.
 
-**Recommendation**
-- On worker failure, fallback to main-thread index creation automatically before surfacing failure.
+## 3) Add true categorization beyond free-text tags
 
-## 4) Product and UX quality
+### Goal
+Make browsing and reporting more reliable than comma-separated text.
 
-### H. Barcode scanning UX edge cases
-**Current state**
-- Scanner supports auto-add and manual ISBN entry, but permission denial and repeated scan states can be confusing depending on device/browser behavior.
+### Recommendation
+Introduce structured taxonomies:
+- **Subjects** (controlled vocabulary; many-to-many)
+- **Series** + volume number
+- **Audience** (reference, work, leisure, loanable)
+- **Acquisition source** and cost/date
+- **Condition** and preservation notes
 
-**Recommendation**
-- Add explicit retry/open-settings guidance in permission-denied state.
-- Add a cooldown + visual “locked” indicator during auto-add to reduce accidental double inserts.
+Keep tags for ad-hoc notes, but add first-class linked tables for high-value categories.
 
-### I. Bulk update safety controls
-**Current state**
-- Bulk updates are powerful and apply immediately.
+### Why this helps
+- Better filters and faceted search.
+- Lower data drift (“sci-fi”, “scifi”, “science fiction” no longer fragment).
+- Easier exports to analytics.
 
-**Recommendation**
-- Add preview/confirm step showing affected record count and changed fields.
-- Provide optional undo buffer for last bulk operation.
+## 4) Build an organization workflow engine
 
-## 5) Engineering process
+### Goal
+Help you actively organize, not just store records.
 
-### J. Expand test coverage around critical workflows
-**Current state**
-- Tests exist for search, duplicates, ISBN lookup, and schema; valuable start.
+### Recommendation
+Add operations workflows:
+- **Re-shelving queue**: books with missing/invalid placement.
+- **Move planner**: “move all books tagged `project:x` to Office Room B”.
+- **Capacity alerts** per shelf/section.
+- **Staging mode** for boxes during moves/renovation.
+- **Audit checklist** by room/container (mark scanned/verified).
 
-**Recommendation**
-- Add integration tests for:
-  - CSV import/export round-trip integrity,
-  - placement conflict resolution,
-  - metadata bulk update semantics,
-  - review queue persistence behavior.
+### Why this helps
+Turns Gnosis into a practical “what should I do next?” assistant.
 
-### K. Define contribution standards
-**Current state**
-- README has strong product guidance, but contributor workflow standards can be more explicit.
+## 5) Improve documentation lifecycle per book
 
-**Recommendation**
-- Add a short `CONTRIBUTING.md` with branch policy, test expectations, and schema-change checklist.
+### Goal
+Track how and why a book matters over time.
+
+### Recommendation
+Add entities for:
+- **Reading sessions** (start/stop, pages, notes)
+- **Annotations/highlights index** (page references)
+- **Provenance history** (where acquired, signed copies, editions)
+- **Lending log** (to whom, when due, returned)
+- **Decision history** (keep, donate, archive)
+
+### Why this helps
+Creates durable knowledge records instead of one-off notes.
+
+## 6) Strengthen retrieval UX for physical libraries
+
+### Goal
+Help you find a specific book fast in a messy, distributed library.
+
+### Recommendation
+Add:
+- **Physical breadcrumb** in every result (Site > Room > Container > Shelf).
+- **“Nearby books”** action (same shelf/section).
+- **Shelf labels/QR codes** to open a filtered view instantly.
+- **Map/list by location** first, then by metadata.
+
+### Why this helps
+Greatly reduces search friction when bookcases differ and are spread out.
+
+## Suggested implementation roadmap
+
+### Phase 1 (high impact, low migration risk)
+1. Add Site/Room/Container entities.
+2. Add per-shelf/section table and wire placement to section ids.
+3. Keep old fields read-only in UI for compatibility.
+
+### Phase 2 (organization workflows)
+1. Re-shelving queue.
+2. Move planner + capacity warnings.
+3. Location-first browsing views.
+
+### Phase 3 (documentation depth)
+1. Reading sessions + annotation references.
+2. Lending/provenance history.
+3. Saved smart collections (“all unread in Office”).
+
+## Quick wins you can ship immediately
+
+- Add **location hierarchy fields** in UI forms (site + room as controlled values).
+- Add **shelf labels** (human text, not only number) for non-standard cases.
+- Add a **placement completeness score** dashboard (% books with exact physical slot).
+- Add an **“unplaced books” saved filter** as a persistent queue.
+
+## Product success metrics to track
+
+- Median time to locate a requested book.
+- % of books with complete physical placement.
+- # of placement conflicts per week.
+- # of books in “unplaced” queue.
+- % of searches resolved through location-first navigation.
 
 ---
 
-## Suggested phased plan
-
-1. **Week 1 (safety baseline):** CI scripts + required checks + doc/schema sync guard.
-2. **Week 2 (correctness):** unify placement normalization + add import/seed error UX.
-3. **Week 3 (performance):** strengthen index signature + worker fallback path.
-4. **Week 4 (UX hardening):** scanner permission flows + bulk-edit confirmation/undo.
-
+If you want, the next step is a concrete schema proposal (`v2`) with table definitions and migration notes from the current CSV contract.

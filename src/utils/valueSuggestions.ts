@@ -12,7 +12,7 @@ export const buildQuickAddSuggestions = (books: Book[]) => {
     books.flatMap((book) => normalizeMultiValue(book.collections))
   );
   const projects = uniqueSorted(books.flatMap((book) => normalizeMultiValue(book.projects)));
-  const locations = uniqueSorted(books.map((book) => book.location || ""));
+  const locations: string[] = [];
 
   return { tags, collections, projects, locations };
 };

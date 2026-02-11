@@ -20,7 +20,6 @@ type SearchDocument = {
   tags: string;
   collections: string;
   projects: string;
-  location: string;
   status: string;
   format: string;
   language: string;
@@ -37,7 +36,6 @@ const createDocument = (book: Book): SearchDocument => ({
   tags: book.tags ?? "",
   collections: book.collections ?? "",
   projects: book.projects ?? "",
-  location: book.location ?? "",
   status: book.status ?? "",
   format: book.format ?? "",
   language: book.language ?? "",
@@ -151,8 +149,6 @@ const applyFilters = (book: Book, filters: SearchFilter[]) =>
         return normalizeMultiValue(book.tags).includes(filter.value);
       case "status":
         return book.status === filter.value;
-      case "location":
-        return (book.location || "").toLowerCase().includes(filter.value.toLowerCase());
       case "author":
         return (book.authors || "").toLowerCase().includes(filter.value.toLowerCase());
       case "year": {
@@ -198,7 +194,6 @@ export const runSearch = (books: Book[], index: MiniSearch | null, query: string
           book.tags,
           book.collections,
           book.projects,
-          book.location,
           book.status,
           book.notes,
           book.isbn13,
