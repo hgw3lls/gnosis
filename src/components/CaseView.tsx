@@ -47,8 +47,7 @@ type AutoPopulateOrder =
   | "year_desc"
   | "status"
   | "updated_desc"
-  | "random"
-  | "category_focus";
+  | "random";
 
 type AutoPopulatePlacement = "sequential" | "snake" | "balanced";
 
@@ -59,37 +58,7 @@ const readPublishYear = (book: Book) => {
   return Number.isFinite(year) ? year : null;
 };
 
-const DEFAULT_AUTO_CATEGORIES = [
-  "philosophy",
-  "theory",
-  "fiction",
-  "history",
-  "technology",
-  "politics",
-  "art",
-  "economics",
-];
-
-const splitMultiValue = (value: string) =>
-  String(value || "")
-    .split(/[|,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-const getBookCategories = (book: Book) => [
-  ...splitMultiValue(book.tags),
-  ...splitMultiValue(book.collections),
-  ...splitMultiValue(book.projects),
-];
-
-const hasCategory = (book: Book, category: string) =>
-  getBookCategories(book).some((item) => item.toLowerCase() === category.toLowerCase());
-
-const sortBooksForAutoPopulate = (
-  books: Book[],
-  order: AutoPopulateOrder,
-  selectedCategory: string
-) => {
+const sortBooksForAutoPopulate = (books: Book[], order: AutoPopulateOrder) => {
   const source = [...books];
   switch (order) {
     case "title_asc":
@@ -106,15 +75,6 @@ const sortBooksForAutoPopulate = (
       return source.sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
     case "random":
       return source.sort(() => Math.random() - 0.5);
-    case "category_focus":
-      return source.sort((a, b) => {
-        const aMatch = hasCategory(a, selectedCategory);
-        const bMatch = hasCategory(b, selectedCategory);
-        if (aMatch !== bMatch) {
-          return aMatch ? -1 : 1;
-        }
-        return (a.title || "").localeCompare(b.title || "");
-      });
     case "current":
     default:
       return source;
@@ -324,8 +284,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [selectedPresetId, setSelectedPresetId] = useState(BOOKCASE_PRESETS[1].id);
   const [autoPopulateOrder, setAutoPopulateOrder] = useState<AutoPopulateOrder>("current");
   const [autoPopulatePlacement, setAutoPopulatePlacement] = useState<AutoPopulatePlacement>("sequential");
-  const [autoPopulateCategory, setAutoPopulateCategory] = useState(DEFAULT_AUTO_CATEGORIES[0]);
-  const [autoPopulateCategoryMode, setAutoPopulateCategoryMode] = useState<"prioritize" | "only">("prioritize");
   const [organizeMode, setOrganizeMode] = useState<
     "category" | "random" | "updated" | "manual"
   >("category");
@@ -439,22 +397,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     const percent = totalSlots ? Math.round((shelved / totalSlots) * 100) : 0;
     return { totalSlots, shelved, free, percent };
   }, [effectiveCapacityPerShelf, effectiveShelvesCount, layout.shelves]);
-
-  const autoPopulateCategoryOptions = useMemo(() => {
-    const fromLibrary = books.flatMap((book) => getBookCategories(book));
-    return Array.from(new Set([...DEFAULT_AUTO_CATEGORIES, ...fromLibrary])).sort((a, b) =>
-      a.localeCompare(b)
-    );
-  }, [books]);
-
-  useEffect(() => {
-    if (!autoPopulateCategoryOptions.length) {
-      return;
-    }
-    if (!autoPopulateCategoryOptions.includes(autoPopulateCategory)) {
-      setAutoPopulateCategory(autoPopulateCategoryOptions[0]);
-    }
-  }, [autoPopulateCategory, autoPopulateCategoryOptions]);
   const quickEditLocation = useMemo(
     () => (quickEditId != null ? layout.locationMap.get(quickEditId) ?? null : null),
     [layout.locationMap, quickEditId]
@@ -739,16 +681,30 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const handleAutoPlaceUnorganized = async () => {
-    if (!showDetails) {
-      setPendingAutoPopulate(true);
-      setShowDetails(true);
-      return;
-    }
     if (!selectedBookcaseId) {
       return;
     }
 
-    await runAutoPopulate();
+    const emptySlots = buildEmptySlotPlan(layout.shelves, autoPopulatePlacement);
+    if (!emptySlots.length || !layout.unorganized.length) {
+      return;
+    }
+
+    const candidates = sortBooksForAutoPopulate(layout.unorganized, autoPopulateOrder);
+    const now = new Date().toISOString();
+    const updates: Book[] = [];
+    candidates.slice(0, emptySlots.length).forEach((book, index) => {
+      const slot = emptySlots[index];
+      updates.push({
+        ...book,
+        bookcase_id: selectedBookcaseId,
+        shelf: slot.shelf,
+        position: slot.position,
+        updated_at: now,
+      });
+    });
+
+    await persistUpdates(updates);
   };
 
   return (
@@ -930,41 +886,9 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                     <option value="year_desc">Publish year (newest first)</option>
                     <option value="status">Status group</option>
                     <option value="updated_desc">Recently updated</option>
-                    <option value="category_focus">Category-focused</option>
                     <option value="random">Random</option>
                   </select>
                 </label>
-                {autoPopulateOrder === "category_focus" ? (
-                  <>
-                    <label>
-                      Category
-                      <select
-                        value={autoPopulateCategory}
-                        onChange={(event) => setAutoPopulateCategory(event.target.value)}
-                      >
-                        {autoPopulateCategoryOptions.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Category behavior
-                      <select
-                        value={autoPopulateCategoryMode}
-                        onChange={(event) =>
-                          setAutoPopulateCategoryMode(
-                            event.target.value as "prioritize" | "only"
-                          )
-                        }
-                      >
-                        <option value="prioritize">Prioritize selected category first</option>
-                        <option value="only">Only place selected category</option>
-                      </select>
-                    </label>
-                  </>
-                ) : null}
                 <label>
                   Auto-populate placement
                   <select
