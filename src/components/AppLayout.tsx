@@ -1,14 +1,11 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
-import clsx from "clsx";
 
 export type ViewMode = "grid" | "list" | "case-spines";
 
 type AppLayoutProps = {
   query: string;
   onQueryChange: (value: string) => void;
-  view: ViewMode;
-  onViewChange: (value: ViewMode) => void;
   onAddBook: () => void;
   onAddBookcase: () => void;
   onScanBarcode: () => void;
@@ -22,8 +19,6 @@ type AppLayoutProps = {
 export const AppLayout = ({
   query,
   onQueryChange,
-  view,
-  onViewChange,
   onAddBook,
   onAddBookcase,
   onScanBarcode,
@@ -68,24 +63,6 @@ export const AppLayout = ({
           />
         </div>
         <div className="topbar-right">
-          <div className="view-toggle">
-            {(
-              [
-                ["grid", "Grid"],
-                ["list", "List"],
-                ["case-spines", "Spines"],
-              ] as const
-            ).map(([option, label]) => (
-              <button
-                key={option}
-                className={clsx("toggle", view === option && "active")}
-                type="button"
-                onClick={() => onViewChange(option)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
           <NavLink to="/import" className="text-link">
             Manage Library{reviewCount ? ` · Needs review: ${reviewCount}` : ""}
           </NavLink>
