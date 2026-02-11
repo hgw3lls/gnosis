@@ -545,13 +545,10 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
 
     const removedBook = removeBookFromShelves(bookId);
     const bookToMove = removedBook ?? movingBook;
-    const unshelved: Array<{ book: Book; destination: "bookcase" | "global" }> = [];
+    const unshelved: Book[] = [];
 
     if (targetShelf == null) {
-      unshelved.push({
-        book: bookToMove,
-        destination: keepInBookcaseWhenUnshelved ? "bookcase" : "global",
-      });
+      unshelved.push(bookToMove);
     } else {
       const target = shelves.find((entry) => entry.shelfNumber === targetShelf);
       if (!target) {
@@ -579,7 +576,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
 
       const overflow = insertIntoShelf(slots, insertIndex, bookToMove);
       if (overflow) {
-        unshelved.push({ book: overflow, destination: "global" });
+        unshelved.push(overflow);
       }
     }
 
@@ -610,7 +607,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       });
     });
 
-    unshelved.forEach(({ book, destination }) => {
+    unshelved.forEach((book) => {
       if (touched.has(book.id)) {
         return;
       }
@@ -694,6 +691,24 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       .map((book) => ({
         ...book,
         bookcase_id: destination === "bookcase" ? selectedBookcaseId : null,
+        shelf: null,
+        position: null,
+        updated_at: now,
+      }));
+    await persistUpdates(updates);
+  };
+
+  const handleClearShelf = async (shelfNumber: number) => {
+    const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
+    if (!shelf) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const updates = shelf.slots
+      .filter((book): book is Book => Boolean(book))
+      .map((book) => ({
+        ...book,
+        bookcase_id: null,
         shelf: null,
         position: null,
         updated_at: now,
@@ -1058,12 +1073,11 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                   <span>Shelf {shelf.shelfNumber}</span>
                   <button
                     type="button"
-                    className="text-link caseShelfClearButton"
-                    aria-label={`Clear Shelf ${shelf.shelfNumber}`}
+                    className="text-link"
                     onClick={() => void handleClearShelf(shelf.shelfNumber)}
                     disabled={!shelf.slots.some(Boolean)}
                   >
-                    Clear
+                    Clear shelf
                   </button>
                 </header>
                 <div
