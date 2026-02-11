@@ -71,9 +71,9 @@ export const AppLayout = ({
           <div className="view-toggle">
             {(
               [
+                ["case-spines", "Spines"],
                 ["grid", "Grid"],
                 ["list", "List"],
-                ["case-spines", "Spines"],
               ] as const
             ).map(([option, label]) => (
               <button
