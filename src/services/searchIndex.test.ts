@@ -3,6 +3,7 @@ import test from "node:test";
 import MiniSearch from "minisearch";
 
 import { SEARCH_INDEX_OPTIONS } from "./searchIndexConfig";
+import { getSearchIndexSignature } from "./searchIndex";
 
 test("MiniSearch serialized index reloads with shared options", () => {
   const index = new MiniSearch(SEARCH_INDEX_OPTIONS);
@@ -31,4 +32,24 @@ test("MiniSearch serialized index reloads with shared options", () => {
 
   assert.equal(hits.length, 1);
   assert.equal(hits[0]?.id, 1);
+});
+
+test("getSearchIndexSignature is order-insensitive and changes on updates", () => {
+  const books = [
+    { id: 2, updated_at: "2024-01-01T00:00:00.000Z" },
+    { id: 1, updated_at: "2024-01-02T00:00:00.000Z" },
+  ];
+  const permuted = [books[1], books[0]];
+
+  const a = getSearchIndexSignature(books);
+  const b = getSearchIndexSignature(permuted);
+  assert.equal(a, b);
+
+  const changed = getSearchIndexSignature(
+    [
+      { id: 2, updated_at: "2024-01-01T00:00:00.000Z" },
+      { id: 1, updated_at: "2024-01-03T00:00:00.000Z" },
+    ],
+  );
+  assert.notEqual(a, changed);
 });

@@ -46,15 +46,20 @@ const createDocument = (book: Book): SearchDocument => ({
   isbn13: book.isbn13 ?? "",
 });
 
-const getSignature = (books: Book[]) => {
-  const updatedAt = books.reduce((max, book) => {
-    const ts = Date.parse(book.updated_at || "");
-    if (!Number.isFinite(ts)) {
-      return max;
-    }
-    return Math.max(max, ts);
-  }, 0);
-  return `${books.length}:${updatedAt}`;
+const djb2Hash = (value: string) => {
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+export const getSearchIndexSignature = (books: Array<Pick<Book, "id" | "updated_at">>) => {
+  const snapshot = books
+    .map((book) => `${book.id}:${book.updated_at || ""}`)
+    .sort()
+    .join("|");
+  return `${books.length}:${djb2Hash(snapshot)}`;
 };
 
 const buildIndex = (documents: SearchDocument[]) => {
@@ -68,21 +73,25 @@ const buildIndexInWorker = async (documents: SearchDocument[]) => {
     return buildIndex(documents);
   }
 
-  return new Promise<MiniSearch>((resolve, reject) => {
-    const worker = new Worker(new URL("../workers/searchIndexWorker.ts", import.meta.url), {
-      type: "module",
-    });
-    worker.onmessage = (event) => {
-      const { indexJson } = event.data as { indexJson: string };
-      const miniSearch = MiniSearch.loadJSON(indexJson, SEARCH_INDEX_OPTIONS);
-      worker.terminate();
-      resolve(miniSearch);
-    };
-    worker.onerror = (event) => {
-      worker.terminate();
-      reject(event);
-    };
-    worker.postMessage({ documents });
+  return new Promise<MiniSearch>((resolve) => {
+    try {
+      const worker = new Worker(new URL("../workers/searchIndexWorker.ts", import.meta.url), {
+        type: "module",
+      });
+      worker.onmessage = (event) => {
+        const { indexJson } = event.data as { indexJson: string };
+        const miniSearch = MiniSearch.loadJSON(indexJson, SEARCH_INDEX_OPTIONS);
+        worker.terminate();
+        resolve(miniSearch);
+      };
+      worker.onerror = () => {
+        worker.terminate();
+        resolve(buildIndex(documents));
+      };
+      worker.postMessage({ documents });
+    } catch {
+      resolve(buildIndex(documents));
+    }
   });
 };
 
@@ -122,7 +131,7 @@ export const buildSearchIndexState = async (
   books: Book[],
   onStatus: (status: SearchIndexState["status"]) => void
 ): Promise<MiniSearch> => {
-  const signature = getSignature(books);
+  const signature = getSearchIndexSignature(books);
   const cached = loadIndexCache(signature);
   if (cached) {
     return cached;
