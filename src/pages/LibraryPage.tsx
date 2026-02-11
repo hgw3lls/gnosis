@@ -23,6 +23,7 @@ type LibraryPageProps = {
   query: string;
   onQueryChange: (value: string) => void;
   view: ViewMode;
+  onViewChange: (value: ViewMode) => void;
 };
 
 const toggleValue = (values: string[], value: string) =>
@@ -45,7 +46,7 @@ const makeFacetOptions = (books: ReturnType<typeof useLibraryStore.getState>["bo
   };
 };
 
-export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: LibraryPageProps) => {
+export const LibraryPage = ({ onSelectBook, query, onQueryChange, view, onViewChange }: LibraryPageProps) => {
   const books = useLibraryStore((state) => state.books);
   const [sort, setSort] = useState<LibrarySort>("updated");
   const [facets, setFacets] = useState<LibraryFacets>(emptyFacets);
@@ -560,6 +561,22 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view }: Librar
               <button className="button ghost filters-trigger" type="button" onClick={() => setFiltersOpen(true)}>
                 Filters
               </button>
+              <div className="view-toggle" aria-label="Library view mode">
+                {([
+                  ["case-spines", "Spines"],
+                  ["grid", "Grid"],
+                  ["list", "List"],
+                ] as const).map(([option, label]) => (
+                  <button
+                    key={option}
+                    className={`toggle${view === option ? " active" : ""}`}
+                    type="button"
+                    onClick={() => onViewChange(option)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <select value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
                 <option value="updated">Recently updated</option>
                 <option value="added">Recently added</option>

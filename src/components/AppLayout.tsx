@@ -1,14 +1,11 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
-import clsx from "clsx";
 
 export type ViewMode = "grid" | "list" | "case-spines";
 
 type AppLayoutProps = {
   query: string;
   onQueryChange: (value: string) => void;
-  view: ViewMode;
-  onViewChange: (value: ViewMode) => void;
   onAddBook: () => void;
   onAddBookcase: () => void;
   onScanBarcode: () => void;
@@ -22,8 +19,6 @@ type AppLayoutProps = {
 export const AppLayout = ({
   query,
   onQueryChange,
-  view,
-  onViewChange,
   onAddBook,
   onAddBookcase,
   onScanBarcode,

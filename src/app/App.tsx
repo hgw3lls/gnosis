@@ -146,8 +146,6 @@ export const App = () => {
       <AppLayout
         query={query}
         onQueryChange={setQuery}
-        view={view}
-        onViewChange={setView}
         onAddBook={actions.openAdd}
         onAddBookcase={actions.openAddBookcase}
         onScanBarcode={actions.openScan}
@@ -165,8 +163,6 @@ export const App = () => {
     <AppLayout
       query={query}
       onQueryChange={setQuery}
-      view={view}
-      onViewChange={setView}
       onAddBook={actions.openAdd}
       onAddBookcase={actions.openAddBookcase}
       onScanBarcode={actions.openScan}
@@ -184,6 +180,7 @@ export const App = () => {
               query={query}
               onQueryChange={setQuery}
               view={view}
+              onViewChange={setView}
             />
           }
         />
