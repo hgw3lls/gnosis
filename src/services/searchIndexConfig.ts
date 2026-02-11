@@ -7,7 +7,6 @@ export const SEARCH_FIELDS = [
   "tags",
   "collections",
   "projects",
-  "location",
   "status",
   "format",
   "language",

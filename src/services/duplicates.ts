@@ -85,7 +85,6 @@ export const mergeBookRecords = (primary: Book, duplicate: Book): Book => {
     tags: mergePipeValues(primary.tags, duplicate.tags),
     collections: mergePipeValues(primary.collections, duplicate.collections),
     projects: mergePipeValues(primary.projects, duplicate.projects),
-    location: choose(primary.location, duplicate.location),
     cover_image: choose(primary.cover_image, duplicate.cover_image),
     notes: mergedNotes,
     updated_at: new Date().toISOString(),

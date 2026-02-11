@@ -62,7 +62,7 @@ const matchesFacets = (book: Book, facets: LibraryFacets) => {
   if (facets.language.length && !facets.language.includes(book.language)) {
     return false;
   }
-  if (facets.location.length && !facets.location.includes(book.location)) {
+  if (facets.location.length && !facets.location.includes(book.location || "")) {
     return false;
   }
   if (!intersects(normalizeMultiValue(book.tags), facets.tags)) {
