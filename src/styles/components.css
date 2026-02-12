@@ -966,8 +966,8 @@ textarea:focus {
   flex-direction: column;
   gap: 20px;
   max-width: 100%;
-  overflow: hidden;
-  height: calc(100vh - 240px);
+  overflow-y: visible;
+  overflow-x: hidden;
 }
 
 .caseHeader {
@@ -1234,10 +1234,9 @@ textarea:focus {
   display: grid;
   gap: 16px;
   max-width: 100%;
-  overflow-y: auto;
-  min-height: 0;
+  overflow-y: visible;
+  overflow-x: hidden;
   padding-right: 4px;
-  flex: 1 1 auto;
 }
 
 .caseShelf {
