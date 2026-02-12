@@ -1233,6 +1233,7 @@ textarea:focus {
   display: grid;
   gap: 16px;
   max-width: 100%;
+  min-width: 0;
   overflow-y: visible;
   padding-right: 4px;
 }
@@ -1242,6 +1243,7 @@ textarea:focus {
   background: #fff;
   padding: 12px 16px 16px;
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .caseShelfHeader {
@@ -1324,9 +1326,12 @@ textarea:focus {
   flex-wrap: nowrap;
   gap: 6px;
   margin-top: 12px;
+  width: 100%;
+  max-width: min(100%, 1120px);
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 8px;
-  max-width: 100%;
+  scrollbar-gutter: stable;
 }
 
 .caseUnorganized {
