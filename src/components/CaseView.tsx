@@ -319,6 +319,8 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [manualOrderIds, setManualOrderIds] = useState<number[] | null>(null);
   const [dragUnlocked, setDragUnlocked] = useState(false);
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [unorganizedDrawerOpen, setUnorganizedDrawerOpen] = useState(false);
+  const [unorganizedDrawerTab, setUnorganizedDrawerTab] = useState<"bookcase" | "global">("bookcase");
   const [formState, setFormState] = useState({
     status: "",
     location: "",
@@ -828,6 +830,77 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
     await persistUpdates(updates);
   };
 
+  const renderUnorganizedList = (
+    items: Book[],
+    zoneLabel: string,
+    emptyMessage: string,
+    onDrop: () => void
+  ) => (
+    <div
+      className="caseUnorganizedList"
+      role="list"
+      onDragOver={(event) => {
+        if (dragUnlocked) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={onDrop}
+    >
+      {items.length ? (
+        items.map((book) => (
+          <button
+            key={book.id}
+            type="button"
+            className="caseSpine caseSpineUnorganized"
+            role="listitem"
+            aria-label={`${book.title || "Untitled"} · ${zoneLabel}`}
+            draggable={dragUnlocked}
+            onClick={(event) => handleClick(event, book.id)}
+            onDoubleClick={() => handleDoubleClick(book.id)}
+            onMouseEnter={(event) => {
+              setPreviewId(book.id);
+              setHoverPosition({ x: event.clientX, y: event.clientY });
+            }}
+            onMouseMove={(event) =>
+              setHoverPosition({ x: event.clientX, y: event.clientY })
+            }
+            onMouseLeave={() => setPreviewId(null)}
+            onFocus={() => setPreviewId(book.id)}
+            onBlur={() => setPreviewId(null)}
+            onTouchStart={() => setPreviewId(book.id)}
+            onPointerDown={() => {
+              if (longPressRef.current) {
+                window.clearTimeout(longPressRef.current);
+              }
+              longPressRef.current = window.setTimeout(() => {
+                setDragUnlocked(true);
+              }, 550);
+            }}
+            onPointerUp={() => {
+              if (longPressRef.current) {
+                window.clearTimeout(longPressRef.current);
+                longPressRef.current = null;
+              }
+            }}
+            onPointerLeave={() => {
+              if (longPressRef.current) {
+                window.clearTimeout(longPressRef.current);
+                longPressRef.current = null;
+              }
+            }}
+            onDragStart={() => setDraggingId(book.id)}
+            onDragEnd={() => setDraggingId(null)}
+          >
+            <span className="caseSpineTitle">{book.title || "Untitled"}</span>
+            <span className="caseSpineAuthor">{book.authors || "Unknown author"}</span>
+          </button>
+        ))
+      ) : (
+        <div className="caseUnorganizedEmpty">{emptyMessage}</div>
+      )}
+    </div>
+  );
+
   return (
     <section className="caseLayout">
       <header className="caseHeader">
@@ -918,6 +991,15 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           <button
             type="button"
             className="text-link caseEditLink"
+            onClick={() => setUnorganizedDrawerOpen((current) => !current)}
+          >
+            {unorganizedDrawerOpen
+              ? `Hide drawer (${layout.unorganizedBookcase.length + layout.unorganizedGlobal.length})`
+              : `Show drawer (${layout.unorganizedBookcase.length + layout.unorganizedGlobal.length})`}
+          </button>
+          <button
+            type="button"
+            className="text-link caseEditLink"
             onClick={() => setShelvesCollapsed((current) => !current)}
           >
             {shelvesCollapsed ? `Show ${collectionView}` : `Hide ${collectionView}`}
@@ -933,6 +1015,65 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           ) : null}
         </div>
       </header>
+      <section className={`caseDrawer${unorganizedDrawerOpen ? " caseDrawerOpen" : ""}`}>
+        <div className="caseDrawerTabs" role="tablist" aria-label="Unorganized drawers">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={unorganizedDrawerTab === "bookcase"}
+            className={`caseDrawerTab${unorganizedDrawerTab === "bookcase" ? " caseDrawerTabActive" : ""}`}
+            onClick={() => {
+              setUnorganizedDrawerTab("bookcase");
+              setUnorganizedDrawerOpen(true);
+            }}
+          >
+            Bookcase ({layout.unorganizedBookcase.length})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={unorganizedDrawerTab === "global"}
+            className={`caseDrawerTab${unorganizedDrawerTab === "global" ? " caseDrawerTabActive" : ""}`}
+            onClick={() => {
+              setUnorganizedDrawerTab("global");
+              setUnorganizedDrawerOpen(true);
+            }}
+          >
+            Global ({layout.unorganizedGlobal.length})
+          </button>
+        </div>
+        {unorganizedDrawerOpen ? (
+          <div className="caseDrawerBody">
+            {unorganizedDrawerTab === "bookcase" ? (
+              <>
+                <header className="caseShelfHeader">
+                  <span>Bookcase unorganized</span>
+                  <span>{layout.unorganizedBookcase.length} books</span>
+                </header>
+                {renderUnorganizedList(
+                  layout.unorganizedBookcase,
+                  `${bookcaseName} unorganized`,
+                  "No books are unshelved in this bookcase.",
+                  handleDropUnorganizedBookcase
+                )}
+              </>
+            ) : (
+              <>
+                <header className="caseShelfHeader">
+                  <span>Global unorganized</span>
+                  <span>{layout.unorganizedGlobal.length} books</span>
+                </header>
+                {renderUnorganizedList(
+                  layout.unorganizedGlobal,
+                  "Global unorganized",
+                  "Global unorganized is empty.",
+                  handleDropUnorganizedGlobal
+                )}
+              </>
+            )}
+          </div>
+        ) : null}
+      </section>
       {showDetails ? (
         <section className="caseDetails">
           <div className="caseMeta">
@@ -1202,77 +1343,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
                 </div>
               </section>
             ))}
-            <section className="caseShelf caseUnorganized">
-              <header className="caseShelfHeader">
-                <span>Bookcase unorganized</span>
-                <span>{layout.unorganizedBookcase.length} books</span>
-              </header>
-              <div
-                className="caseUnorganizedList"
-                role="list"
-                onDragOver={(event) => {
-                  if (dragUnlocked) {
-                    event.preventDefault();
-                  }
-                }}
-                onDrop={handleDropUnorganizedBookcase}
-              >
-                {layout.unorganizedBookcase.length ? (
-                  layout.unorganizedBookcase.map((book) => (
-                    <button
-                      key={book.id}
-                      type="button"
-                      className="caseSpine caseSpineUnorganized"
-                      role="listitem"
-                      aria-label={`${book.title || "Untitled"} · ${bookcaseName} unorganized`}
-                      draggable={dragUnlocked}
-                      onClick={(event) => handleClick(event, book.id)}
-                      onDoubleClick={() => handleDoubleClick(book.id)}
-                      onMouseEnter={(event) => {
-                        setPreviewId(book.id);
-                        setHoverPosition({ x: event.clientX, y: event.clientY });
-                      }}
-                      onMouseMove={(event) =>
-                        setHoverPosition({ x: event.clientX, y: event.clientY })
-                      }
-                      onMouseLeave={() => setPreviewId(null)}
-                      onFocus={() => setPreviewId(book.id)}
-                      onBlur={() => setPreviewId(null)}
-                      onTouchStart={() => setPreviewId(book.id)}
-                      onPointerDown={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                        }
-                        longPressRef.current = window.setTimeout(() => {
-                          setDragUnlocked(true);
-                        }, 550);
-                      }}
-                      onPointerUp={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                          longPressRef.current = null;
-                        }
-                      }}
-                      onPointerLeave={() => {
-                        if (longPressRef.current) {
-                          window.clearTimeout(longPressRef.current);
-                          longPressRef.current = null;
-                        }
-                      }}
-                      onDragStart={() => setDraggingId(book.id)}
-                      onDragEnd={() => setDraggingId(null)}
-                    >
-                      <span className="caseSpineTitle">{book.title || "Untitled"}</span>
-                      <span className="caseSpineAuthor">
-                        {book.authors || "Unknown author"}
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="caseUnorganizedEmpty">No books are unshelved in this bookcase.</div>
-                )}
-              </div>
-            </section>
           </div>
           ) : (
             <section className="caseDetachedCollection" aria-live="polite">
@@ -1317,77 +1387,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </div>
             </section>
           )}
-          <section className="caseShelf caseUnorganized caseUnorganizedDetached">
-            <header className="caseShelfHeader">
-              <span>Global unorganized</span>
-              <span>{layout.unorganizedGlobal.length} books</span>
-            </header>
-            <div
-              className="caseUnorganizedList"
-              role="list"
-              onDragOver={(event) => {
-                if (dragUnlocked) {
-                  event.preventDefault();
-                }
-              }}
-              onDrop={handleDropUnorganizedGlobal}
-            >
-              {layout.unorganizedGlobal.length ? (
-                layout.unorganizedGlobal.map((book) => (
-                  <button
-                    key={book.id}
-                    type="button"
-                    className="caseSpine caseSpineUnorganized"
-                    role="listitem"
-                    aria-label={`${book.title || "Untitled"} · Global unorganized`}
-                    draggable={dragUnlocked}
-                    onClick={(event) => handleClick(event, book.id)}
-                    onDoubleClick={() => handleDoubleClick(book.id)}
-                    onMouseEnter={(event) => {
-                      setPreviewId(book.id);
-                      setHoverPosition({ x: event.clientX, y: event.clientY });
-                    }}
-                    onMouseMove={(event) =>
-                      setHoverPosition({ x: event.clientX, y: event.clientY })
-                    }
-                    onMouseLeave={() => setPreviewId(null)}
-                    onFocus={() => setPreviewId(book.id)}
-                    onBlur={() => setPreviewId(null)}
-                    onTouchStart={() => setPreviewId(book.id)}
-                    onPointerDown={() => {
-                      if (longPressRef.current) {
-                        window.clearTimeout(longPressRef.current);
-                      }
-                      longPressRef.current = window.setTimeout(() => {
-                        setDragUnlocked(true);
-                      }, 550);
-                    }}
-                    onPointerUp={() => {
-                      if (longPressRef.current) {
-                        window.clearTimeout(longPressRef.current);
-                        longPressRef.current = null;
-                      }
-                    }}
-                    onPointerLeave={() => {
-                      if (longPressRef.current) {
-                        window.clearTimeout(longPressRef.current);
-                        longPressRef.current = null;
-                      }
-                    }}
-                    onDragStart={() => setDraggingId(book.id)}
-                    onDragEnd={() => setDraggingId(null)}
-                  >
-                    <span className="caseSpineTitle">{book.title || "Untitled"}</span>
-                    <span className="caseSpineAuthor">
-                      {book.authors || "Unknown author"}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <div className="caseUnorganizedEmpty">Global unorganized is empty.</div>
-              )}
-            </div>
-          </section>
           {previewLocation && !quickEditLocation ? (
             <div
               className="caseHoverCard"

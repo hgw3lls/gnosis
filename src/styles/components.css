@@ -1278,6 +1278,47 @@ textarea:focus {
   color: var(--red);
 }
 
+.caseDrawer {
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow);
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.caseDrawerTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.caseDrawerTab {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.caseDrawerTabActive {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-wash);
+}
+
+.caseDrawerBody {
+  display: grid;
+  gap: 10px;
+}
+
+.caseDrawer .caseUnorganizedList {
+  max-height: min(52vh, 560px);
+}
+
 .caseShelfRow {
   display: flex;
   flex-wrap: nowrap;
@@ -2146,9 +2187,6 @@ textarea {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--red) 40%, var(--border));
 }
 
-.caseUnorganizedDetached {
-  margin-top: 4px;
-}
 
 .caseDetachedCollection {
   border: 1px solid var(--border);
