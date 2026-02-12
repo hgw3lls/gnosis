@@ -495,8 +495,9 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view, onViewCh
       ) : null}
 
       {screenMode === "results" ? (
-      <div className="library-shell">
-        <aside className={`facets-panel ${filtersOpen ? "open" : ""}`}>
+      <div className={`library-shell${filtersOpen ? " library-shell--filters-open" : ""}`}>
+        {filtersOpen ? (
+          <aside className={`facets-panel ${filtersOpen ? "open" : ""}`}>
           <div className="facets-header-row">
             <h3>Filters</h3>
             <button className="icon-button facets-close" type="button" onClick={() => setFiltersOpen(false)}>
@@ -554,12 +555,13 @@ export const LibraryPage = ({ onSelectBook, query, onQueryChange, view, onViewCh
             Clear filters
           </button>
         </aside>
+        ) : null}
 
         <div className="library-main">
           <div className="toolbar">
             <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              <button className="button ghost filters-trigger" type="button" onClick={() => setFiltersOpen(true)}>
-                Filters
+              <button className="button ghost filters-trigger" type="button" onClick={() => setFiltersOpen((prev) => !prev)}>
+                {filtersOpen ? "Hide filters" : "Show filters"}
               </button>
               <select value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
                 <option value="updated">Recently updated</option>

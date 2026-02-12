@@ -2,30 +2,32 @@
 .app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 18px 16px 40px;
+  padding: calc(12px + env(safe-area-inset-top, 0px))
+    calc(10px + env(safe-area-inset-right, 0px))
+    calc(28px + env(safe-area-inset-bottom, 0px))
+    calc(10px + env(safe-area-inset-left, 0px));
 }
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   align-items: start;
 }
 
 .workspace-sidebar {
-  position: sticky;
-  top: 14px;
+  position: static;
   display: grid;
-  gap: 16px;
-  padding: 14px;
-  max-height: calc(100vh - 28px);
-  overflow-y: auto;
+  gap: 14px;
+  padding: 12px;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .workspace-brand {
   display: grid;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 10px 10px 12px;
   border: 1px dashed var(--line-soft);
   background: repeating-linear-gradient(
     -45deg,
@@ -50,13 +52,15 @@
 }
 
 .topbar-logo-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  max-width: 170px;
+  justify-content: flex-start;
+  max-width: 164px;
+  padding: 2px 0;
 }
 
 .topbar-logo {
-  height: 34px;
+  height: 32px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -362,47 +366,95 @@ textarea:focus {
   font-size: 14px;
 }
 
-@media (max-width: 1100px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .workspace-sidebar {
-    position: static;
-    max-height: none;
-  }
-
-  .workspace-actions {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    align-items: start;
-  }
+.workspace-header {
+  flex-direction: column;
+  align-items: stretch;
 }
 
-@media (max-width: 720px) {
+.workspace-header-controls {
+  justify-items: stretch;
+}
+
+.topbar-search-row {
+  flex-direction: column;
+}
+
+.view-toggle {
+  width: 100%;
+  grid-auto-columns: 1fr;
+}
+
+.toggle {
+  width: 100%;
+}
+
+.topbar-logo-link {
+  max-width: 150px;
+  padding: 1px 0;
+}
+
+.topbar-logo {
+  height: 28px;
+}
+
+@media (min-width: 721px) {
   .app {
-    padding: 12px 10px 28px;
+    padding: 18px 16px 40px;
   }
 
   .workspace-header {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: end;
   }
 
   .workspace-header-controls {
-    justify-items: stretch;
+    justify-items: end;
   }
 
   .topbar-search-row {
-    flex-direction: column;
+    flex-direction: row;
   }
 
-  .view-toggle {
-    width: 100%;
-    grid-auto-columns: 1fr;
-  }
-
+  .view-toggle,
   .toggle {
-    width: 100%;
+    width: auto;
+  }
+
+  .topbar-logo-link {
+    max-width: 164px;
+    padding: 2px 0;
+  }
+
+  .topbar-logo {
+    height: 32px;
+  }
+}
+
+@media (min-width: 1101px) {
+  .app-shell {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .workspace-sidebar {
+    position: sticky;
+    top: 14px;
+    gap: 16px;
+    padding: 14px;
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+  }
+
+  .workspace-actions {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 1100px) {
+  .workspace-actions {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    align-items: start;
   }
 }
 
@@ -1884,8 +1936,12 @@ textarea:focus {
 
 .library-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+}
+
+.library-shell--filters-open {
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .library-main {
@@ -1938,11 +1994,13 @@ textarea:focus {
 
 .filters-trigger,
 .facets-close {
-  display: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 960px) {
-  .library-shell {
+  .library-shell,
+  .library-shell--filters-open {
     grid-template-columns: 1fr;
   }
 

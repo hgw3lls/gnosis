@@ -26,8 +26,6 @@ type CaseViewProps = {
   onOpenBook: (id: number) => void;
 };
 
-type CaseCollectionView = "spines" | "grid" | "list";
-
 type BookcasePreset = {
   id: string;
   label: string;
@@ -311,7 +309,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [pendingAutoPopulate, setPendingAutoPopulate] = useState(false);
   const [shelvesCollapsed, setShelvesCollapsed] = useState(false);
-  const [collectionView, setCollectionView] = useState<CaseCollectionView>("spines");
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const [quickEditId, setQuickEditId] = useState<number | null>(null);
@@ -937,24 +934,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
           </div>
         </div>
         <div className="caseHeaderActions">
-          <div className="caseCollectionNav" role="tablist" aria-label="Bookcase collection views">
-            {([
-              ["spines", "Spines"],
-              ["grid", "Grid"],
-              ["list", "List"],
-            ] as const).map(([mode, label]) => (
-              <button
-                key={mode}
-                type="button"
-                role="tab"
-                aria-selected={collectionView === mode}
-                className={`caseCollectionNavButton${collectionView === mode ? " caseCollectionNavButtonActive" : ""}`}
-                onClick={() => setCollectionView(mode)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
           {dragUnlocked ? (
             <span className="caseUnlockBadge" aria-live="polite">
               Reorder unlocked
@@ -1002,7 +981,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
             className="text-link caseEditLink"
             onClick={() => setShelvesCollapsed((current) => !current)}
           >
-            {shelvesCollapsed ? `Show ${collectionView}` : `Hide ${collectionView}`}
+            {shelvesCollapsed ? "Show shelves" : "Hide shelves"}
           </button>
           {dragUnlocked ? (
             <button
@@ -1249,8 +1228,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
       ) : null}
       {!shelvesCollapsed ? (
         <>
-          {collectionView === "spines" ? (
-            <div className="caseShelves">
+          <div className="caseShelves">
             {layout.shelves.map((shelf) => (
               <section key={shelf.shelfNumber} className="caseShelf">
                 <header className="caseShelfHeader">
@@ -1344,49 +1322,6 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
               </section>
             ))}
           </div>
-          ) : (
-            <section className="caseDetachedCollection" aria-live="polite">
-              <header className="caseDetachedCollectionHeader">
-                <div>
-                  <p className="caseKicker">{collectionView === "grid" ? "Grid" : "List"} collection view</p>
-                  <h3 className="caseDetachedCollectionTitle">{bookcaseName}</h3>
-                </div>
-                <p className="caseDetachedCollectionMeta">
-                  {layout.shelves.reduce((count, shelf) => count + shelf.slots.filter(Boolean).length, 0)} shelved · {layout.unorganizedBookcase.length} bookcase unorganized
-                </p>
-              </header>
-              <div className={`caseDetachedCollectionItems caseDetachedCollectionItems--${collectionView}`}>
-                {layout.shelves.flatMap((shelf) =>
-                  shelf.slots
-                    .map((book, index) => ({ book, shelf: shelf.shelfNumber, position: index + 1 }))
-                    .filter((entry) => entry.book)
-                    .map((entry) => {
-                      const book = entry.book as Book;
-                      return (
-                        <button
-                          key={book.id}
-                          type="button"
-                          className={`caseDetachedBook caseDetachedBook--${collectionView}`}
-                          onClick={(event) => handleClick(event, book.id)}
-                          onDoubleClick={() => handleDoubleClick(book.id)}
-                          onMouseEnter={(event) => {
-                            setPreviewId(book.id);
-                            setHoverPosition({ x: event.clientX, y: event.clientY });
-                          }}
-                          onMouseMove={(event) => setHoverPosition({ x: event.clientX, y: event.clientY })}
-                          onMouseLeave={() => setPreviewId(null)}
-                        >
-                          <span className="caseDetachedBookTitle">{book.title || "Untitled"}</span>
-                          <span className="caseDetachedBookMeta">
-                            {book.authors || "Unknown author"} · S{entry.shelf} · P{entry.position}
-                          </span>
-                        </button>
-                      );
-                    })
-                )}
-              </div>
-            </section>
-          )}
           {previewLocation && !quickEditLocation ? (
             <div
               className="caseHoverCard"
