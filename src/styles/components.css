@@ -55,14 +55,14 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  max-width: 164px;
+  width: 100%;
+  max-width: none;
   padding: 2px 0;
 }
 
 .topbar-logo {
-  height: 32px;
-  width: auto;
-  max-width: 100%;
+  width: 100%;
+  height: auto;
   object-fit: contain;
 }
 
@@ -389,12 +389,14 @@ textarea:focus {
 }
 
 .topbar-logo-link {
-  max-width: 150px;
+  width: 100%;
+  max-width: none;
   padding: 1px 0;
 }
 
 .topbar-logo {
-  height: 28px;
+  width: 100%;
+  height: auto;
 }
 
 @media (min-width: 721px) {
@@ -421,12 +423,14 @@ textarea:focus {
   }
 
   .topbar-logo-link {
-    max-width: 164px;
+    width: 100%;
+    max-width: none;
     padding: 2px 0;
   }
 
   .topbar-logo {
-    height: 32px;
+    width: 100%;
+    height: auto;
   }
 }
 
