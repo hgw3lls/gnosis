@@ -178,7 +178,7 @@ const buildLayout = (
   const unorganizedBookcase: Book[] = [];
   const unorganizedGlobal: Book[] = [];
 
-  if (!bookcaseId || shelvesCount <= 0 || capacityPerShelf <= 0) {
+  if (bookcaseId == null || shelvesCount <= 0 || capacityPerShelf <= 0) {
     const arrangedGlobal = arrangeBooks(
       books.filter((book) => !book.bookcase_id),
       organizeMode,
@@ -698,7 +698,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const clearShelf = async (shelfNumber: number, destination: "bookcase" | "global") => {
-    if (!selectedBookcaseId) {
+    if (selectedBookcaseId == null) {
       return;
     }
     const shelf = layout.shelves.find((entry) => entry.shelfNumber === shelfNumber);
@@ -723,7 +723,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const handleClearBookcase = async (destination: "bookcase" | "global") => {
-    if (!selectedBookcaseId) {
+    if (selectedBookcaseId == null) {
       return;
     }
     const now = new Date().toISOString();
@@ -741,7 +741,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const runAutoPopulate = async () => {
-    if (!selectedBookcaseId) {
+    if (selectedBookcaseId == null) {
       return;
     }
 
@@ -801,7 +801,7 @@ export const CaseView = ({ books, onOpenBook }: CaseViewProps) => {
   };
 
   const handleAutoPlaceUnorganized = async () => {
-    if (!selectedBookcaseId) {
+    if (selectedBookcaseId == null) {
       return;
     }
 
