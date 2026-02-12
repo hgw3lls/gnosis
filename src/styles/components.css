@@ -1,24 +1,32 @@
 
 .app {
-  max-width: 1320px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 22px 18px 64px;
+  padding: 18px 16px 40px;
 }
 
-.topbar {
+.app-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(320px, 1fr) minmax(280px, 400px);
-  gap: 20px;
-  align-items: stretch;
-  padding: 18px;
-  margin-bottom: 24px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 
-.topbar-brand {
+.workspace-sidebar {
+  position: sticky;
+  top: 14px;
+  display: grid;
+  gap: 16px;
+  padding: 14px;
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
+}
+
+.workspace-brand {
   display: grid;
   gap: 10px;
+  padding: 10px;
   border: 1px dashed var(--line-soft);
-  padding: 12px;
   background: repeating-linear-gradient(
     -45deg,
     transparent,
@@ -28,19 +36,17 @@
   );
 }
 
+.workspace-status-row {
+  display: grid;
+  gap: 6px;
+}
+
 .topbar-kicker {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 10px;
   color: var(--muted);
-}
-
-.topbar-brand-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
 }
 
 .topbar-logo-link {
@@ -66,10 +72,56 @@
   background: #fff;
 }
 
+.workspace-nav,
+.workspace-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.workspace-nav-link {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.workspace-nav-link.active {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-wash);
+}
+
+.workspace-section-title {
+  margin: 0;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.workspace-main {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 14px;
+  padding: 14px;
+}
+
 .topbar-search-block {
   display: grid;
   gap: 8px;
   align-content: start;
+  min-width: 0;
+  flex: 1;
 }
 
 .topbar-label {
@@ -90,27 +142,18 @@
   color: var(--muted);
 }
 
-.topbar-controls {
+.workspace-header-controls {
   display: grid;
+  justify-items: end;
   gap: 10px;
-  align-content: start;
-}
-
-.topbar-meta-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .topbar-meta-link {
   font-weight: 700;
 }
 
-.topbar-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.workspace-content {
+  min-width: 0;
 }
 
 .add-menu {
@@ -320,25 +363,33 @@ textarea:focus {
 }
 
 @media (max-width: 1100px) {
-  .topbar {
+  .app-shell {
     grid-template-columns: 1fr;
   }
 
-  .topbar-brand-row,
-  .topbar-meta-row,
-  .topbar-actions {
-    justify-content: space-between;
+  .workspace-sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .workspace-actions {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    align-items: start;
   }
 }
 
 @media (max-width: 720px) {
   .app {
-    padding: 14px 10px 40px;
+    padding: 12px 10px 28px;
   }
 
-  .topbar {
-    padding: 12px;
-    gap: 12px;
+  .workspace-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace-header-controls {
+    justify-items: stretch;
   }
 
   .topbar-search-row {
