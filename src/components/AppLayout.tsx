@@ -50,51 +50,126 @@ export const AppLayout = ({
   }, []);
 
   return (
-    <div className="app">
-      <header className="topbar brutal-surface">
-        <div className="topbar-brand">
+    <div className="app app-shell">
+      <aside className="workspace-sidebar brutal-surface">
+        <div className="workspace-brand">
           <p className="topbar-kicker">Private archive system</p>
-          <div className="topbar-brand-row">
-            <NavLink to="/" className="topbar-logo-link" aria-label="Open library home">
-              <img src="exlibris.png" alt="Ex Libris" className="topbar-logo" />
-            </NavLink>
+          <NavLink to="/" className="topbar-logo-link" aria-label="Open library home">
+            <img src="exlibris.png" alt="Ex Libris" className="topbar-logo" />
+          </NavLink>
+          <div className="workspace-status-row">
             <div className="topbar-status-pill" aria-live="polite">
               {isUnlocked ? "Editable" : "Read only"}
             </div>
-          </div>
-        </div>
-
-        <div className="topbar-search-block">
-          <label htmlFor="global-library-search" className="topbar-label">
-            Search catalogue
-          </label>
-          <div className="topbar-search-row">
-            <input
-              id="global-library-search"
-              className="input input-dominant"
-              type="search"
-              placeholder="Title, author, tags, location"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-            />
-            <button className="button ghost hotkey-badge" type="button" onClick={() => onQueryChange("")}>
-              Clear
-            </button>
-          </div>
-          <p className="topbar-hint">Shortcuts: / focus search · A add book · ⌘/Ctrl K command palette</p>
-        </div>
-
-        <div className="topbar-controls">
-          <div className="topbar-meta-row">
-            <NavLink to="/import" className="text-link topbar-meta-link">
-              Manage Library
-            </NavLink>
             <span className="topbar-review-pill">
               {reviewCount ? `${reviewCount} pending review` : "No pending review"}
             </span>
           </div>
+        </div>
 
-          {view !== "case-spines" ? (
+        <nav className="workspace-nav" aria-label="Primary navigation">
+          <NavLink to="/" className="workspace-nav-link">
+            Library Workspace
+          </NavLink>
+          <NavLink to="/import" className="workspace-nav-link">
+            Data & Import
+          </NavLink>
+        </nav>
+
+        <section className="workspace-actions" aria-label="Quick actions">
+          <h2 className="workspace-section-title">Quick actions</h2>
+          <button className="button primary" type="button" onClick={onAddBook}>
+            Add Book
+          </button>
+          <button className="button ghost" type="button" onClick={onAddBookcase}>
+            Add Bookcase
+          </button>
+          <button className="button ghost" type="button" onClick={onScanBarcode} disabled={!isUnlocked}>
+            Scan Barcode
+          </button>
+          {isUnlocked ? (
+            <button className="button ghost" type="button" onClick={onLock}>
+              Lock Editing
+            </button>
+          ) : (
+            <button className="button ghost" type="button" onClick={onRequestUnlock}>
+              Unlock Editing
+            </button>
+          )}
+
+          <div className="add-menu" ref={addMenuRef}>
+            <button
+              className="button ghost add-trigger"
+              type="button"
+              onClick={() => {
+                if (!isUnlocked) {
+                  onRequestUnlock();
+                  return;
+                }
+                setAddMenuOpen((prev) => !prev);
+              }}
+              aria-expanded={addMenuOpen}
+              aria-haspopup="true"
+            >
+              More add options
+              <span className="add-trigger-caret" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+            {addMenuOpen ? (
+              <div className="add-menu-panel" role="menu">
+                <button
+                  className="add-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    onAddBook();
+                  }}
+                >
+                  Add Book
+                </button>
+                <button
+                  className="add-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    onAddBookcase();
+                  }}
+                >
+                  Add Bookcase
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <p className="topbar-hint">Shortcuts: / search · A add book · ⌘/Ctrl K command palette</p>
+      </aside>
+
+      <div className="workspace-main">
+        <header className="workspace-header brutal-surface">
+          <div className="topbar-search-block">
+            <label htmlFor="global-library-search" className="topbar-label">
+              Search catalogue
+            </label>
+            <div className="topbar-search-row">
+              <input
+                id="global-library-search"
+                className="input input-dominant"
+                type="search"
+                placeholder="Title, author, tags, location"
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+              />
+              <button className="button ghost hotkey-badge" type="button" onClick={() => onQueryChange("")}>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="workspace-header-controls">
             <div className="view-toggle" role="tablist" aria-label="Library view selector">
               {(
                 [
@@ -115,72 +190,14 @@ export const AppLayout = ({
                 </button>
               ))}
             </div>
-          ) : null}
-
-          <div className="topbar-actions">
-            <button className="button ghost" type="button" onClick={onScanBarcode} disabled={!isUnlocked}>
-              Scan
-            </button>
-            {isUnlocked ? (
-              <button className="button ghost" type="button" onClick={onLock}>
-                Lock
-              </button>
-            ) : (
-              <button className="button ghost" type="button" onClick={onRequestUnlock}>
-                Unlock
-              </button>
-            )}
-
-            <div className="add-menu" ref={addMenuRef}>
-              <button
-                className="button primary add-trigger"
-                type="button"
-                onClick={() => {
-                  if (!isUnlocked) {
-                    onRequestUnlock();
-                    return;
-                  }
-                  setAddMenuOpen((prev) => !prev);
-                }}
-                aria-expanded={addMenuOpen}
-                aria-haspopup="true"
-              >
-                Add
-                <span className="add-trigger-caret" aria-hidden="true">
-                  ▾
-                </span>
-              </button>
-              {addMenuOpen ? (
-                <div className="add-menu-panel" role="menu">
-                  <button
-                    className="add-menu-item"
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setAddMenuOpen(false);
-                      onAddBook();
-                    }}
-                  >
-                    Add Book
-                  </button>
-                  <button
-                    className="add-menu-item"
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setAddMenuOpen(false);
-                      onAddBookcase();
-                    }}
-                  >
-                    Add Bookcase
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <NavLink to="/import" className="text-link topbar-meta-link">
+              Manage Library Data
+            </NavLink>
           </div>
+        </header>
+
+        <main className="workspace-content">{children}</main>
         </div>
-      </header>
-      {children}
     </div>
   );
 };
