@@ -108,8 +108,15 @@ export const ImportPage = () => {
         }
 
         const rawDetails = await response.text();
-        const detail = extractMeaningfulSyncError(response, rawDetails);
-        throw new Error(detail);
+        const details = rawDetails.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        const statusSummary = `${response.status} ${response.statusText}`.trim();
+        const repeatedStatusSummary = `${statusSummary} ${statusSummary}`.trim();
+
+        if (!details || details === response.statusText || details === statusSummary || details === repeatedStatusSummary) {
+          throw new Error("");
+        }
+
+        throw new Error(details);
       }
 
       setMessage("Library synced to website library.csv. Future visitors will load this update.");
