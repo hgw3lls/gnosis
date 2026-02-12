@@ -62,7 +62,8 @@ export const ImportPage = () => {
       }
 
       if (!response.ok) {
-        const details = await response.text();
+        const rawDetails = await response.text();
+        const details = rawDetails.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
         throw new Error(details || `Sync failed with status ${response.status}.`);
       }
 
