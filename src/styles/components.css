@@ -1,3 +1,13 @@
+:root {
+  --app-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+
 
 .app {
   max-width: 1400px;
@@ -436,8 +446,8 @@ textarea:focus {
 
 @media (min-width: 1101px) {
   .app-shell {
-    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+    gap: 18px;
   }
 
   .workspace-sidebar {
@@ -475,13 +485,17 @@ textarea:focus {
   --red: var(--red);
   --redWash: var(--red-wash);
   --shadow: var(--shadow);
+  min-height: min(760px, calc(var(--app-viewport-height) - 220px));
 }
 
 .spineShelf {
   border: 1px solid var(--rule);
   background: #fff;
   padding: 8px 6px 12px;
+  min-height: 0;
+  display: flex;
 }
+
 
 .spineShelf-empty {
   margin-top: 24px;
@@ -494,8 +508,10 @@ textarea:focus {
   scroll-snap-type: x mandatory;
   gap: 0;
   padding: 10px 4px 18px;
-  min-height: 320px;
+  min-height: min(420px, calc(var(--app-viewport-height) - 340px));
+  width: 100%;
 }
+
 
 .spineRail::-webkit-scrollbar {
   height: 8px;
@@ -591,7 +607,10 @@ textarea:focus {
   padding: 12px 16px 24px;
   background: #fff;
   min-height: 360px;
+  max-height: calc(var(--app-viewport-height) - 108px);
+  overflow: auto;
 }
+
 
 .previewEmpty {
   color: var(--ink2);
@@ -763,7 +782,7 @@ textarea:focus {
 }
 
 .list-virtualized {
-  height: calc(100vh - 360px);
+  height: calc(var(--app-viewport-height) - 360px);
   min-height: 320px;
 }
 
@@ -1176,8 +1195,10 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
   gap: 16px;
   min-height: 0;
+  max-height: calc(var(--app-viewport-height) - 240px);
   overflow: hidden;
 }
+
 
 
 .caseBodySingle {
@@ -1857,6 +1878,31 @@ textarea:focus {
   }
 }
 
+@media (max-width: 960px) {
+  .spinesLayout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .previewRail {
+    position: static;
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .caseBody {
+    grid-template-columns: 1fr;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .caseSidebar {
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .topbar {
     grid-template-columns: 1fr;
@@ -1959,7 +2005,7 @@ textarea:focus {
   display: grid;
   gap: 14px;
   align-content: start;
-  max-height: calc(100vh - 190px);
+  max-height: calc(var(--app-viewport-height) - 190px);
   overflow: auto;
   position: sticky;
   top: 96px;
@@ -2017,7 +2063,7 @@ textarea:focus {
     position: fixed;
     inset: 0 auto 0 0;
     width: min(360px, 88vw);
-    max-height: 100vh;
+    max-height: var(--app-viewport-height);
     z-index: 80;
     transform: translateX(-105%);
     transition: transform 180ms ease;
@@ -2168,7 +2214,7 @@ textarea {
   position: fixed;
   inset: auto 0 0 0;
   width: 100%;
-  max-height: 82vh;
+  max-height: min(82vh, calc(var(--app-viewport-height) - 24px));
   border-radius: 18px 18px 0 0;
   transform: translateY(105%);
   transition: transform 180ms ease;
@@ -2201,7 +2247,7 @@ textarea {
 
 @media (min-width: 961px) {
   .app {
-    max-width: 1200px;
+    max-width: 1680px;
     padding: 28px 24px 64px;
   }
 
@@ -2269,7 +2315,7 @@ textarea {
     position: sticky;
     inset: auto;
     width: auto;
-    max-height: calc(100vh - 190px);
+    max-height: calc(var(--app-viewport-height) - 190px);
     border-radius: 0;
     transform: none;
     box-shadow: none;
@@ -2340,7 +2386,7 @@ textarea {
 .caseDetachedCollectionItems {
   display: grid;
   gap: 10px;
-  max-height: 56vh;
+  max-height: min(56vh, calc(var(--app-viewport-height) - 260px));
   overflow: auto;
   padding-right: 2px;
 }

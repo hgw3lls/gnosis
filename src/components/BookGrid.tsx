@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FixedSizeList as List } from "react-window";
 import { Book } from "../db/schema";
 import { BookCard } from "./BookCard";
@@ -12,17 +12,37 @@ type BookGridProps = {
   onToggleSelect: (id: number, options?: { shiftKey?: boolean }) => void;
 };
 
-const estimateListHeight = () => Math.max(320, window.innerHeight - 360);
+const MIN_LIST_HEIGHT = 320;
+const LIST_BOTTOM_GUTTER = 20;
+
+const getViewportHeight = () =>
+  window.visualViewport?.height ?? window.innerHeight;
 
 export const BookGrid = ({ books, view, onSelect, selectedIds, onToggleSelect }: BookGridProps) => {
   const layoutClass = view === "list" ? "list" : "grid";
-  const [listHeight, setListHeight] = useState(() => estimateListHeight());
+  const listContainerRef = useRef<HTMLElement>(null);
+  const [listHeight, setListHeight] = useState(MIN_LIST_HEIGHT);
 
   useEffect(() => {
-    const handleResize = () => setListHeight(estimateListHeight());
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    if (view !== "list") {
+      return;
+    }
+
+    const resize = () => {
+      const top = listContainerRef.current?.getBoundingClientRect().top ?? 0;
+      const available = getViewportHeight() - top - LIST_BOTTOM_GUTTER;
+      setListHeight(Math.max(MIN_LIST_HEIGHT, Math.floor(available)));
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    window.visualViewport?.addEventListener("resize", resize);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      window.visualViewport?.removeEventListener("resize", resize);
+    };
+  }, [view]);
 
   const itemData = useMemo(
     () => ({
@@ -36,7 +56,7 @@ export const BookGrid = ({ books, view, onSelect, selectedIds, onToggleSelect }:
 
   if (view === "list") {
     return (
-      <section className="list-virtualized">
+      <section className="list-virtualized" ref={listContainerRef}>
         <List
           height={listHeight}
           itemCount={books.length}
