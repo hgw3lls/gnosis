@@ -37,6 +37,9 @@ export const ImportPage = () => {
   };
 
   const handleSync = async () => {
+    const fallbackMessage =
+      "Sync failed. This deployment likely does not expose /api/library. Use Export and replace library.csv in deployment.";
+
     try {
       setError("");
       const books = await db.books.toArray();
@@ -62,18 +65,36 @@ export const ImportPage = () => {
       }
 
       if (!response.ok) {
+        if (response.status === 404 || response.status === 405) {
+          throw new Error("");
+        }
+
         const rawDetails = await response.text();
         const details = rawDetails.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-        throw new Error(details || `Sync failed with status ${response.status}.`);
+        const statusSummary = `${response.status} ${response.statusText}`.trim();
+        const repeatedStatusSummary = `${statusSummary} ${statusSummary}`.trim();
+
+        if (!details || details === response.statusText || details === statusSummary || details === repeatedStatusSummary) {
+          throw new Error("");
+        }
+
+        throw new Error(details);
       }
 
       setMessage("Library synced to website library.csv. Future visitors will load this update.");
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? `${error.message} If this site does not provide /api/library, use Export and replace library.csv in deployment.`
-          : "Sync failed. If this site does not provide /api/library, use Export and replace library.csv in deployment."
-      );
+      if (error instanceof TypeError) {
+        setError(fallbackMessage);
+        return;
+      }
+
+      if (error instanceof Error) {
+        const detail = error.message.trim();
+        setError(detail ? `${detail} ${fallbackMessage}` : fallbackMessage);
+        return;
+      }
+
+      setError(fallbackMessage);
     }
   };
 
