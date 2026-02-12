@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --paper: #f6f3ea;
-  --paper-alt: #fffdf8;
-  --ink: #121212;
-  --muted: #45423d;
-  --border: #1c1b19;
-  --line-soft: rgba(18, 18, 18, 0.2);
-  --red: #c4282f;
-  --red-deep: #8f161b;
-  --red-wash: rgba(196, 40, 47, 0.1);
-  --focus: #c4282f;
-  --shadow: 7px 7px 0 rgba(18, 18, 18, 0.95);
+  --paper: #f9f6ed;
+  --paper-alt: #fff9d9;
+  --ink: #12121a;
+  --muted: #3a3651;
+  --border: #19162b;
+  --line-soft: rgba(25, 22, 43, 0.26);
+  --red: #5a31ff;
+  --red-deep: #3114a8;
+  --red-wash: rgba(90, 49, 255, 0.15);
+  --focus: #5a31ff;
+  --shadow: 7px 7px 0 rgba(25, 22, 43, 0.95);
 }
 
 * {
@@ -21,8 +21,9 @@ body {
   margin: 0;
   font-family: "Inter", "SF Pro Text", system-ui, -apple-system, sans-serif;
   background:
-    linear-gradient(90deg, rgba(18, 18, 18, 0.03) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(rgba(18, 18, 18, 0.03) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(25, 22, 43, 0.08) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(rgba(25, 22, 43, 0.08) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(180deg, rgba(90, 49, 255, 0.08), rgba(90, 49, 255, 0)),
     var(--paper);
   color: var(--ink);
 }
@@ -43,4 +44,5 @@ textarea {
   background: var(--paper-alt);
   border: 2px solid var(--border);
   box-shadow: var(--shadow);
+  border-radius: 0;
 }
