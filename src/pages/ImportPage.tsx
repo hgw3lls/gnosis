@@ -4,6 +4,44 @@ import { useLibraryStore } from "../app/store";
 import { exportCsvText } from "../utils/csv";
 import { getReviewIssues, needsReview } from "../services/reviewQueue";
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const extractMeaningfulSyncError = (response: Response, rawDetails: string) => {
+  const details = rawDetails.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (!details) {
+    return "";
+  }
+
+  if (!/[a-zA-Z]/.test(details)) {
+    return "";
+  }
+
+  const statusText = response.statusText.trim();
+  const statusSummary = `${response.status} ${statusText}`.trim();
+
+  if (details === statusText || details === statusSummary || details === `${statusSummary} ${statusSummary}`.trim()) {
+    return "";
+  }
+
+  if (statusText) {
+    const statusNoise = new RegExp(`^(?:${response.status}\\s+${escapeRegExp(statusText)}\\s*)+`, "i");
+    const strippedStatusNoise = details.replace(statusNoise, "").trim();
+    if (!strippedStatusNoise) {
+      return "";
+    }
+    if (/^sync failed\b/i.test(strippedStatusNoise)) {
+      return "";
+    }
+    return strippedStatusNoise;
+  }
+
+  if (/^sync failed\b/i.test(details)) {
+    return "";
+  }
+
+  return details;
+};
+
 export const ImportPage = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -164,6 +202,10 @@ export const ImportPage = () => {
         <p>
           Sync publishes your current session library to the website&rsquo;s canonical
           <code> library.csv</code> so later visitors load the same updated data.
+        </p>
+        <p className="summary">
+          Server-side saving requires a deployment endpoint at <code>/api/library</code>. Without
+          it, use Export and replace <code>library.csv</code> in your host/deployment.
         </p>
         <div className="actions">
           <button className="button" type="button" onClick={handleSync}>
